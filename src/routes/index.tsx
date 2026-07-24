@@ -11,6 +11,8 @@ import {
   Flame,
   ShieldCheck,
 } from "lucide-react";
+import { MenuBrowser } from "@/components/menu/MenuBrowser";
+import { CartSheet } from "@/components/menu/CartSheet";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -109,14 +111,11 @@ function Home() {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Cardápio</p>
-            <h2 className="mt-1 text-3xl font-black md:text-4xl">Nossos destaques</h2>
+            <h2 className="mt-1 text-3xl font-black md:text-4xl">Peça pelo cardápio</h2>
           </div>
         </div>
-        <div className="mt-8 rounded-2xl border-2 border-dashed border-border bg-muted/40 p-10 text-center">
-          <p className="text-lg font-semibold">Cardápio em preparação 🍢</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Envie o cardápio na próxima mensagem para eu cadastrar os produtos, categorias, preços e fotos.
-          </p>
+        <div className="mt-8">
+          <MenuBrowser />
         </div>
       </section>
 
@@ -136,6 +135,7 @@ function Home() {
           <p className="mt-1">© {new Date().getFullYear()} · Todos os direitos reservados.</p>
         </div>
       </footer>
+      <CartSheet />
     </div>
   );
 }
