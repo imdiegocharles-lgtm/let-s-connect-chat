@@ -85,6 +85,30 @@ export type Database = {
           },
         ]
       }
+      neighborhoods: {
+        Row: {
+          created_at: string
+          fee: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fee?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fee?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -135,38 +159,56 @@ export type Database = {
       }
       orders: {
         Row: {
+          change_for: number | null
           created_at: string
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          delivery_fee: number
           delivery_type: string
           id: string
+          neighborhood: string | null
           notes: string | null
+          order_number: number
+          payment_method: string | null
           status: string
+          subtotal: number
           total: number
           updated_at: string
         }
         Insert: {
+          change_for?: number | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          delivery_fee?: number
           delivery_type: string
           id?: string
+          neighborhood?: string | null
           notes?: string | null
+          order_number?: number
+          payment_method?: string | null
           status?: string
+          subtotal?: number
           total: number
           updated_at?: string
         }
         Update: {
+          change_for?: number | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          delivery_fee?: number
           delivery_type?: string
           id?: string
+          neighborhood?: string | null
           notes?: string | null
+          order_number?: number
+          payment_method?: string | null
           status?: string
+          subtotal?: number
           total?: number
           updated_at?: string
         }
