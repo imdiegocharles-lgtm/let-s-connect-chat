@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Família Amaral — Churrasquinho & Restaurante | Delivery" },
+      { name: "description", content: "Peça online no Família Amaral: churrasquinho, pratos e petiscos com entrega rápida. Cardápio, promoções e pedido pelo WhatsApp." },
+      { name: "author", content: "Família Amaral" },
+      { name: "theme-color", content: "#c1121f" },
+      { property: "og:title", content: "Família Amaral — Delivery" },
+      { property: "og:description", content: "Churrasquinho & restaurante com entrega rápida. Faça seu pedido online." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
