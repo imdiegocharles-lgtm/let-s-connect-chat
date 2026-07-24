@@ -119,7 +119,7 @@ function AdminDashboard() {
 
 /* --------------------------- CATEGORIES --------------------------- */
 
-type Category = { id: string; name: string; slug: string; sort_order: number };
+type Category = { id: string; name: string; sort_order: number };
 
 function CategoriesPanel() {
   const qc = useQueryClient();
@@ -128,7 +128,7 @@ function CategoriesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase.from("menu_categories").select("*").order("sort_order");
       if (error) throw error;
-      return data as Category[];
+      return (data ?? []) as unknown as Category[];
     },
   });
 
@@ -153,7 +153,7 @@ function CategoriesPanel() {
             <Card key={c.id} className="p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{c.name}</div>
-                <div className="text-xs text-muted-foreground">slug: {c.slug} · ordem: {c.sort_order}</div>
+                <div className="text-xs text-muted-foreground">Ordem: {c.sort_order}</div>
               </div>
               <div className="flex gap-2">
                 <CategoryDialog category={c} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
@@ -172,20 +172,18 @@ function CategoryDialog({ category, trigger }: { category?: Category; trigger: R
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(category?.name ?? "");
-  const [slug, setSlug] = useState(category?.slug ?? "");
   const [sortOrder, setSortOrder] = useState(category?.sort_order ?? 0);
 
   useEffect(() => {
     if (open) {
       setName(category?.name ?? "");
-      setSlug(category?.slug ?? "");
       setSortOrder(category?.sort_order ?? 0);
     }
   }, [open, category]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { name, slug: slug || slugify(name), sort_order: sortOrder };
+      const payload = { name, sort_order: sortOrder };
       if (category) {
         const { error } = await supabase.from("menu_categories").update(payload).eq("id", category.id);
         if (error) throw error;
@@ -209,7 +207,6 @@ function CategoryDialog({ category, trigger }: { category?: Category; trigger: R
         <DialogHeader><DialogTitle>{category ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Slug (opcional)</Label><Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="auto a partir do nome" /></div>
           <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
         </div>
         <DialogFooter>
@@ -242,7 +239,7 @@ function ItemsPanel() {
     queryFn: async () => {
       const { data, error } = await supabase.from("menu_categories").select("*").order("sort_order");
       if (error) throw error;
-      return data as Category[];
+      return (data ?? []) as unknown as Category[];
     },
   });
   const { data: items, isLoading } = useQuery({
@@ -400,7 +397,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
 
 /* --------------------------- NEIGHBORHOODS --------------------------- */
 
-type Neighborhood = { id: string; name: string; fee: number; is_active: boolean };
+type Neighborhood = { id: string; name: string; fee: number };
 
 function NeighborhoodsPanel() {
   const qc = useQueryClient();
@@ -409,7 +406,7 @@ function NeighborhoodsPanel() {
     queryFn: async () => {
       const { data, error } = await supabase.from("neighborhoods").select("*").order("name");
       if (error) throw error;
-      return data as Neighborhood[];
+      return (data ?? []) as unknown as Neighborhood[];
     },
   });
 
@@ -434,7 +431,7 @@ function NeighborhoodsPanel() {
             <Card key={n.id} className="p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{n.name}</div>
-                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")} {n.is_active ? "" : "· inativo"}</div>
+                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")}</div>
               </div>
               <div className="flex gap-2">
                 <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
@@ -453,19 +450,17 @@ function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighbor
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(neighborhood?.name ?? "");
   const [fee, setFee] = useState(neighborhood?.fee?.toString() ?? "");
-  const [active, setActive] = useState(neighborhood?.is_active ?? true);
 
   useEffect(() => {
     if (open) {
       setName(neighborhood?.name ?? "");
       setFee(neighborhood?.fee?.toString() ?? "");
-      setActive(neighborhood?.is_active ?? true);
     }
   }, [open, neighborhood]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { name, fee: Number(fee.replace(",", ".")), is_active: active };
+      const payload = { name, fee: Number(fee.replace(",", ".")) };
       if (neighborhood) {
         const { error } = await supabase.from("neighborhoods").update(payload).eq("id", neighborhood.id);
         if (error) throw error;
@@ -490,9 +485,6 @@ function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighbor
         <div className="space-y-3">
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" /></div>
-          <div className="flex items-center gap-2">
-            <Switch checked={active} onCheckedChange={setActive} /><Label>Ativo</Label>
-          </div>
         </div>
         <DialogFooter>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !name || !fee}>
@@ -524,8 +516,4 @@ function ConfirmDelete({ onConfirm, label }: { onConfirm: () => void; label: str
       </AlertDialogContent>
     </AlertDialog>
   );
-}
-
-function slugify(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
