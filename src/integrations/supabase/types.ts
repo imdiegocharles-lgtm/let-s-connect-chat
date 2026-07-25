@@ -187,7 +187,7 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           notes?: string | null
-          order_number: number
+          order_number?: number
           payment_method?: string | null
           status?: string
           subtotal?: number
