@@ -161,7 +161,7 @@ export async function sendToLocalPrinter(
   const res = await fetch(agentUrl, {
     method: "POST",
     headers: { "Content-Type": "application/octet-stream" },
-    body: new Blob([bytes as unknown as BlobPart]),
+    body: new Blob([bytes]),
   });
 
   if (!res.ok) {
