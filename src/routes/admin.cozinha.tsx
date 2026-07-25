@@ -181,7 +181,7 @@ function KitchenDashboard() {
           });
 
           if (soundOn) {
-            audioRef.current?.play().catch(() => {});
+            playBeep();
           }
 
           if (autoPrint) {
