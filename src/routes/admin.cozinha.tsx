@@ -353,13 +353,13 @@ function OrderCard({
         <p><span className="font-semibold">Telefone:</span> {order.customer_phone}</p>
         {order.delivery_type === "delivery" ? (
           <>
-            <p><span className="font-semibold">Endereço:</span> {order.customer_address}</p>
+        <p><span className="font-semibold">Endereço:</span> {order.customer_address}</p>
             <p><span className="font-semibold">Bairro:</span> {order.neighborhood}</p>
           </>
         ) : (
           <p><span className="font-semibold">Entrega:</span> Retirada no local</p>
         )}
-        <p><span className="font-semibold">Pagamento:</span> {order.payment_method}</p>
+        <p><span className="font-semibold">Pagamento:</span> {PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method}</p>
         {order.change_for ? <p><span className="font-semibold">Troco para:</span> R$ {order.change_for.toFixed(2).replace(".", ",")}</p> : null}
       </div>
 
