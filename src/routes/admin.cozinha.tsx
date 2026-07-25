@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, ArrowLeft, Printer, RefreshCw, Volume2, VolumeX } from "lucide-react";
-import { buildReceiptBytes, sendToLocalPrinter } from "@/lib/receipt";
+import { Loader2, LogOut, ArrowLeft, Printer, Volume2, VolumeX } from "lucide-react";
+import { sendToLocalPrinter } from "@/lib/receipt";
+import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Order = Tables<"orders">;
