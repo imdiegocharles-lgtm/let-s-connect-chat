@@ -187,7 +187,7 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           notes?: string | null
-          order_number?: number
+          order_number: number
           payment_method?: string | null
           status?: string
           subtotal?: number
@@ -262,6 +262,7 @@ export type Database = {
     }
     Functions: {
       claim_admin_if_whitelisted: { Args: never; Returns: boolean }
+      get_next_order_number: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
