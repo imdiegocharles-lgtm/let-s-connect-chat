@@ -30,6 +30,14 @@ const STATUS_COLORS: Record<string, string> = {
   ready: "bg-green-500 hover:bg-green-600",
   delivered: "bg-muted text-muted-foreground",
 };
+const PAYMENT_LABELS: Record<string, string> = {
+  dinheiro: "Dinheiro",
+  credito: "Cartão de Crédito",
+  debito: "Cartão de Débito",
+  sodexo: "Vale-refeição Sodexo",
+  alelo: "Vale-refeição Alelo",
+  pix: "Pix (na entrega)",
+};
 
 export const Route = createFileRoute("/admin/cozinha")({
   head: () => ({
