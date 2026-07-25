@@ -93,7 +93,6 @@ function KitchenDashboard() {
   const [agentUrl, setAgentUrl] = useState(() => localStorage.getItem("familia-amaral-printer-url") || "http://localhost:8080/print");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("familia-amaral-auto-print") === "true");
   const [soundOn, setSoundOn] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     localStorage.setItem("familia-amaral-printer-url", agentUrl);
