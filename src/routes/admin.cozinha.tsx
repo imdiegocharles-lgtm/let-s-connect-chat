@@ -213,10 +213,6 @@ function KitchenDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <audio ref={audioRef} preload="auto">
-        <source src="/notification.mp3" type="audio/mpeg" />
-      </audio>
-
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
