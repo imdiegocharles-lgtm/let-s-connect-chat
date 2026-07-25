@@ -98,9 +98,15 @@ function KitchenPage() {
 function KitchenDashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [agentUrl, setAgentUrl] = useState(() => localStorage.getItem("familia-amaral-printer-url") || "http://localhost:8080/print");
-  const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("familia-amaral-auto-print") === "true");
+  const [agentUrl, setAgentUrl] = useState("http://localhost:8080/print");
+  const [autoPrint, setAutoPrint] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("familia-amaral-printer-url");
+    if (saved) setAgentUrl(saved);
+    setAutoPrint(localStorage.getItem("familia-amaral-auto-print") === "true");
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("familia-amaral-printer-url", agentUrl);
