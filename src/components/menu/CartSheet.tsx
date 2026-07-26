@@ -31,7 +31,6 @@ export function CartSheet() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [address, setAddress] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState<string>("");
   const [payment, setPayment] = useState<string>("");
@@ -52,7 +51,7 @@ export function CartSheet() {
   });
 
   const neighborhood = neighborhoods.find((n) => n.id === neighborhoodId);
-  const deliveryFee = deliveryType === "delivery" ? Number(neighborhood?.fee ?? 0) : 0;
+  const deliveryFee = Number(neighborhood?.fee ?? 0);
   const total = subtotal + deliveryFee;
 
   const paymentLabel = useMemo(
@@ -62,9 +61,10 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!name.trim() || !phone.trim()) throw new Error("Preencha nome e telefone.");
-      if (deliveryType === "delivery" && (!address.trim() || !neighborhoodId))
-        throw new Error("Informe o endereço e o bairro.");
+      if (!name.trim()) throw new Error("Preencha seu nome.");
+      if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
+      if (!address.trim()) throw new Error("Informe o endereço com número.");
+      if (!neighborhoodId) throw new Error("Selecione o bairro.");
       if (!payment) throw new Error("Selecione a forma de pagamento.");
       if (payment === "dinheiro" && needsChange === "sim" && Number(changeFor) <= total)
         throw new Error("O troco deve ser maior que o total.");
@@ -85,9 +85,9 @@ export function CartSheet() {
         .insert({
           customer_name: name.trim(),
           customer_phone: phone.trim(),
-          customer_address: deliveryType === "delivery" ? address.trim() : null,
-          delivery_type: deliveryType,
-          neighborhood: deliveryType === "delivery" ? neighborhood?.name ?? null : null,
+          customer_address: address.trim(),
+          delivery_type: "delivery",
+          neighborhood: neighborhood?.name ?? null,
           delivery_fee: deliveryFee,
           subtotal,
           total,
