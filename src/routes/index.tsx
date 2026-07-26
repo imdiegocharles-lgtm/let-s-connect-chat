@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import logoAsset from "@/assets/logo-familia-amaral.jpeg.asset.json";
+import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
 import {
   Clock,
   MapPin,
@@ -72,11 +72,13 @@ function Home() {
                 Fazer Pedido Agora
               </a>
               <a
-                href="#contato"
+                href="https://www.instagram.com/churrasquinhofamiliaamaral?igsh=bDM0a3diaDM5eTFo&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10"
               >
-                <Phone className="h-5 w-5" />
-                Falar no WhatsApp
+                <Instagram className="h-5 w-5" />
+                Siga no Instagram
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
@@ -100,7 +102,7 @@ function Home() {
       {/* Quick info strip */}
       <section className="border-b border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-3">
-          <Strip icon={<Clock className="h-5 w-5 text-primary" />} title="Aberto agora" sub="Ter–Dom · 18h às 23h" />
+          <Strip icon={<Clock className="h-5 w-5 text-primary" />} title="Horário do churrasco" sub="Seg–Sáb 17h às 00h · Dom 11h às 00h" />
           <Strip icon={<Bike className="h-5 w-5 text-primary" />} title="Entrega rápida" sub="Bairros próximos · 30–45 min" />
           <Strip icon={<ShieldCheck className="h-5 w-5 text-primary" />} title="Pedido seguro" sub="Sem cadastro, direto pelo site" />
         </div>
