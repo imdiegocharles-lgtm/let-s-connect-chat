@@ -46,11 +46,19 @@ export function MenuBrowser() {
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
+  const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
+  const displayName = (name: string) =>
+    name.toLowerCase() === "completos" ? "🏆 O MAIS PEDIDO" : name;
+
   const grouped = data.cats
     .map((c) => ({ ...c, items: data.items.filter((i) => i.category_id === c.id) }))
-    .filter((c) => c.items.length);
+    .filter((c) => c.items.length)
+    .sort((a, b) => {
+      if (a.id === completosCatId) return -1;
+      if (b.id === completosCatId) return 1;
+      return a.sort_order - b.sort_order;
+    });
 
-  const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
   const espetosCatId = data.cats.find((c) => c.name.toLowerCase() === "espetos")?.id;
   const skewerOptions = data.items.filter(
     (i) => i.category_id === espetosCatId && Number(i.price) === 15,
@@ -85,7 +93,7 @@ export function MenuBrowser() {
                 href={`#cat-${c.id}`}
                 className="inline-flex whitespace-nowrap rounded-full border border-border bg-card px-4 py-1.5 text-sm font-semibold text-foreground hover:border-primary hover:text-primary"
               >
-                {c.name}
+                {displayName(c.name)}
               </a>
             </li>
           ))}
@@ -94,15 +102,24 @@ export function MenuBrowser() {
 
       {grouped.map((cat) => (
         <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-32">
-          <h2 className="text-2xl font-black md:text-3xl">{cat.name}</h2>
+          <h2 className="text-2xl font-black md:text-3xl">{displayName(cat.name)}</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {cat.items.map((item) => (
+            {cat.items.map((item) => {
+              const isBestseller =
+                cat.id === completosCatId &&
+                /(salpic|maionese)/i.test(item.name);
+              return (
               <article
                 key={item.id}
                 className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-primary/50 hover:shadow-md"
               >
                 <div className="min-w-0">
                   <h3 className="font-bold leading-tight">{item.name}</h3>
+                  {isBestseller && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">
+                      🏆 Campeão de Vendas
+                    </span>
+                  )}
                   {item.description && (
                     <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
                   )}
@@ -116,7 +133,8 @@ export function MenuBrowser() {
                   <Plus className="h-5 w-5" />
                 </button>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
