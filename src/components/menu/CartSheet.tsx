@@ -31,7 +31,6 @@ export function CartSheet() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [address, setAddress] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState<string>("");
   const [payment, setPayment] = useState<string>("");
@@ -52,7 +51,7 @@ export function CartSheet() {
   });
 
   const neighborhood = neighborhoods.find((n) => n.id === neighborhoodId);
-  const deliveryFee = deliveryType === "delivery" ? Number(neighborhood?.fee ?? 0) : 0;
+  const deliveryFee = Number(neighborhood?.fee ?? 0);
   const total = subtotal + deliveryFee;
 
   const paymentLabel = useMemo(
@@ -62,9 +61,10 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!name.trim() || !phone.trim()) throw new Error("Preencha nome e telefone.");
-      if (deliveryType === "delivery" && (!address.trim() || !neighborhoodId))
-        throw new Error("Informe o endereço e o bairro.");
+      if (!name.trim()) throw new Error("Preencha seu nome.");
+      if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
+      if (!address.trim()) throw new Error("Informe o endereço com número.");
+      if (!neighborhoodId) throw new Error("Selecione o bairro.");
       if (!payment) throw new Error("Selecione a forma de pagamento.");
       if (payment === "dinheiro" && needsChange === "sim" && Number(changeFor) <= total)
         throw new Error("O troco deve ser maior que o total.");
@@ -85,9 +85,9 @@ export function CartSheet() {
         .insert({
           customer_name: name.trim(),
           customer_phone: phone.trim(),
-          customer_address: deliveryType === "delivery" ? address.trim() : null,
-          delivery_type: deliveryType,
-          neighborhood: deliveryType === "delivery" ? neighborhood?.name ?? null : null,
+          customer_address: address.trim(),
+          delivery_type: "delivery",
+          neighborhood: neighborhood?.name ?? null,
           delivery_fee: deliveryFee,
           subtotal,
           total,
@@ -215,67 +215,50 @@ export function CartSheet() {
             <div className="flex-1 space-y-4 overflow-y-auto p-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Nome</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="phone">WhatsApp / Telefone</Label>
+                <Label htmlFor="phone">WhatsApp / Telefone *</Label>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="(21) 9 0000-0000"
                   maxLength={20}
+                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label>Tipo de entrega</Label>
-                <RadioGroup
-                  value={deliveryType}
-                  onValueChange={(v) => setDeliveryType(v as "delivery" | "pickup")}
-                  className="grid grid-cols-2 gap-2"
-                >
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <RadioGroupItem value="delivery" /> Entrega
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <RadioGroupItem value="pickup" /> Retirar no local
-                  </label>
-                </RadioGroup>
+                <Label htmlFor="address">Endereço com número (rua, número, complemento) *</Label>
+                <Textarea
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  maxLength={200}
+                  rows={2}
+                  placeholder="Ex: Rua das Flores, 123 - apto 2"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Bairro *</Label>
+                <Select value={neighborhoodId} onValueChange={setNeighborhoodId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o bairro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {neighborhoods.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.name} — {formatBRL(n.fee)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {deliveryType === "delivery" && (
-                <>
-                  <div className="grid gap-2">
-                    <Label htmlFor="address">Endereço (rua, número, complemento)</Label>
-                    <Textarea
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      maxLength={200}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Bairro</Label>
-                    <Select value={neighborhoodId} onValueChange={setNeighborhoodId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o bairro" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {neighborhoods.map((n) => (
-                          <SelectItem key={n.id} value={n.id}>
-                            {n.name} — {formatBRL(n.fee)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-
               <div className="grid gap-2">
-                <Label>Forma de pagamento</Label>
+                <Label>Forma de pagamento *</Label>
                 <Select value={payment} onValueChange={setPayment}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -341,7 +324,7 @@ export function CartSheet() {
                 </div>
                 <div className="flex justify-between">
                   <span>Taxa de entrega</span>
-                  <span>{deliveryType === "pickup" ? "—" : formatBRL(deliveryFee)}</span>
+                  <span>{formatBRL(deliveryFee)}</span>
                 </div>
                 <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-black">
                   <span>Total</span>
