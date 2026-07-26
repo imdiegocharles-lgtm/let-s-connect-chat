@@ -66,6 +66,7 @@ export function CartSheet() {
       if (!address.trim()) throw new Error("Informe o endereço com número.");
       if (!neighborhoodId) throw new Error("Selecione o bairro.");
       if (!payment) throw new Error("Selecione a forma de pagamento.");
+      if (!notes.trim()) throw new Error("Preencha as observações e ponto de referência.");
       if (payment === "dinheiro" && needsChange === "sim" && Number(changeFor) <= total)
         throw new Error("O troco deve ser maior que o total.");
 
@@ -214,7 +215,7 @@ export function CartSheet() {
           <>
             <div className="flex-1 space-y-4 overflow-y-auto p-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">Nome *</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />
               </div>
               <div className="grid gap-2">
@@ -306,14 +307,15 @@ export function CartSheet() {
               )}
 
               <div className="grid gap-2">
-                <Label htmlFor="notes">Observações (opcional)</Label>
+                <Label htmlFor="notes">Observações e Ponto de Referência *</Label>
                 <Textarea
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={400}
                   rows={2}
-                  placeholder="Ex: sem cebola, ponto da carne…"
+                  placeholder="Ex: sem cebola, próximo à padaria…"
+                  required
                 />
               </div>
 
