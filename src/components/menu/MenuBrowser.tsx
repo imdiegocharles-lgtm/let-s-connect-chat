@@ -1,7 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, useCart } from "@/lib/cart";
 import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 type Category = { id: string; name: string; sort_order: number };
 type Item = {
@@ -31,6 +39,7 @@ async function fetchMenu() {
 export function MenuBrowser() {
   const { data, isLoading, error } = useQuery({ queryKey: ["menu"], queryFn: fetchMenu });
   const { add } = useCart();
+  const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
 
   if (isLoading)
     return <p className="py-10 text-center text-sm text-muted-foreground">Carregando cardápio…</p>;
@@ -40,6 +49,30 @@ export function MenuBrowser() {
   const grouped = data.cats
     .map((c) => ({ ...c, items: data.items.filter((i) => i.category_id === c.id) }))
     .filter((c) => c.items.length);
+
+  const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
+  const espetosCatId = data.cats.find((c) => c.name.toLowerCase() === "espetos")?.id;
+  const skewerOptions = data.items.filter(
+    (i) => i.category_id === espetosCatId && Number(i.price) === 15,
+  );
+
+  const handleAdd = (item: Item) => {
+    if (item.category_id === completosCatId) {
+      setPendingCompleto(item);
+      return;
+    }
+    add({ id: item.id, name: item.name, price: Number(item.price) });
+  };
+
+  const confirmCompleto = (skewer: Item) => {
+    if (!pendingCompleto) return;
+    add({
+      id: `${pendingCompleto.id}:${skewer.id}`,
+      name: `${pendingCompleto.name} (Espeto: ${skewer.name})`,
+      price: Number(pendingCompleto.price),
+    });
+    setPendingCompleto(null);
+  };
 
   return (
     <div className="space-y-12">
@@ -76,9 +109,7 @@ export function MenuBrowser() {
                   <p className="mt-2 text-lg font-black text-primary">{formatBRL(item.price)}</p>
                 </div>
                 <button
-                  onClick={() =>
-                    add({ id: item.id, name: item.name, price: Number(item.price) })
-                  }
+                  onClick={() => handleAdd(item)}
                   aria-label={`Adicionar ${item.name}`}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110"
                 >
@@ -89,6 +120,30 @@ export function MenuBrowser() {
           </div>
         </section>
       ))}
+
+      <Dialog open={!!pendingCompleto} onOpenChange={(v) => !v && setPendingCompleto(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Escolha seu espeto</DialogTitle>
+            <DialogDescription>
+              O {pendingCompleto?.name} acompanha um espeto de R$ 15,00 à sua escolha, sem alterar o
+              valor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+            {skewerOptions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => confirmCompleto(s)}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+              >
+                <span className="font-semibold">{s.name}</span>
+                <span className="text-sm text-muted-foreground">Incluso</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
