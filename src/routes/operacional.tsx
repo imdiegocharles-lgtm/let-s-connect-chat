@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, ArrowLeft, Printer, Volume2, VolumeX } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
