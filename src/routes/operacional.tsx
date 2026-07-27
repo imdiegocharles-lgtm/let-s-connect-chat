@@ -231,10 +231,7 @@ function KitchenDashboard() {
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" /> Painel
-            </Link>
-            <h1 className="text-lg sm:text-xl font-bold">Cozinha — Pedidos</h1>
+            <h1 className="text-lg sm:text-xl font-bold">Painel Operacional — Pedidos</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
