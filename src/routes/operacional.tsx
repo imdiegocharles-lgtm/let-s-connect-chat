@@ -39,7 +39,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "Pix (na entrega)",
 };
 
-export const Route = createFileRoute("/admin/cozinha")({
+export const Route = createFileRoute("/operacional")({
   head: () => ({
     meta: [
       { title: "Cozinha — Família Amaral" },
