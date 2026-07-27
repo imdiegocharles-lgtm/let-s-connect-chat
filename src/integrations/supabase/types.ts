@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       menu_categories: {
         Row: {
+          available_dinner: boolean
+          available_lunch: boolean
           created_at: string
           id: string
           name: string
@@ -23,6 +25,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_dinner?: boolean
+          available_lunch?: boolean
           created_at?: string
           id?: string
           name: string
@@ -30,6 +34,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_dinner?: boolean
+          available_lunch?: boolean
           created_at?: string
           id?: string
           name?: string
@@ -160,6 +166,7 @@ export type Database = {
       orders: {
         Row: {
           change_for: number | null
+          confirmed_payment_method: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
@@ -170,7 +177,9 @@ export type Database = {
           neighborhood: string | null
           notes: string | null
           order_number: number
+          payment_confirmed_at: string | null
           payment_method: string | null
+          shift_id: string | null
           status: string
           subtotal: number
           total: number
@@ -178,6 +187,7 @@ export type Database = {
         }
         Insert: {
           change_for?: number | null
+          confirmed_payment_method?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
@@ -188,7 +198,9 @@ export type Database = {
           neighborhood?: string | null
           notes?: string | null
           order_number?: number
+          payment_confirmed_at?: string | null
           payment_method?: string | null
+          shift_id?: string | null
           status?: string
           subtotal?: number
           total: number
@@ -196,6 +208,7 @@ export type Database = {
         }
         Update: {
           change_for?: number | null
+          confirmed_payment_method?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
@@ -206,13 +219,23 @@ export type Database = {
           neighborhood?: string | null
           notes?: string | null
           order_number?: number
+          payment_confirmed_at?: string | null
           payment_method?: string | null
+          shift_id?: string | null
           status?: string
           subtotal?: number
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -234,6 +257,81 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shifts: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          opened_at: string
+          opening_cash: number
+          operator_id: string | null
+          operator_name: string | null
+          shift_type: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opening_cash?: number
+          operator_id?: string | null
+          operator_name?: string | null
+          shift_type: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opening_cash?: number
+          operator_id?: string | null
+          operator_name?: string | null
+          shift_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          avg_prep_minutes: number
+          dinner_end: string
+          dinner_start: string
+          id: number
+          lunch_end: string
+          lunch_start: string
+          min_order_value: number
+          printer_url: string
+          report_emails: string[]
+          updated_at: string
+        }
+        Insert: {
+          avg_prep_minutes?: number
+          dinner_end?: string
+          dinner_start?: string
+          id?: number
+          lunch_end?: string
+          lunch_start?: string
+          min_order_value?: number
+          printer_url?: string
+          report_emails?: string[]
+          updated_at?: string
+        }
+        Update: {
+          avg_prep_minutes?: number
+          dinner_end?: string
+          dinner_start?: string
+          id?: number
+          lunch_end?: string
+          lunch_start?: string
+          min_order_value?: number
+          printer_url?: string
+          report_emails?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -262,6 +360,7 @@ export type Database = {
     }
     Functions: {
       claim_admin_if_whitelisted: { Args: never; Returns: boolean }
+      claim_role_if_whitelisted: { Args: never; Returns: string }
       get_next_order_number: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -272,7 +371,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "operator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -400,7 +499,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "operator"],
     },
   },
 } as const

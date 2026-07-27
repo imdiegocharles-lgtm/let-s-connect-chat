@@ -11,7 +11,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-type Category = { id: string; name: string; sort_order: number };
+type Category = {
+  id: string;
+  name: string;
+  sort_order: number;
+  available_lunch: boolean;
+  available_dinner: boolean;
+};
 type Item = {
   id: string;
   category_id: string;
@@ -22,9 +28,19 @@ type Item = {
   sort_order: number;
 };
 
+type Settings = {
+  lunch_start: string;
+  lunch_end: string;
+  dinner_start: string;
+  dinner_end: string;
+};
+
 async function fetchMenu() {
   const [{ data: cats, error: cErr }, { data: items, error: iErr }] = await Promise.all([
-    supabase.from("menu_categories").select("id, name, sort_order").order("sort_order"),
+    supabase
+      .from("menu_categories")
+      .select("id, name, sort_order, available_lunch, available_dinner")
+      .order("sort_order"),
     supabase
       .from("menu_items")
       .select("id, category_id, name, description, price, is_available, sort_order")
@@ -33,7 +49,33 @@ async function fetchMenu() {
   ]);
   if (cErr) throw cErr;
   if (iErr) throw iErr;
-  return { cats: (cats ?? []) as Category[], items: (items ?? []) as Item[] };
+  const { data: settings } = await (supabase as any)
+    .from("system_settings")
+    .select("lunch_start, lunch_end, dinner_start, dinner_end")
+    .eq("id", 1)
+    .maybeSingle();
+  return {
+    cats: (cats ?? []) as unknown as Category[],
+    items: (items ?? []) as Item[],
+    settings: (settings ?? {
+      lunch_start: "11:00",
+      lunch_end: "14:30",
+      dinner_start: "18:00",
+      dinner_end: "23:59",
+    }) as Settings,
+  };
+}
+
+function toMin(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+function currentWindow(s: Settings): "lunch" | "dinner" | "closed" {
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  if (cur >= toMin(s.lunch_start) && cur <= toMin(s.lunch_end)) return "lunch";
+  if (cur >= toMin(s.dinner_start) && cur <= toMin(s.dinner_end)) return "dinner";
+  return "closed";
 }
 
 export function MenuBrowser() {
@@ -46,11 +88,15 @@ export function MenuBrowser() {
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
+  const svcWindow = currentWindow(data.settings);
   const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
   const displayName = (name: string) =>
     name.toLowerCase() === "completos" ? "🏆 O MAIS PEDIDO" : name;
 
   const grouped = data.cats
+    .filter((c) =>
+      svcWindow === "lunch" ? c.available_lunch : svcWindow === "dinner" ? c.available_dinner : false,
+    )
     .map((c) => ({ ...c, items: data.items.filter((i) => i.category_id === c.id) }))
     .filter((c) => c.items.length)
     .sort((a, b) => {
@@ -84,6 +130,14 @@ export function MenuBrowser() {
 
   return (
     <div className="space-y-12">
+      {svcWindow === "closed" && (
+        <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
+          <p className="text-lg font-black text-primary">Estamos fechados no momento</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Almoço: {data.settings.lunch_start.slice(0,5)}–{data.settings.lunch_end.slice(0,5)} · Churrasco: {data.settings.dinner_start.slice(0,5)}–{data.settings.dinner_end.slice(0,5)}
+          </p>
+        </div>
+      )}
       {/* Category nav */}
       <nav className="sticky top-[64px] z-30 -mx-4 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 backdrop-blur">
         <ul className="flex gap-2">

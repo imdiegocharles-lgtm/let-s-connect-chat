@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OperacionalRouteImport } from './routes/operacional'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminCozinhaRouteImport } from './routes/admin.cozinha'
 
+const OperacionalRoute = OperacionalRouteImport.update({
+  id: '/operacional',
+  path: '/operacional',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -35,23 +40,18 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCozinhaRoute = AdminCozinhaRouteImport.update({
-  id: '/cozinha',
-  path: '/cozinha',
-  getParentRoute: () => AdminRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/admin/cozinha': typeof AdminCozinhaRoute
+  '/operacional': typeof OperacionalRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin/cozinha': typeof AdminCozinhaRoute
+  '/operacional': typeof OperacionalRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -59,25 +59,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/admin/cozinha': typeof AdminCozinhaRoute
+  '/operacional': typeof OperacionalRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/admin/cozinha' | '/admin/'
+  fullPaths: '/' | '/admin' | '/auth' | '/operacional' | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin/cozinha' | '/admin'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/admin/cozinha' | '/admin/'
+  to: '/' | '/auth' | '/operacional' | '/admin'
+  id: '__root__' | '/' | '/admin' | '/auth' | '/operacional' | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  OperacionalRoute: typeof OperacionalRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/operacional': {
+      id: '/operacional'
+      path: '/operacional'
+      fullPath: '/operacional'
+      preLoaderRoute: typeof OperacionalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -106,23 +114,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/cozinha': {
-      id: '/admin/cozinha'
-      path: '/cozinha'
-      fullPath: '/admin/cozinha'
-      preLoaderRoute: typeof AdminCozinhaRouteImport
-      parentRoute: typeof AdminRoute
-    }
   }
 }
 
 interface AdminRouteChildren {
-  AdminCozinhaRoute: typeof AdminCozinhaRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminCozinhaRoute: AdminCozinhaRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -132,6 +131,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  OperacionalRoute: OperacionalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

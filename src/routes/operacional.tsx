@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, ArrowLeft, Printer, Volume2, VolumeX } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
@@ -39,10 +39,10 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "Pix (na entrega)",
 };
 
-export const Route = createFileRoute("/admin/cozinha")({
+export const Route = createFileRoute("/operacional")({
   head: () => ({
     meta: [
-      { title: "Cozinha — Família Amaral" },
+      { title: "Painel Operacional — Família Amaral" },
       { name: "description", content: "Tela de cozinha com pedidos em tempo real e impressão de cupons." },
       { name: "robots", content: "noindex,nofollow" },
     ],
@@ -52,18 +52,16 @@ export const Route = createFileRoute("/admin/cozinha")({
 
 function KitchenPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "not-admin">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "denied">("loading");
 
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return setStatus("unauth");
-      await supabase.rpc("claim_admin_if_whitelisted");
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: session.user.id,
-        _role: "admin",
-      });
-      setStatus(isAdmin ? "ok" : "not-admin");
+      await supabase.rpc("claim_role_if_whitelisted" as never);
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
+      const { data: isOp } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "operator" as never });
+      setStatus(isAdmin || isOp ? "ok" : "denied");
     })();
   }, []);
 
@@ -78,12 +76,12 @@ function KitchenPage() {
     navigate({ to: "/auth" });
     return null;
   }
-  if (status === "not-admin") {
+  if (status === "denied") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="p-8 max-w-md text-center">
           <h2 className="text-xl font-bold">Acesso negado</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Sua conta não tem permissão de administrador.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Sua conta não tem permissão para o painel operacional.</p>
           <Button className="mt-4" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}>
             Sair
           </Button>
@@ -165,6 +163,9 @@ function KitchenDashboard() {
       total: 94.9,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      shift_id: null,
+      confirmed_payment_method: null,
+      payment_confirmed_at: null,
     };
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
@@ -230,10 +231,7 @@ function KitchenDashboard() {
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" /> Painel
-            </Link>
-            <h1 className="text-lg sm:text-xl font-bold">Cozinha — Pedidos</h1>
+            <h1 className="text-lg sm:text-xl font-bold">Painel Operacional — Pedidos</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
