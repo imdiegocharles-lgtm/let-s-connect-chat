@@ -524,3 +524,58 @@ function ConfirmDelete({ onConfirm, label }: { onConfirm: () => void; label: str
     </AlertDialog>
   );
 }
+
+function SettingsPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["system_settings"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("system_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [form, setForm] = useState<any>(null);
+  useEffect(() => { if (data) setForm({ ...data, report_emails: (data.report_emails ?? []).join(", ") }); }, [data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        lunch_start: form.lunch_start,
+        lunch_end: form.lunch_end,
+        dinner_start: form.dinner_start,
+        dinner_end: form.dinner_end,
+        avg_prep_minutes: Number(form.avg_prep_minutes) || 30,
+        min_order_value: Number(form.min_order_value) || 0,
+        printer_url: form.printer_url,
+        report_emails: String(form.report_emails || "")
+          .split(",").map((s: string) => s.trim()).filter(Boolean),
+      };
+      const { error } = await (supabase as any).from("system_settings").update(payload).eq("id", 1);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Configurações salvas"); qc.invalidateQueries({ queryKey: ["system_settings"] }); qc.invalidateQueries({ queryKey: ["menu"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading || !form) return <Loader2 className="h-5 w-5 animate-spin" />;
+  return (
+    <Card className="p-6 max-w-2xl space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label>Almoço — início</Label><Input type="time" value={form.lunch_start?.slice(0,5)} onChange={(e) => setForm({ ...form, lunch_start: e.target.value })} /></div>
+        <div><Label>Almoço — fim</Label><Input type="time" value={form.lunch_end?.slice(0,5)} onChange={(e) => setForm({ ...form, lunch_end: e.target.value })} /></div>
+        <div><Label>Churrasco — início</Label><Input type="time" value={form.dinner_start?.slice(0,5)} onChange={(e) => setForm({ ...form, dinner_start: e.target.value })} /></div>
+        <div><Label>Churrasco — fim</Label><Input type="time" value={form.dinner_end?.slice(0,5)} onChange={(e) => setForm({ ...form, dinner_end: e.target.value })} /></div>
+        <div><Label>Tempo médio de preparo (min)</Label><Input type="number" value={form.avg_prep_minutes} onChange={(e) => setForm({ ...form, avg_prep_minutes: e.target.value })} /></div>
+        <div><Label>Pedido mínimo (R$)</Label><Input type="number" step="0.01" value={form.min_order_value} onChange={(e) => setForm({ ...form, min_order_value: e.target.value })} /></div>
+      </div>
+      <div><Label>URL do agente da impressora</Label><Input value={form.printer_url} onChange={(e) => setForm({ ...form, printer_url: e.target.value })} placeholder="http://localhost:8080/print" /></div>
+      <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" /></div>
+      <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
+    </Card>
+  );
+}
