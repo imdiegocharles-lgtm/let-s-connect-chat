@@ -160,7 +160,9 @@ function CategoriesPanel() {
             <Card key={c.id} className="p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{c.name}</div>
-                <div className="text-xs text-muted-foreground">Ordem: {c.sort_order}</div>
+                <div className="text-xs text-muted-foreground">
+                  Ordem: {c.sort_order} · {(c as any).available_lunch ? "Almoço ✓" : "Almoço ✗"} · {(c as any).available_dinner ? "Churrasco ✓" : "Churrasco ✗"}
+                </div>
               </div>
               <div className="flex gap-2">
                 <CategoryDialog category={c} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
@@ -180,17 +182,21 @@ function CategoryDialog({ category, trigger }: { category?: Category; trigger: R
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(category?.name ?? "");
   const [sortOrder, setSortOrder] = useState(category?.sort_order ?? 0);
+  const [availLunch, setAvailLunch] = useState<boolean>((category as any)?.available_lunch ?? true);
+  const [availDinner, setAvailDinner] = useState<boolean>((category as any)?.available_dinner ?? true);
 
   useEffect(() => {
     if (open) {
       setName(category?.name ?? "");
       setSortOrder(category?.sort_order ?? 0);
+      setAvailLunch((category as any)?.available_lunch ?? true);
+      setAvailDinner((category as any)?.available_dinner ?? true);
     }
   }, [open, category]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { name, sort_order: sortOrder };
+      const payload: any = { name, sort_order: sortOrder, available_lunch: availLunch, available_dinner: availDinner };
       if (category) {
         const { error } = await supabase.from("menu_categories").update(payload).eq("id", category.id);
         if (error) throw error;
@@ -215,6 +221,10 @@ function CategoryDialog({ category, trigger }: { category?: Category; trigger: R
         <div className="space-y-3">
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
+          <div className="flex items-center gap-6 pt-1">
+            <label className="flex items-center gap-2 text-sm"><Switch checked={availLunch} onCheckedChange={setAvailLunch} /> Disponível no almoço</label>
+            <label className="flex items-center gap-2 text-sm"><Switch checked={availDinner} onCheckedChange={setAvailDinner} /> Disponível no jantar/churrasco</label>
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>
