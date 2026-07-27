@@ -29,10 +29,26 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
-    });
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      const role = await resolveRole();
+      navigate({ to: role === "operator" ? "/operacional" : "/admin" });
+    })();
   }, [navigate]);
+
+  async function resolveRole(): Promise<"admin" | "operator" | "none"> {
+    const { data } = await supabase.rpc("claim_role_if_whitelisted");
+    if (data === "admin" || data === "operator") return data;
+    const { data: session } = await supabase.auth.getSession();
+    const uid = session.session?.user.id;
+    if (!uid) return "none";
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" });
+    if (isAdmin) return "admin";
+    const { data: isOp } = await supabase.rpc("has_role", { _user_id: uid, _role: "operator" });
+    if (isOp) return "operator";
+    return "none";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,7 +58,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
+          options: { emailRedirectTo: `${window.location.origin}/auth` },
         });
         if (error) throw error;
         toast.success("Conta criada! Entrando...");
@@ -50,8 +66,13 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      await supabase.rpc("claim_admin_if_whitelisted");
-      navigate({ to: "/admin" });
+      const role = await resolveRole();
+      if (role === "none") {
+        toast.error("Sua conta não tem permissão de acesso.");
+        await supabase.auth.signOut();
+        return;
+      }
+      navigate({ to: role === "operator" ? "/operacional" : "/admin" });
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao autenticar");
     } finally {
