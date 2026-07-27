@@ -42,7 +42,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 export const Route = createFileRoute("/operacional")({
   head: () => ({
     meta: [
-      { title: "Cozinha — Família Amaral" },
+      { title: "Painel Operacional — Família Amaral" },
       { name: "description", content: "Tela de cozinha com pedidos em tempo real e impressão de cupons." },
       { name: "robots", content: "noindex,nofollow" },
     ],
@@ -52,18 +52,16 @@ export const Route = createFileRoute("/operacional")({
 
 function KitchenPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "not-admin">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "denied">("loading");
 
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return setStatus("unauth");
-      await supabase.rpc("claim_admin_if_whitelisted");
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: session.user.id,
-        _role: "admin",
-      });
-      setStatus(isAdmin ? "ok" : "not-admin");
+      await supabase.rpc("claim_role_if_whitelisted" as never);
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
+      const { data: isOp } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "operator" as never });
+      setStatus(isAdmin || isOp ? "ok" : "denied");
     })();
   }, []);
 
@@ -78,12 +76,12 @@ function KitchenPage() {
     navigate({ to: "/auth" });
     return null;
   }
-  if (status === "not-admin") {
+  if (status === "denied") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="p-8 max-w-md text-center">
           <h2 className="text-xl font-bold">Acesso negado</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Sua conta não tem permissão de administrador.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Sua conta não tem permissão para o painel operacional.</p>
           <Button className="mt-4" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}>
             Sair
           </Button>
