@@ -88,14 +88,14 @@ export function MenuBrowser() {
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
-  const window = currentWindow(data.settings);
+  const svcWindow = currentWindow(data.settings);
   const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
   const displayName = (name: string) =>
     name.toLowerCase() === "completos" ? "🏆 O MAIS PEDIDO" : name;
 
   const grouped = data.cats
     .filter((c) =>
-      window === "lunch" ? c.available_lunch : window === "dinner" ? c.available_dinner : false,
+      svcWindow === "lunch" ? c.available_lunch : svcWindow === "dinner" ? c.available_dinner : false,
     )
     .map((c) => ({ ...c, items: data.items.filter((i) => i.category_id === c.id) }))
     .filter((c) => c.items.length)
@@ -130,7 +130,7 @@ export function MenuBrowser() {
 
   return (
     <div className="space-y-12">
-      {window === "closed" && (
+      {svcWindow === "closed" && (
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">Estamos fechados no momento</p>
           <p className="mt-1 text-sm text-muted-foreground">
