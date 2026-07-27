@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft } from "lucide-react";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
       { title: "Painel Administrativo — Família Amaral" },
