@@ -9,13 +9,38 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, Printer, Volume2, VolumeX } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2 } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Order = Tables<"orders">;
 type OrderItem = Tables<"order_items">;
+type Shift = {
+  id: string;
+  shift_type: string;
+  operator_id: string | null;
+  operator_name: string | null;
+  opened_at: string;
+  closed_at: string | null;
+  opening_cash: number;
+};
 
 const STATUS_FLOW: Order["status"][] = ["received", "preparing", "ready", "delivered"];
 const STATUS_LABELS: Record<string, string> = {
