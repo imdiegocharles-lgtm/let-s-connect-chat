@@ -288,12 +288,44 @@ function KitchenDashboard() {
   const activeOrders = useMemo(() => orders.filter((o) => o.status !== "delivered"), [orders]);
   const doneOrders = useMemo(() => orders.filter((o) => o.status === "delivered"), [orders]);
 
+  // Faturamento (só pagamentos confirmados) — do turno ativo
+  const shiftOrders = useMemo(
+    () => (activeShift ? orders.filter((o: any) => o.shift_id === activeShift.id) : []),
+    [orders, activeShift],
+  );
+  const shiftRevenue = useMemo(
+    () =>
+      shiftOrders
+        .filter((o: any) => o.payment_confirmed_at)
+        .reduce((s, o) => s + Number(o.total), 0),
+    [shiftOrders],
+  );
+  const awaitingPayment = useMemo(
+    () =>
+      shiftOrders.filter(
+        (o: any) => o.status === "delivered" && !o.payment_confirmed_at,
+      ),
+    [shiftOrders],
+  );
+  const pendingActive = useMemo(
+    () => shiftOrders.filter((o) => o.status !== "delivered"),
+    [shiftOrders],
+  );
+  const canCloseShift = pendingActive.length === 0 && awaitingPayment.length === 0;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-lg sm:text-xl font-bold">Painel Operacional — Pedidos</h1>
+            {activeShift ? (
+              <Badge className="bg-green-600 hover:bg-green-600">
+                Turno {activeShift.shift_type === "almoco" ? "Almoço" : "Noite"} aberto
+              </Badge>
+            ) : (
+              <Badge variant="destructive">Nenhum turno aberto</Badge>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
@@ -314,11 +346,43 @@ function KitchenDashboard() {
             <Button size="icon" variant="outline" onClick={() => setSoundOn((v) => !v)} aria-label={soundOn ? "Som ligado" : "Som desligado"}>
               {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
+            {activeShift ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCloseShiftModal(true)}
+                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Square className="h-4 w-4 mr-2" /> Fechar turno
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setOpenShiftModal(true)}>
+                <Play className="h-4 w-4 mr-2" /> Abrir turno
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}>
               <LogOut className="h-4 w-4 mr-2" /> Sair
             </Button>
           </div>
         </div>
+        {activeShift && (
+          <div className="mx-auto max-w-7xl px-4 pb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <StatChip label="Operador" value={activeShift.operator_name ?? "—"} />
+            <StatChip
+              label="Aberto às"
+              value={new Date(activeShift.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            />
+            <StatChip
+              label="Caixa inicial"
+              value={Number(activeShift.opening_cash).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            />
+            <StatChip
+              label="Faturado (confirmado)"
+              value={shiftRevenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              highlight
+            />
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
@@ -327,56 +391,104 @@ function KitchenDashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section>
-              <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-                Pedidos ativos
-                <Badge variant="secondary">{activeOrders.length}</Badge>
-              </h2>
-              <div className="space-y-4">
-                {activeOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onStatus={(s) => updateStatus.mutate({ id: order.id, status: s })}
-                    onPrint={() => printOne(order)}
-                    isPending={updateStatus.isPending}
-                  />
-                ))}
-                {activeOrders.length === 0 && (
-                  <Card className="p-8 text-center text-muted-foreground">
-                    Nenhum pedido ativo no momento.
-                  </Card>
-                )}
-              </div>
-            </section>
+          <Tabs defaultValue="orders">
+            <TabsList>
+              <TabsTrigger value="orders">Pedidos</TabsTrigger>
+              <TabsTrigger value="menu">Cardápio</TabsTrigger>
+            </TabsList>
+            <TabsContent value="orders" className="mt-4">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <section>
+                  <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+                    Pedidos ativos
+                    <Badge variant="secondary">{activeOrders.length}</Badge>
+                  </h2>
+                  <div className="space-y-4">
+                    {activeOrders.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onStatus={(s) => updateStatus.mutate({ id: order.id, status: s })}
+                        onPrint={() => printOne(order)}
+                        onConfirmPayment={() => setConfirmPayFor(order)}
+                        isPending={updateStatus.isPending}
+                      />
+                    ))}
+                    {activeOrders.length === 0 && (
+                      <Card className="p-8 text-center text-muted-foreground">
+                        Nenhum pedido ativo no momento.
+                      </Card>
+                    )}
+                  </div>
+                </section>
 
-            <section>
-              <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-                Entregues hoje
-                <Badge variant="secondary">{doneOrders.length}</Badge>
-              </h2>
-              <div className="space-y-4">
-                {doneOrders.slice(0, 20).map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onStatus={(s) => updateStatus.mutate({ id: order.id, status: s })}
-                    onPrint={() => printOne(order)}
-                    isPending={updateStatus.isPending}
-                    compact
-                  />
-                ))}
-                {doneOrders.length === 0 && (
-                  <Card className="p-8 text-center text-muted-foreground">
-                    Nenhum pedido entregue ainda.
-                  </Card>
-                )}
+                <section>
+                  <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+                    Entregues
+                    <Badge variant="secondary">{doneOrders.length}</Badge>
+                    {awaitingPayment.length > 0 && (
+                      <Badge className="bg-amber-500 hover:bg-amber-500">
+                        {awaitingPayment.length} aguardando pagamento
+                      </Badge>
+                    )}
+                  </h2>
+                  <div className="space-y-4">
+                    {doneOrders.slice(0, 20).map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onStatus={(s) => updateStatus.mutate({ id: order.id, status: s })}
+                        onPrint={() => printOne(order)}
+                        onConfirmPayment={() => setConfirmPayFor(order)}
+                        isPending={updateStatus.isPending}
+                        compact
+                      />
+                    ))}
+                    {doneOrders.length === 0 && (
+                      <Card className="p-8 text-center text-muted-foreground">
+                        Nenhum pedido entregue ainda.
+                      </Card>
+                    )}
+                  </div>
+                </section>
               </div>
-            </section>
-          </div>
+            </TabsContent>
+            <TabsContent value="menu" className="mt-4">
+              <MenuAvailabilityPanel />
+            </TabsContent>
+          </Tabs>
         )}
       </main>
+
+      <OpenShiftDialog
+        open={openShiftModal}
+        onClose={() => setOpenShiftModal(false)}
+        onOpened={() => {
+          setOpenShiftModal(false);
+          refetchShift();
+        }}
+      />
+      <CloseShiftDialog
+        open={closeShiftModal}
+        shift={activeShift ?? null}
+        canClose={canCloseShift}
+        pendingActive={pendingActive.length}
+        awaitingPayment={awaitingPayment.length}
+        onClose={() => setCloseShiftModal(false)}
+        onClosed={() => {
+          setCloseShiftModal(false);
+          refetchShift();
+          qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+        }}
+      />
+      <ConfirmPaymentDialog
+        order={confirmPayFor}
+        onClose={() => setConfirmPayFor(null)}
+        onConfirm={(method) =>
+          confirmPayFor && confirmPayment.mutate({ id: confirmPayFor.id, method })
+        }
+        isPending={confirmPayment.isPending}
+      />
     </div>
   );
 }
