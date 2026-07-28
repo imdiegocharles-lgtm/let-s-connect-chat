@@ -333,7 +333,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
   const [price, setPrice] = useState(item?.price?.toString() ?? "");
-  const [imageUrl, setImageUrl] = useState(item?.image_url ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
   const [available, setAvailable] = useState(item?.is_available ?? true);
   const [sortOrder, setSortOrder] = useState(item?.sort_order ?? 0);
 
@@ -343,7 +343,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setName(item?.name ?? "");
       setDescription(item?.description ?? "");
       setPrice(item?.price?.toString() ?? "");
-      setImageUrl(item?.image_url ?? "");
+      setImageUrl(item?.image_url ?? null);
       setAvailable(item?.is_available ?? true);
       setSortOrder(item?.sort_order ?? 0);
     }
