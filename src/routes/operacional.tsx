@@ -128,6 +128,46 @@ function KitchenDashboard() {
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
 
+  const { data: perms } = useQuery({
+    queryKey: ["my-kitchen-perms"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+      // Admins get all permissions by default
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: session.user.id,
+        _role: "admin",
+      });
+      if (isAdmin) {
+        return {
+          can_open_close_shift: true,
+          can_confirm_payment: true,
+          can_manage_menu: true,
+          can_update_order_status: true,
+        };
+      }
+      const { data } = await (supabase as any)
+        .from("kitchen_permissions")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      return (
+        data ?? {
+          can_open_close_shift: true,
+          can_confirm_payment: true,
+          can_manage_menu: true,
+          can_update_order_status: true,
+        }
+      );
+    },
+  });
+  const p = perms ?? {
+    can_open_close_shift: false,
+    can_confirm_payment: false,
+    can_manage_menu: false,
+    can_update_order_status: false,
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem("familia-amaral-printer-url");
     if (saved) setAgentUrl(saved);
@@ -346,7 +386,7 @@ function KitchenDashboard() {
             <Button size="icon" variant="outline" onClick={() => setSoundOn((v) => !v)} aria-label={soundOn ? "Som ligado" : "Som desligado"}>
               {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
-            {activeShift ? (
+            {p.can_open_close_shift && activeShift ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -355,11 +395,11 @@ function KitchenDashboard() {
               >
                 <Square className="h-4 w-4 mr-2" /> Fechar turno
               </Button>
-            ) : (
+            ) : p.can_open_close_shift ? (
               <Button size="sm" onClick={() => setOpenShiftModal(true)}>
                 <Play className="h-4 w-4 mr-2" /> Abrir turno
               </Button>
-            )}
+            ) : null}
             <Button variant="outline" size="sm" onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}>
               <LogOut className="h-4 w-4 mr-2" /> Sair
             </Button>
@@ -394,7 +434,7 @@ function KitchenDashboard() {
           <Tabs defaultValue="orders">
             <TabsList>
               <TabsTrigger value="orders">Pedidos</TabsTrigger>
-              <TabsTrigger value="menu">Cardápio</TabsTrigger>
+              {p.can_manage_menu && <TabsTrigger value="menu">Cardápio</TabsTrigger>}
             </TabsList>
             <TabsContent value="orders" className="mt-4">
               <div className="grid gap-6 lg:grid-cols-2">
@@ -412,6 +452,8 @@ function KitchenDashboard() {
                         onPrint={() => printOne(order)}
                         onConfirmPayment={() => setConfirmPayFor(order)}
                         isPending={updateStatus.isPending}
+                        canUpdateStatus={p.can_update_order_status}
+                        canConfirmPayment={p.can_confirm_payment}
                       />
                     ))}
                     {activeOrders.length === 0 && (
@@ -442,6 +484,8 @@ function KitchenDashboard() {
                         onConfirmPayment={() => setConfirmPayFor(order)}
                         isPending={updateStatus.isPending}
                         compact
+                        canUpdateStatus={p.can_update_order_status}
+                        canConfirmPayment={p.can_confirm_payment}
                       />
                     ))}
                     {doneOrders.length === 0 && (
@@ -453,9 +497,11 @@ function KitchenDashboard() {
                 </section>
               </div>
             </TabsContent>
-            <TabsContent value="menu" className="mt-4">
-              <MenuAvailabilityPanel />
-            </TabsContent>
+            {p.can_manage_menu && (
+              <TabsContent value="menu" className="mt-4">
+                <MenuAvailabilityPanel />
+              </TabsContent>
+            )}
           </Tabs>
         )}
       </main>
@@ -500,6 +546,8 @@ function OrderCard({
   onConfirmPayment,
   isPending,
   compact,
+  canUpdateStatus = true,
+  canConfirmPayment = true,
 }: {
   order: Order & { order_items: OrderItem[] };
   onStatus: (status: Order["status"]) => void;
@@ -507,6 +555,8 @@ function OrderCard({
   onConfirmPayment: () => void;
   isPending: boolean;
   compact?: boolean;
+  canUpdateStatus?: boolean;
+  canConfirmPayment?: boolean;
 }) {
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
@@ -590,7 +640,7 @@ function OrderCard({
         <Button size="sm" variant="outline" onClick={onPrint}>
           <Printer className="h-4 w-4 mr-2" /> Reimprimir
         </Button>
-        {nextStatus && (
+        {nextStatus && canUpdateStatus && (
           <Button
             size="sm"
             onClick={() => onStatus(nextStatus)}
@@ -601,7 +651,7 @@ function OrderCard({
             Mover para {STATUS_LABELS[nextStatus].toLowerCase()}
           </Button>
         )}
-        {needsPayConfirm && (
+        {needsPayConfirm && canConfirmPayment && (
           <Button size="sm" onClick={onConfirmPayment} className="bg-amber-500 hover:bg-amber-600">
             <CheckCircle2 className="h-4 w-4 mr-2" /> Confirmar pagamento
           </Button>
