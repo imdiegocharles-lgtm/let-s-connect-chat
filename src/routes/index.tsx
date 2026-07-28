@@ -115,7 +115,6 @@ function Home() {
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
-              <Info icon={<Clock className="h-4 w-4" />} label="40–80 min" sub="Entrega podendo ocorrer antes" />
               <Info icon={<Bike className="h-4 w-4" />} label="A partir de R$ 5" sub="Taxa de entrega" />
               <ReviewDialog
                 trigger={
@@ -169,7 +168,7 @@ function Home() {
       {/* Contato */}
       <section id="contato" className="border-t border-border bg-secondary text-secondary-foreground">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-2">
-          <ContactCard icon={<Phone className="h-5 w-5" />} title="WhatsApp" value="Em breve" />
+          <ContactCard icon={<Phone className="h-5 w-5" />} title="WhatsApp" value="Fale conosco" href="https://wa.me/message/5ZD6GFWUIAMZA1" />
           <ContactCard icon={<MapPin className="h-5 w-5" />} title="Endereço" value="Rua Monteiro Lobato, 18 – Estrela do Norte – São Gonçalo/RJ" />
         </div>
       </section>
@@ -210,14 +209,31 @@ function Strip({ icon, title, sub }: { icon: React.ReactNode; title: string; sub
   );
 }
 
-function ContactCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+function ContactCard({ icon, title, value, href }: { icon: React.ReactNode; title: string; value: string; href?: string }) {
+  const content = (
+    <>
       <div className="flex items-center gap-2 text-primary">
         {icon}
         <p className="text-xs font-bold uppercase tracking-widest">{title}</p>
       </div>
       <p className="mt-2 text-lg font-semibold">{value}</p>
+    </>
+  );
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:bg-white/10"
+      >
+        {content}
+      </a>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      {content}
     </div>
   );
 }

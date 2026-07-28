@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Calendar as CalendarIcon, Users, Phone, MapPin, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,7 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
           <div className="py-6 text-center space-y-3">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary text-2xl">✓</div>
             <p className="text-sm">
-              Sua reserva foi enviada com sucesso! Nossa equipe analisará a disponibilidade e entrará em contato pelo WhatsApp informado para confirmar sua reserva.
+              Recebemos sua solicitação de reserva com sucesso! Em breve, nossa equipe analisará a disponibilidade e retornará pelo WhatsApp informado para confirmar todos os detalhes da sua reserva.
             </p>
             <Button onClick={() => setOpen(false)} className="mt-2">Fechar</Button>
           </div>
@@ -85,6 +86,7 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
+                locale={ptBR}
                 disabled={(d) => {
                   const day = d.getDay();
                   return d < today || day === 0 || day === 5;
