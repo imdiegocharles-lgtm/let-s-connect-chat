@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck, ChefHat } from "lucide-react";
+import { z } from "zod";
+
+const searchSchema = z.object({
+  role: z.enum(["admin", "cozinha"]).optional(),
+});
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Acesso Administrativo — Família Amaral" },
@@ -23,7 +29,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const search = useSearch({ from: "/auth" });
+  const requestedRole = search.role ?? "admin";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,21 +61,21 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/auth` },
-        });
-        if (error) throw error;
-        toast.success("Conta criada! Entrando...");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       const role = await resolveRole();
       if (role === "none") {
         toast.error("Sua conta não tem permissão de acesso.");
+        await supabase.auth.signOut();
+        return;
+      }
+      if (requestedRole === "admin" && role !== "admin") {
+        toast.error("Esta conta não é de administrador.");
+        await supabase.auth.signOut();
+        return;
+      }
+      if (requestedRole === "cozinha" && role !== "operator" && role !== "admin") {
+        toast.error("Esta conta não é da cozinha.");
         await supabase.auth.signOut();
         return;
       }
@@ -80,12 +87,24 @@ function AuthPage() {
     }
   }
 
+  const isCozinha = requestedRole === "cozinha";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
+        <Link to="/admin" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
+          <ArrowLeft className="h-3 w-3" /> Voltar
+        </Link>
+        <div className="flex items-center gap-2">
+          {isCozinha ? <ChefHat className="h-6 w-6 text-primary" /> : <ShieldCheck className="h-6 w-6 text-primary" />}
+          <h1 className="text-2xl font-bold text-foreground">
+            {isCozinha ? "Login Cozinha" : "Login Administrativo"}
+          </h1>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {mode === "login" ? "Entre com sua conta de administrador" : "Crie sua conta de administrador"}
+          {isCozinha
+            ? "Entre com sua conta da cozinha (criada pelo administrador)."
+            : "Entre com sua conta de administrador."}
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -98,16 +117,9 @@ function AuthPage() {
           </div>
           <Button type="submit" disabled={loading} className="w-full">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {mode === "login" ? "Entrar" : "Criar conta"}
+            Entrar
           </Button>
         </form>
-        <button
-          type="button"
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          className="mt-4 text-sm text-primary hover:underline"
-        >
-          {mode === "login" ? "Não tem conta? Criar conta" : "Já tem conta? Entrar"}
-        </button>
       </Card>
     </div>
   );
