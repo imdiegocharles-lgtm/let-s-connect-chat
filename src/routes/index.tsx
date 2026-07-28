@@ -82,7 +82,7 @@ function Home() {
                 Siga no Instagram
               </a>
               <a
-                href="https://www.bing.com/search?q=familia%20amaral%20churrasquinho&form=EX0050&shtp=GetUrl&shid=f9c4a27e-4e40-4c28-be84-bc4b39954408#"
+                href="https://share.google/WxLpMadUsMXgePEe6"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10"
