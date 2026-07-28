@@ -18,7 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat, Star } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -120,12 +120,16 @@ function AdminDashboard() {
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
+            <TabsTrigger value="reservations">🍽️ Reservas</TabsTrigger>
+            <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
+          <TabsContent value="reservations" className="mt-6"><ReservationsPanel /></TabsContent>
+          <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
