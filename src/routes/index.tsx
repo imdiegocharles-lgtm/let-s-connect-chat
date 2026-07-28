@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Flame,
   ShieldCheck,
+  Navigation,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { CartSheet } from "@/components/menu/CartSheet";
@@ -79,6 +80,15 @@ function Home() {
               >
                 <Instagram className="h-5 w-5" />
                 Siga no Instagram
+              </a>
+              <a
+                href="https://www.bing.com/search?q=familia%20amaral%20churrasquinho&form=EX0050&shtp=GetUrl&shid=f9c4a27e-4e40-4c28-be84-bc4b39954408#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10"
+              >
+                <Navigation className="h-5 w-5" />
+                Como Chegar
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
