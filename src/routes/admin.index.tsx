@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft } from "lucide-react";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
