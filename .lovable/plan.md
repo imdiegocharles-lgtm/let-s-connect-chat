@@ -1,105 +1,79 @@
-## Auditoria do sistema atual
+# Plano — Próximas entregas (Família Amaral)
 
-**O que já existe e será preservado:**
-- Site público (`/`) — hero, logo 4K, horários, link Instagram, cardápio
-- Cardápio (`MenuBrowser`) com aba "🏆 O MAIS PEDIDO" primeiro, selo "CAMPEÃO DE VENDAS", diálogo de escolha de espeto para completos
-- Carrinho persistente (`CartSheet`) com validações obrigatórias (nome, telefone, endereço, bairro, pagamento, observações)
-- Painel Admin (`/admin`) com abas Itens, Categorias, Bairros
-- Login (`/auth`) via e-mail/senha, admin whitelist via `claim_admin_if_whitelisted`
-- Tela Cozinha (`/admin/cozinha`) com realtime, som, auto-impressão ESC/POS via agente Elgin local
-- Banco: `menu_categories`, `menu_items`, `orders`, `order_items`, `neighborhoods`, `profiles`, `user_roles`, numeração diária de pedidos
+Sem mexer em identidade visual, layout geral, organização do cardápio ou funcionalidades já prontas. Só adiciono/ajusto o pedido abaixo.
 
-**Identidade visual, layout e organização do cardápio serão mantidos intactos.**
+## 1) Upload/troca de imagens dos produtos + card 65% foto
 
----
+- Criar bucket **público** `menu-images` no Lovable Cloud com RLS: leitura pública, upload/update/delete apenas para `admin`.
+- No painel Admin → aba **Itens**: substituir o campo "URL da imagem" por **uploader** (arrastar/clicar). Ao salvar, sobe arquivo para `menu-images/{itemId}-{timestamp}.jpg` e grava a URL pública em `menu_items.image_url`. Botão "Trocar foto" e "Remover foto".
+- Ajustar `MenuBrowser.tsx`: cards com **~65% de altura ocupada pela foto** (aspect-ratio + `object-cover`), preservando estilo/typography atuais e o selo "🏆 Campeão de Vendas".
 
-## Correções antes de novas features
+## 2) Controle de turnos (Operacional)
 
-1. **Erro 404 em `/admin/cozinha`**: a rota existe no arquivo `admin.cozinha.tsx` e no `routeTree.gen.ts`, mas ela renderiza como filha de `/admin` sem `<Outlet />` no `admin.tsx`. Corrigir: transformar `admin.tsx` no dashboard direto (rota index) e mover Cozinha para rota irmã, OU adicionar `<Outlet />` no admin e mover conteúdo para `admin.index.tsx`. Vou usar a segunda opção.
-2. Validar todas as rotas após alterações para garantir zero 404.
+- Já existe tabela `shifts`. Adicionar UI em `/operacional`:
+  - Ao entrar sem turno aberto → modal **"Abrir turno"**: seleciona *Almoço* ou *Noite*, informa **caixa inicial (R$)** e confirma. Grava `operator_id`, `operator_name`, `opening_cash`, `opened_at`.
+  - Cabeçalho mostra turno aberto (tipo, operador, hora de abertura, caixa inicial) e botão **"Fechar turno"**.
+  - Fechar turno: **bloqueado** se houver pedidos com status ≠ `delivered` **ou** pagamento não confirmado ainda pendente do turno. Mensagem clara listando pendências.
+  - Todo novo pedido criado enquanto turno aberto é vinculado (`orders.shift_id`) via trigger baseado no turno ativo do tipo correspondente ao horário.
 
----
+## 3) Confirmação de pagamento real (pós-motoboy)
 
-## Novos módulos (nesta ordem)
+- No card do pedido (Operacional), quando status = **Entregue**, exibir bloco **"Confirmar pagamento"**:
+  - Select da forma real recebida (mesmas opções: dinheiro/crédito/débito/sodexo/alelo/pix).
+  - Botão **"Confirmar recebimento"** → grava `confirmed_payment_method` + `payment_confirmed_at`.
+- **Faturamento** = soma apenas de pedidos com `payment_confirmed_at IS NOT NULL`. Pedidos entregues sem confirmação aparecem como **"Aguardando pagamento"** e bloqueiam fechamento de turno.
 
-### 1) Controle de acesso em 3 níveis
-- Nova role `operator` (enum `app_role`)
-- Função `claim_operator_if_whitelisted` opcional; admin cria operadores via painel
-- Rotas separadas:
-  - `/admin` → **somente admin** (gestão de produtos, categorias, bairros, promoções, horários, usuários, configurações, relatórios históricos, dashboard)
-  - `/operacional` → **operador OU admin** (antiga cozinha + turnos + relatórios + confirmar pagamento + marcar indisponível)
-- Login único em `/auth`, mas redireciona por role. Admin nunca compartilha senha; operador tem conta própria criada pelo admin.
+## 4) Relatórios de turno + consolidado do dia
 
-### 2) Horários automáticos do cardápio
-- Nova tabela `menu_categories.availability_window` (JSON): `{ lunch: bool, dinner: bool }`
-- Configurar categorias existentes:
-  - Almoço → lunch
-  - Espetos/Combos/Porções/Petiscos/Sobremesas → dinner
-  - Bebidas (refri, não alcoólicas, cervejas) → lunch + dinner
-- Nova tabela `restaurant_hours` (configurável pelo admin) com janelas: `lunch_start=11:00, lunch_end=14:30, dinner_start=18:00, dinner_end=23:59`
-- No frontend, filtrar categorias/itens pelo horário atual (client-side com hora do Brasil)
-- Fora de horário: banner "Restaurante preparando o churrasco / Fechado — abrimos às XX:XX" e desabilita checkout
+- Ao fechar turno gerar relatório com:
+  - Turno, operador, abertura/fechamento, caixa inicial.
+  - Nº de pedidos, ticket médio, faturamento (só confirmados), quebra por forma de pagamento, top itens, taxas de entrega.
+- **Impressão automática** do relatório via mesmo agente ESC/POS.
+- Ao fechar o **turno da noite**, também imprime o **consolidado do dia** (soma almoço + noite).
+- Botão manual "Reimprimir relatório" nos turnos fechados (lista no Admin).
+- **E-mail**: preparar server function `send-shift-report` (usa `system_settings.report_emails`); só dispara quando houver domínio configurado — hoje fica com log/no-op e aviso "envio será ativado quando domínio de e-mail for configurado".
 
-### 3) Upload de imagens (sem código, sem créditos)
-- Bucket público `menu-images` no Storage
-- No painel admin, campo de upload direto no editor de item (preview + trocar + remover)
-- Cards do cardápio: foto ocupando ~70% da altura, produto vendendo pela imagem
+## 5) Marcar produto indisponível no Operacional
 
-### 4) Turnos e pagamentos confirmados
-- Tabela `shifts`: `id, type ('lunch'|'dinner'), operator_id, opened_at, closed_at, opening_cash`
-- Coluna `orders.shift_id`, `orders.confirmed_payment_method`, `orders.payment_confirmed_at`
-- No painel operacional:
-  - Botão Abrir/Fechar turno (bloqueia fechamento se houver pedidos pendentes)
-  - Ao clicar num pedido finalizado, diálogo "Confirmar pagamento recebido" com opções Pix/Crédito/Débito/Dinheiro/Sodexo/Alelo — só entra no faturamento após confirmar
-  - Botão marcar item como indisponível (toggle `is_available`)
+- Já existe policy `operator_toggle_availability`. Adicionar aba/tela **"Cardápio"** em `/operacional` (só leitura + toggle `is_available`) com busca por nome/categoria. Sem editar preço/descrição.
 
-### 5) Relatórios automáticos
-- Server function `generateShiftReport(shiftId)` que calcula: qtd pedidos, faturamento (só confirmados), top produtos, delivery/retirada, pagamentos confirmados, horários, operador
-- Ao fechar turno: imprime ESC/POS na Elgin + envia por e-mail (Lovable Emails)
-- Ao fechar turno da noite: também gera e envia o **Consolidado do Dia** (almoço + noite)
-- Configuração de destinatários no painel admin
+## 6) Impressora: detecção, seleção, status e reconexão
 
-### 6) Configurações (painel admin)
-- Nova aba "Configurações": horários (almoço/churrasco), tempo médio de preparo, valor mínimo do pedido, endereço da impressora, e-mails dos relatórios
+O navegador **não enxerga impressoras locais do Windows** — quem faz isso é o agente. Vou entregar dos dois lados:
 
-### 7) Impressão robusta
-- Manter fluxo atual ESC/POS via agente Elgin local
-- Retry automático + alerta visual em caso de falha + botão reimprimir (já existe parcialmente)
+**Agente local (documentar + fornecer script Node.js pronto)**
+- Script `printer-agent.js` (Node + `pdf-to-printer`/`node-thermal-printer`) que:
+  - `GET /printers` → lista impressoras instaladas no Windows.
+  - `GET /status?name=...` → retorna `connected: true/false` (checa spooler).
+  - `POST /print?name=...` → imprime bytes ESC/POS recebidos.
+  - CORS liberado só para o domínio Lovable + `localhost`.
+- Instruções passo a passo (instalar Node, `npm i`, `node printer-agent.js`, atalho na inicialização do Windows).
 
----
+**UI no Operacional**
+- Cabeçalho ganha bloco "Impressora":
+  - Select com impressoras retornadas por `/printers` (autopreenche a padrão do Windows).
+  - Indicador **● Conectada / ● Desconectada** (poll `/status` a cada 5s).
+  - Botão **"Testar impressão"** (já existe, mantido).
+  - **Reconexão automática**: se `/status` falhar, tenta novamente a cada 5s até voltar. Toast "Impressora reconectada" quando volta.
+  - Se impressão de pedido falhar: **toast destacado + banner vermelho persistente** "Falha ao imprimir pedido #XXXX — clique para reimprimir".
+- Preferência da impressora escolhida guardada em `localStorage`.
 
 ## Detalhes técnicos
 
-- **Banco**: migrações para enum `operator`, tabelas `shifts`, `restaurant_hours`, `system_settings`, `report_recipients`; colunas em `orders` e `menu_categories`; policies RLS por role usando `has_role`
-- **Storage**: bucket público `menu-images` com policies (admin escreve, todos leem)
-- **E-mail**: usar Lovable Emails (necessita domínio próprio para envio real; se ainda não configurado, mostro o fluxo de setup na primeira geração de relatório)
-- **Rotas**:
-  ```text
-  /                      público
-  /auth                  público (login unificado, redireciona por role)
-  /admin/                admin only  (dashboard, itens, categorias, bairros, promoções, horários, usuários, configs, relatórios históricos)
-  /operacional/          operator+admin (pedidos tempo real, turnos, confirmar pgto, indisponibilidade, relatórios do turno)
-  ```
-- **Componentes novos**: `ShiftManager`, `PaymentConfirmDialog`, `ImageUpload`, `ScheduleSettings`, `UsersManager`, `ReportViewer`
-
----
+- Migração: bucket `menu-images` + policies; trigger para setar `shift_id` no insert de `orders`; policies leitura de `shifts` para operator/admin (já existem).
+- Server fn `close-shift` (`requireSupabaseAuth` + verifica role admin/operator): valida pendências, fecha turno, retorna payload do relatório.
+- Server fn `send-shift-report` (stub até domínio ativo).
+- Ajuste `receipt.ts`: helper `buildShiftReportBytes(report)` reutilizando ESC/POS.
+- `MenuBrowser.tsx`: apenas ajustes de classe/aspect, sem mudar cores/tokens.
 
 ## Ordem de execução
 
-1. Corrigir 404 da Cozinha (mover para `/operacional` com layout próprio)
-2. Migração: role `operator`, tabelas de turnos/configs/pagamento confirmado, bucket de imagens, availability_window
-3. Configurações + horários automáticos + filtro do cardápio
-4. Upload de imagens + cards com foto grande (70%)
-5. Painel operacional novo (turnos, confirmar pagamento, indisponível)
-6. Relatórios automáticos + envio por e-mail (requer domínio configurado)
-7. Gestão de usuários operadores no painel admin
-8. Validar todas as rotas
+1. Migração (bucket + trigger shift_id).
+2. Upload de imagens no Admin + ajuste 65% no card.
+3. UI de turnos + trigger + bloqueio de fechamento.
+4. Confirmação de pagamento + faturamento filtrado.
+5. Fechar turno → relatório → impressão automática + consolidado do dia.
+6. Aba Cardápio no Operacional (toggle disponibilidade).
+7. UI de impressora (lista/status/reconexão) + script `printer-agent.js` + guia de instalação.
 
----
-
-## Pontos que precisam da sua confirmação
-
-1. **E-mail para relatórios**: você precisa ter um domínio próprio configurado no Lovable Emails para o envio automático funcionar. Você já tem um domínio? Se não, os relatórios ficarão só na tela + impressão até você configurar.
-2. **Contas de operador**: quer que eu já crie uma conta operador de teste, ou você cria depois pelo painel admin?
-3. **Valor mínimo do pedido**: tem valor definido hoje ou começamos em R$ 0 e você ajusta na tela de configurações?
-4. **Fechamento automático de turno**: se o operador esquecer, quer que o sistema feche sozinho após o horário limite, ou só manual?
+Confirma que sigo nessa ordem?
