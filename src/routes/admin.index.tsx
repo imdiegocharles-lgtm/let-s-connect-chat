@@ -396,7 +396,10 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
             <div><Label>Preço (R$)</Label><Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0,00" /></div>
             <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
           </div>
-          <div><Label>URL da imagem (opcional)</Label><Input value={imageUrl ?? ""} onChange={(e) => setImageUrl(e.target.value)} /></div>
+          <div>
+            <Label>Foto do produto</Label>
+            <ImageUploader value={imageUrl} onChange={setImageUrl} />
+          </div>
           <div className="flex items-center gap-2">
             <Switch checked={available} onCheckedChange={setAvailable} />
             <Label>Disponível para pedido</Label>
