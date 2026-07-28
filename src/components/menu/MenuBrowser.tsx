@@ -24,6 +24,7 @@ type Item = {
   name: string;
   description: string | null;
   price: number;
+  image_url: string | null;
   is_available: boolean;
   sort_order: number;
 };
@@ -43,7 +44,7 @@ async function fetchMenu() {
       .order("sort_order"),
     supabase
       .from("menu_items")
-      .select("id, category_id, name, description, price, is_available, sort_order")
+      .select("id, category_id, name, description, price, image_url, is_available, sort_order")
       .eq("is_available", true)
       .order("sort_order"),
   ]);
