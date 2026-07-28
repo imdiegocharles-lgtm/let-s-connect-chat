@@ -497,17 +497,23 @@ function OrderCard({
   order,
   onStatus,
   onPrint,
+  onConfirmPayment,
   isPending,
   compact,
 }: {
   order: Order & { order_items: OrderItem[] };
   onStatus: (status: Order["status"]) => void;
   onPrint: () => void;
+  onConfirmPayment: () => void;
   isPending: boolean;
   compact?: boolean;
 }) {
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
+  const anyOrder = order as any;
+  const needsPayConfirm =
+    order.status === "delivered" && !anyOrder.payment_confirmed_at;
+  const payConfirmed = !!anyOrder.payment_confirmed_at;
 
   return (
     <Card className={`p-4 ${compact ? "opacity-70" : ""}`}>
@@ -569,6 +575,17 @@ function OrderCard({
         </div>
       )}
 
+      {needsPayConfirm && (
+        <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+          Aguardando confirmação de pagamento (motoboy retornou?).
+        </div>
+      )}
+      {payConfirmed && (
+        <div className="mb-3 rounded-md border border-green-500/40 bg-green-500/10 p-2 text-xs">
+          Pagamento confirmado: {PAYMENT_LABELS[anyOrder.confirmed_payment_method] ?? anyOrder.confirmed_payment_method}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={onPrint}>
           <Printer className="h-4 w-4 mr-2" /> Reimprimir
@@ -584,7 +601,367 @@ function OrderCard({
             Mover para {STATUS_LABELS[nextStatus].toLowerCase()}
           </Button>
         )}
+        {needsPayConfirm && (
+          <Button size="sm" onClick={onConfirmPayment} className="bg-amber-500 hover:bg-amber-600">
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Confirmar pagamento
+          </Button>
+        )}
       </div>
     </Card>
+  );
+}
+
+function StatChip({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-md border px-3 py-2 ${
+        highlight ? "border-primary/50 bg-primary/10" : "border-border bg-muted/40"
+      }`}
+    >
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`font-bold ${highlight ? "text-primary" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function OpenShiftDialog({
+  open,
+  onClose,
+  onOpened,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpened: () => void;
+}) {
+  const [type, setType] = useState<"almoco" | "noite">("almoco");
+  const [cash, setCash] = useState("");
+  const [operatorName, setOperatorName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const hour = new Date().getHours();
+    setType(hour >= 11 && hour < 16 ? "almoco" : "noite");
+    setCash("");
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const email = data.user?.email ?? "";
+      setOperatorName(email.split("@")[0] ?? "Operador");
+    })();
+  }, [open]);
+
+  const submit = async () => {
+    const cashNum = Number(cash.replace(",", "."));
+    if (Number.isNaN(cashNum) || cashNum < 0) {
+      toast.error("Informe um valor de caixa válido");
+      return;
+    }
+    if (!operatorName.trim()) {
+      toast.error("Informe o nome do operador");
+      return;
+    }
+    setSaving(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await (supabase as any).from("shifts").insert({
+      shift_type: type,
+      opening_cash: cashNum,
+      operator_id: userData.user?.id,
+      operator_name: operatorName.trim(),
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Turno aberto");
+    onOpened();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Abrir turno</DialogTitle>
+          <DialogDescription>
+            Registre o operador, o tipo do turno e o valor inicial do caixa.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Operador</Label>
+            <Input value={operatorName} onChange={(e) => setOperatorName(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Tipo de turno</Label>
+            <Select value={type} onValueChange={(v) => setType(v as any)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="almoco">Almoço</SelectItem>
+                <SelectItem value="noite">Noite</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Caixa inicial (R$)</Label>
+            <Input
+              inputMode="decimal"
+              placeholder="0,00"
+              value={cash}
+              onChange={(e) => setCash(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Abrir turno
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CloseShiftDialog({
+  open,
+  shift,
+  canClose,
+  pendingActive,
+  awaitingPayment,
+  onClose,
+  onClosed,
+}: {
+  open: boolean;
+  shift: Shift | null;
+  canClose: boolean;
+  pendingActive: number;
+  awaitingPayment: number;
+  onClose: () => void;
+  onClosed: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!shift) return;
+    setSaving(true);
+    const { error } = await (supabase as any)
+      .from("shifts")
+      .update({ closed_at: new Date().toISOString() })
+      .eq("id", shift.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Turno fechado");
+    onClosed();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Fechar turno</DialogTitle>
+          <DialogDescription>
+            {canClose
+              ? "Todos os pedidos foram entregues e pagos. Confirma o fechamento?"
+              : "Não é possível fechar o turno com pendências."}
+          </DialogDescription>
+        </DialogHeader>
+        {!canClose && (
+          <ul className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm space-y-1">
+            {pendingActive > 0 && (
+              <li>• {pendingActive} pedido(s) ainda em andamento (não entregues).</li>
+            )}
+            {awaitingPayment > 0 && (
+              <li>• {awaitingPayment} pedido(s) entregues aguardando confirmação de pagamento.</li>
+            )}
+          </ul>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={!canClose || saving} variant="destructive">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Fechar turno
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ConfirmPaymentDialog({
+  order,
+  onClose,
+  onConfirm,
+  isPending,
+}: {
+  order: Order | null;
+  onClose: () => void;
+  onConfirm: (method: string) => void;
+  isPending: boolean;
+}) {
+  const [method, setMethod] = useState<string>("dinheiro");
+  useEffect(() => {
+    if (order) setMethod(order.payment_method ?? "dinheiro");
+  }, [order]);
+  return (
+    <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Confirmar pagamento</DialogTitle>
+          <DialogDescription>
+            Registre a forma real recebida pelo motoboy. Só entra no faturamento após confirmar.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Forma de pagamento recebida</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PAYMENT_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {order && (
+            <p className="text-sm text-muted-foreground">
+              Total do pedido:{" "}
+              <strong>
+                {Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </strong>
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={() => onConfirm(method)} disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Confirmar recebimento
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MenuAvailabilityPanel() {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["op-menu"],
+    queryFn: async () => {
+      const [{ data: cats }, { data: items }] = await Promise.all([
+        supabase.from("menu_categories").select("id, name, sort_order").order("sort_order"),
+        supabase
+          .from("menu_items")
+          .select("id, category_id, name, is_available, price, sort_order")
+          .order("sort_order"),
+      ]);
+      return { cats: cats ?? [], items: items ?? [] };
+    },
+  });
+
+  const toggle = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ is_available: value })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["op-menu"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const q = search.trim().toLowerCase();
+  const filteredItems = q
+    ? data.items.filter((i: any) => i.name.toLowerCase().includes(q))
+    : data.items;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <Input
+          placeholder="Buscar produto…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="sm:max-w-xs"
+        />
+        <p className="text-xs text-muted-foreground">
+          Desligue para marcar como indisponível (some do cardápio do cliente).
+        </p>
+      </div>
+      {data.cats.map((cat: any) => {
+        const catItems = filteredItems.filter((i: any) => i.category_id === cat.id);
+        if (!catItems.length) return null;
+        return (
+          <section key={cat.id}>
+            <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              {cat.name}
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {catItems.map((item: any) => (
+                <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {Number(item.price).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-semibold ${
+                        item.is_available ? "text-green-600" : "text-muted-foreground"
+                      }`}
+                    >
+                      {item.is_available ? "Disponível" : "Indisponível"}
+                    </span>
+                    <Switch
+                      checked={item.is_available}
+                      onCheckedChange={(v) => toggle.mutate({ id: item.id, value: v })}
+                    />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
