@@ -24,6 +24,7 @@ type Item = {
   name: string;
   description: string | null;
   price: number;
+  image_url: string | null;
   is_available: boolean;
   sort_order: number;
 };
@@ -43,7 +44,7 @@ async function fetchMenu() {
       .order("sort_order"),
     supabase
       .from("menu_items")
-      .select("id, category_id, name, description, price, is_available, sort_order")
+      .select("id, category_id, name, description, price, image_url, is_available, sort_order")
       .eq("is_available", true)
       .order("sort_order"),
   ]);
@@ -157,7 +158,7 @@ export function MenuBrowser() {
       {grouped.map((cat) => (
         <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-32">
           <h2 className="text-2xl font-black md:text-3xl">{displayName(cat.name)}</h2>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cat.items.map((item) => {
               const isBestseller =
                 cat.id === completosCatId &&
@@ -165,27 +166,41 @@ export function MenuBrowser() {
               return (
               <article
                 key={item.id}
-                className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-primary/50 hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition hover:border-primary/50 hover:shadow-md"
               >
-                <div className="min-w-0">
-                  <h3 className="font-bold leading-tight">{item.name}</h3>
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-4xl opacity-30">🍢</div>
+                  )}
                   {isBestseller && (
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">
-                      🏆 Campeão de Vendas
+                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary-foreground shadow">
+                      🏆 Campeão
                     </span>
                   )}
-                  {item.description && (
-                    <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
-                  )}
-                  <p className="mt-2 text-lg font-black text-primary">{formatBRL(item.price)}</p>
                 </div>
-                <button
-                  onClick={() => handleAdd(item)}
-                  aria-label={`Adicionar ${item.name}`}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110"
-                >
-                  <Plus className="h-5 w-5" />
-                </button>
+                <div className="flex flex-1 items-start justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold leading-tight">{item.name}</h3>
+                    {item.description && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                    )}
+                    <p className="mt-2 text-lg font-black text-primary">{formatBRL(item.price)}</p>
+                  </div>
+                  <button
+                    onClick={() => handleAdd(item)}
+                    aria-label={`Adicionar ${item.name}`}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
               </article>
               );
             })}

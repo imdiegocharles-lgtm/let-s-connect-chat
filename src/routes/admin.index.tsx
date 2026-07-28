@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft } from "lucide-react";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -332,7 +333,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
   const [price, setPrice] = useState(item?.price?.toString() ?? "");
-  const [imageUrl, setImageUrl] = useState(item?.image_url ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
   const [available, setAvailable] = useState(item?.is_available ?? true);
   const [sortOrder, setSortOrder] = useState(item?.sort_order ?? 0);
 
@@ -342,7 +343,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setName(item?.name ?? "");
       setDescription(item?.description ?? "");
       setPrice(item?.price?.toString() ?? "");
-      setImageUrl(item?.image_url ?? "");
+      setImageUrl(item?.image_url ?? null);
       setAvailable(item?.is_available ?? true);
       setSortOrder(item?.sort_order ?? 0);
     }
@@ -396,7 +397,10 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
             <div><Label>Preço (R$)</Label><Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0,00" /></div>
             <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
           </div>
-          <div><Label>URL da imagem (opcional)</Label><Input value={imageUrl ?? ""} onChange={(e) => setImageUrl(e.target.value)} /></div>
+          <div>
+            <Label>Foto do produto</Label>
+            <ImageUploader value={imageUrl} onChange={setImageUrl} />
+          </div>
           <div className="flex items-center gap-2">
             <Switch checked={available} onCheckedChange={setAvailable} />
             <Label>Disponível para pedido</Label>
