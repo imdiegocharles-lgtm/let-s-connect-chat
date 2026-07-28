@@ -11,9 +11,12 @@ import {
   Flame,
   ShieldCheck,
   Navigation,
+  CalendarDays,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { CartSheet } from "@/components/menu/CartSheet";
+import { ReservationDialog } from "@/components/reservations/ReservationDialog";
+import { ReviewDialog } from "@/components/reviews/ReviewDialog";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -31,18 +34,38 @@ function Home() {
               alt="Família Amaral"
               className="h-11 w-11 rounded-full ring-2 ring-primary/30"
             />
-            <div className="leading-tight">
-              <p className="text-sm font-black uppercase tracking-wide">Família Amaral</p>
-              <p className="text-[11px] text-muted-foreground">Churrasquinho & Restaurante</p>
-            </div>
+            <p className="text-sm font-black uppercase tracking-wide leading-tight">Família Amaral</p>
           </div>
-          <a
-            href="#pedido"
-            className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:brightness-110 sm:inline-flex"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Fazer Pedido
-          </a>
+          <div className="flex items-center gap-2">
+            <ReservationDialog
+              trigger={
+                <button className="hidden sm:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
+                  <CalendarDays className="h-4 w-4" />
+                  Faça sua Reserva
+                </button>
+              }
+            />
+            <a
+              href="#pedido"
+              className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:brightness-110 sm:inline-flex"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Fazer Pedido
+            </a>
+          </div>
+        </div>
+        <div className="sm:hidden mx-auto max-w-6xl px-4 pb-3 flex flex-col items-stretch gap-1">
+          <ReservationDialog
+            trigger={
+              <button className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+                <CalendarDays className="h-4 w-4" />
+                Faça sua Reserva
+              </button>
+            }
+          />
+          <p className="text-[11px] text-center text-muted-foreground">
+            Reservas disponíveis apenas para grupos a partir de 10 pessoas.
+          </p>
         </div>
       </header>
 
@@ -92,9 +115,21 @@ function Home() {
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
-              <Info icon={<Clock className="h-4 w-4" />} label="30–45 min" sub="Tempo médio" />
+              <Info icon={<Clock className="h-4 w-4" />} label="40–80 min" sub="Entrega podendo ocorrer antes" />
               <Info icon={<Bike className="h-4 w-4" />} label="A partir de R$ 5" sub="Taxa de entrega" />
-              <Info icon={<Star className="h-4 w-4 fill-current" />} label="4.9" sub="Avaliação" />
+              <ReviewDialog
+                trigger={
+                  <button className="flex items-center gap-2 text-left transition hover:opacity-80">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
+                      <Star className="h-4 w-4 fill-current" />
+                    </span>
+                    <span className="leading-tight">
+                      <span className="block font-bold">4.9</span>
+                      <span className="block text-xs text-white/60 underline decoration-dotted">Avaliar</span>
+                    </span>
+                  </button>
+                }
+              />
             </div>
           </div>
 
@@ -113,7 +148,7 @@ function Home() {
       <section className="border-b border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-3">
           <Strip icon={<Clock className="h-5 w-5 text-primary" />} title="Horário do churrasco" sub="Seg–Sáb 17h às 00h · Dom 11h às 00h" />
-          <Strip icon={<Bike className="h-5 w-5 text-primary" />} title="Entrega rápida" sub="Bairros próximos · 30–45 min" />
+          <Strip icon={<Bike className="h-5 w-5 text-primary" />} title="Entrega em 40–80 min" sub="Podendo ocorrer antes do prazo informado" />
           <Strip icon={<ShieldCheck className="h-5 w-5 text-primary" />} title="Pedido seguro" sub="Sem cadastro, direto pelo site" />
         </div>
       </section>
@@ -133,10 +168,9 @@ function Home() {
 
       {/* Contato */}
       <section id="contato" className="border-t border-border bg-secondary text-secondary-foreground">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-2">
           <ContactCard icon={<Phone className="h-5 w-5" />} title="WhatsApp" value="Em breve" />
-          <ContactCard icon={<Instagram className="h-5 w-5" />} title="Instagram" value="@familiaamaral" />
-          <ContactCard icon={<MapPin className="h-5 w-5" />} title="Endereço" value="Em breve" />
+          <ContactCard icon={<MapPin className="h-5 w-5" />} title="Endereço" value="Rua Monteiro Lobato, 18 – Estrela do Norte – São Gonçalo/RJ" />
         </div>
       </section>
 

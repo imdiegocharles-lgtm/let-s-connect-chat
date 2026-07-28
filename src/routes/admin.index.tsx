@@ -18,7 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat, Star } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -120,12 +120,16 @@ function AdminDashboard() {
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
+            <TabsTrigger value="reservations">🍽️ Reservas</TabsTrigger>
+            <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
+          <TabsContent value="reservations" className="mt-6"><ReservationsPanel /></TabsContent>
+          <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
@@ -787,5 +791,200 @@ function SettingsPanel() {
       <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" /></div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
     </Card>
+  );
+}
+
+/* --------------------------- RESERVATIONS --------------------------- */
+
+const LOCATION_LABELS: Record<string, string> = {
+  varanda: "Varanda",
+  salao: "Salão",
+  segundo_andar: "Segundo Andar (AC)",
+};
+
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  pendente: { label: "🟡 Pendente", className: "bg-yellow-100 text-yellow-800" },
+  confirmada: { label: "🟢 Confirmada", className: "bg-green-100 text-green-800" },
+  cancelada: { label: "🔴 Cancelada", className: "bg-red-100 text-red-800" },
+};
+
+function ReservationsPanel() {
+  const qc = useQueryClient();
+  const [searchName, setSearchName] = useState("");
+  const [searchPhone, setSearchPhone] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-reservations"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("reservations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async (v: { id: string; status: string }) => {
+      const { error } = await (supabase as any)
+        .from("reservations").update({ status: v.status }).eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Status atualizado");
+      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("reservations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Reserva excluída");
+      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const filtered = (data ?? []).filter((r: any) => {
+    if (searchName && !r.customer_name.toLowerCase().includes(searchName.toLowerCase())) return false;
+    if (searchPhone && !r.phone.includes(searchPhone)) return false;
+    if (filterDate && r.reservation_date !== filterDate) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 grid gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Buscar por nome</Label>
+          <Input value={searchName} onChange={(e) => setSearchName(e.target.value)} placeholder="Nome do cliente" />
+        </div>
+        <div>
+          <Label>Buscar por telefone</Label>
+          <Input value={searchPhone} onChange={(e) => setSearchPhone(e.target.value)} placeholder="Telefone" />
+        </div>
+        <div>
+          <Label>Filtrar por data</Label>
+          <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
+        </div>
+      </Card>
+
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin" />
+      ) : (
+        <div className="grid gap-3">
+          {filtered.map((r: any) => {
+            const s = STATUS_LABELS[r.status] ?? STATUS_LABELS.pendente;
+            return (
+              <Card key={r.id} className="p-4">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">{r.customer_name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>{s.label}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      📞 {r.phone} · 👥 {r.people_count} pessoas · 📍 {LOCATION_LABELS[r.location] ?? r.location}
+                    </div>
+                    <div className="text-sm">
+                      📅 <strong>Data da reserva:</strong>{" "}
+                      {new Date(r.reservation_date + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Solicitado em {new Date(r.created_at).toLocaleString("pt-BR")}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={r.status} onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v })}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">🟡 Pendente</SelectItem>
+                        <SelectItem value="confirmada">🟢 Confirmada</SelectItem>
+                        <SelectItem value="cancelada">🔴 Cancelada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <ConfirmDelete onConfirm={() => del.mutate(r.id)} label={`Excluir reserva de ${r.customer_name}?`} />
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhuma reserva encontrada.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------- REVIEWS --------------------------- */
+
+function ReviewsPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-reviews"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("reviews")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("reviews").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Avaliação excluída");
+      qc.invalidateQueries({ queryKey: ["admin-reviews"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin" />
+      ) : (data ?? []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma avaliação recebida ainda.</p>
+      ) : (
+        (data ?? []).map((r: any) => (
+          <Card key={r.id} className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-0.5 mb-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-4 w-4 ${n <= r.rating ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                    />
+                  ))}
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString("pt-BR")}
+                  </span>
+                </div>
+                {r.comment ? (
+                  <p className="text-sm whitespace-pre-wrap">{r.comment}</p>
+                ) : (
+                  <p className="text-sm italic text-muted-foreground">Sem comentário</p>
+                )}
+              </div>
+              <ConfirmDelete onConfirm={() => del.mutate(r.id)} label="Excluir esta avaliação?" />
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
   );
 }
