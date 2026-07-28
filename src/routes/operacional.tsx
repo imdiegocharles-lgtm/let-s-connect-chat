@@ -124,6 +124,9 @@ function KitchenDashboard() {
   const [agentUrl, setAgentUrl] = useState("http://localhost:8080/print");
   const [autoPrint, setAutoPrint] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [openShiftModal, setOpenShiftModal] = useState(false);
+  const [closeShiftModal, setCloseShiftModal] = useState(false);
+  const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("familia-amaral-printer-url");
@@ -138,6 +141,21 @@ function KitchenDashboard() {
   useEffect(() => {
     localStorage.setItem("familia-amaral-auto-print", String(autoPrint));
   }, [autoPrint]);
+
+  const { data: activeShift, refetch: refetchShift } = useQuery({
+    queryKey: ["active-shift"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("shifts")
+        .select("*")
+        .is("closed_at", null)
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as Shift | null;
+    },
+  });
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["kitchen-orders"],
@@ -158,6 +176,25 @@ function KitchenDashboard() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["kitchen-orders"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const confirmPayment = useMutation({
+    mutationFn: async ({ id, method }: { id: string; method: string }) => {
+      const { error } = await (supabase as any)
+        .from("orders")
+        .update({
+          confirmed_payment_method: method,
+          payment_confirmed_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      setConfirmPayFor(null);
+      toast.success("Pagamento confirmado");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
