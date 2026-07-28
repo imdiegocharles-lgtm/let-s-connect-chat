@@ -546,6 +546,8 @@ function OrderCard({
   onConfirmPayment,
   isPending,
   compact,
+  canUpdateStatus = true,
+  canConfirmPayment = true,
 }: {
   order: Order & { order_items: OrderItem[] };
   onStatus: (status: Order["status"]) => void;
@@ -553,6 +555,8 @@ function OrderCard({
   onConfirmPayment: () => void;
   isPending: boolean;
   compact?: boolean;
+  canUpdateStatus?: boolean;
+  canConfirmPayment?: boolean;
 }) {
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
@@ -636,7 +640,7 @@ function OrderCard({
         <Button size="sm" variant="outline" onClick={onPrint}>
           <Printer className="h-4 w-4 mr-2" /> Reimprimir
         </Button>
-        {nextStatus && (
+        {nextStatus && canUpdateStatus && (
           <Button
             size="sm"
             onClick={() => onStatus(nextStatus)}
@@ -647,7 +651,7 @@ function OrderCard({
             Mover para {STATUS_LABELS[nextStatus].toLowerCase()}
           </Button>
         )}
-        {needsPayConfirm && (
+        {needsPayConfirm && canConfirmPayment && (
           <Button size="sm" onClick={onConfirmPayment} className="bg-amber-500 hover:bg-amber-600">
             <CheckCircle2 className="h-4 w-4 mr-2" /> Confirmar pagamento
           </Button>
