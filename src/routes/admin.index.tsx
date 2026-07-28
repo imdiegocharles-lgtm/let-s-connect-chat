@@ -18,8 +18,15 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  listKitchenUsers,
+  createKitchenUser,
+  updateKitchenPermissions,
+  deleteKitchenUser,
+} from "@/lib/kitchen-users.functions";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -59,8 +66,7 @@ function AdminPage() {
     );
   }
   if (status === "unauth") {
-    navigate({ to: "/auth" });
-    return null;
+    return <LoginChooser />;
   }
   if (status === "not-admin") {
     return (
@@ -113,14 +119,204 @@ function AdminDashboard() {
             <TabsTrigger value="items">Itens</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
+            <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
+          <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
+    </div>
+  );
+}
+
+/* --------------------------- LOGIN CHOOSER --------------------------- */
+
+function LoginChooser() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="w-full max-w-3xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-black">Família Amaral</h1>
+          <p className="text-sm text-muted-foreground mt-1">Selecione o tipo de acesso</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Link to="/auth" search={{ role: "admin" }}>
+            <Card className="p-8 text-center hover:border-primary hover:shadow-lg transition cursor-pointer h-full">
+              <ShieldCheck className="h-12 w-12 mx-auto text-primary mb-3" />
+              <h2 className="text-xl font-bold">Login Administrativo</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Gerenciar cardápio, bairros, usuários da cozinha e configurações.
+              </p>
+            </Card>
+          </Link>
+          <Link to="/auth" search={{ role: "cozinha" }}>
+            <Card className="p-8 text-center hover:border-primary hover:shadow-lg transition cursor-pointer h-full">
+              <ChefHat className="h-12 w-12 mx-auto text-primary mb-3" />
+              <h2 className="text-xl font-bold">Login Cozinha</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Receber pedidos, imprimir cupons e operar o turno.
+              </p>
+            </Card>
+          </Link>
+        </div>
+        <div className="text-center mt-6">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+            <ArrowLeft className="h-3 w-3" /> Voltar ao site
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- KITCHEN USERS --------------------------- */
+
+type Perms = {
+  can_open_close_shift: boolean;
+  can_confirm_payment: boolean;
+  can_manage_menu: boolean;
+  can_update_order_status: boolean;
+};
+
+const PERM_LABELS: Record<keyof Perms, string> = {
+  can_open_close_shift: "Abrir/fechar turno",
+  can_confirm_payment: "Confirmar pagamento",
+  can_manage_menu: "Gerenciar disponibilidade do cardápio",
+  can_update_order_status: "Atualizar status de pedidos",
+};
+
+function KitchenUsersPanel() {
+  const qc = useQueryClient();
+  const list = useServerFn(listKitchenUsers);
+  const create = useServerFn(createKitchenUser);
+  const updatePerms = useServerFn(updateKitchenPermissions);
+  const remove = useServerFn(deleteKitchenUser);
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["kitchen-users"],
+    queryFn: () => list({}),
+  });
+
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPerms, setNewPerms] = useState<Perms>({
+    can_open_close_shift: true,
+    can_confirm_payment: true,
+    can_manage_menu: true,
+    can_update_order_status: true,
+  });
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      create({ data: { email: newEmail, password: newPassword, permissions: newPerms } }),
+    onSuccess: () => {
+      toast.success("Usuário da cozinha criado");
+      setNewEmail(""); setNewPassword("");
+      qc.invalidateQueries({ queryKey: ["kitchen-users"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (v: { user_id: string; permissions: Perms }) => updatePerms({ data: v }),
+    onSuccess: () => {
+      toast.success("Permissões atualizadas");
+      qc.invalidateQueries({ queryKey: ["kitchen-users"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const delMut = useMutation({
+    mutationFn: (user_id: string) => remove({ data: { user_id } }),
+    onSuccess: () => {
+      toast.success("Usuário removido");
+      qc.invalidateQueries({ queryKey: ["kitchen-users"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-4">
+        <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <Plus className="h-4 w-4" /> Novo usuário da cozinha
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label>E-mail</Label>
+            <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+          </div>
+          <div>
+            <Label>Senha (mín. 6)</Label>
+            <Input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          <p className="text-sm font-medium">Permissões</p>
+          {(Object.keys(PERM_LABELS) as (keyof Perms)[]).map((k) => (
+            <label key={k} className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={newPerms[k]}
+                onCheckedChange={(v) => setNewPerms((p) => ({ ...p, [k]: v }))}
+              />
+              {PERM_LABELS[k]}
+            </label>
+          ))}
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={() => createMut.mutate()}
+            disabled={createMut.isPending || !newEmail || newPassword.length < 6}
+          >
+            {createMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Criar usuário
+          </Button>
+        </div>
+      </Card>
+
+      <div>
+        <h3 className="font-semibold mb-3">Usuários existentes</h3>
+        {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+          <div className="grid gap-3">
+            {(users ?? []).map((u: any) => (
+              <Card key={u.id} className="p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="font-medium">{u.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Criado em {u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}
+                    </div>
+                  </div>
+                  <ConfirmDelete onConfirm={() => delMut.mutate(u.id)} label={`Excluir ${u.email}?`} />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(Object.keys(PERM_LABELS) as (keyof Perms)[]).map((k) => (
+                    <label key={k} className="flex items-center gap-2 text-sm">
+                      <Switch
+                        checked={!!u.permissions?.[k]}
+                        onCheckedChange={(v) =>
+                          updateMut.mutate({
+                            user_id: u.id,
+                            permissions: { ...u.permissions, [k]: v },
+                          })
+                        }
+                      />
+                      {PERM_LABELS[k]}
+                    </label>
+                  ))}
+                </div>
+              </Card>
+            ))}
+            {(users ?? []).length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhum usuário da cozinha cadastrado.</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
