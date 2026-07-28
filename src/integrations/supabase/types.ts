@@ -361,6 +361,7 @@ export type Database = {
     Functions: {
       claim_admin_if_whitelisted: { Args: never; Returns: boolean }
       claim_role_if_whitelisted: { Args: never; Returns: string }
+      get_active_shift_id: { Args: never; Returns: string }
       get_next_order_number: { Args: never; Returns: number }
       has_role: {
         Args: {
