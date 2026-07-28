@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      kitchen_permissions: {
+        Row: {
+          can_confirm_payment: boolean
+          can_manage_menu: boolean
+          can_open_close_shift: boolean
+          can_update_order_status: boolean
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_confirm_payment?: boolean
+          can_manage_menu?: boolean
+          can_open_close_shift?: boolean
+          can_update_order_status?: boolean
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_confirm_payment?: boolean
+          can_manage_menu?: boolean
+          can_open_close_shift?: boolean
+          can_update_order_status?: boolean
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_categories: {
         Row: {
           available_dinner: boolean
