@@ -11,6 +11,7 @@ import { z } from "zod";
 
 const searchSchema = z.object({
   role: z.enum(["admin", "cozinha"]).optional(),
+  next: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -31,6 +32,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
   const requestedRole = search.role ?? "admin";
+  const nextPath = search.next && /^\/(?!\/)/.test(search.next) ? search.next : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,9 +42,13 @@ function AuthPage() {
       const { data } = await supabase.auth.getSession();
       if (!data.session) return;
       const role = await resolveRole();
+      if (nextPath) {
+        window.location.href = nextPath;
+        return;
+      }
       navigate({ to: role === "operator" ? "/operacional" : "/admin" });
     })();
-  }, [navigate]);
+  }, [navigate, nextPath]);
 
   async function resolveRole(): Promise<"admin" | "operator" | "none"> {
     const { data } = await supabase.rpc("claim_role_if_whitelisted");
@@ -77,6 +83,10 @@ function AuthPage() {
       if (requestedRole === "cozinha" && role !== "operator" && role !== "admin") {
         toast.error("Esta conta não é da cozinha.");
         await supabase.auth.signOut();
+        return;
+      }
+      if (nextPath) {
+        window.location.href = nextPath;
         return;
       }
       navigate({ to: role === "operator" ? "/operacional" : "/admin" });
