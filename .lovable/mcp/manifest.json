@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "sdk_version": "0.25.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://qhhztembdukcwptjoghe.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "familia-amaral-churrasquinho-restaurante",
+      "version": "0.1.0",
+      "title": "Família Amaral Churrasquinho & Restaurante"
+    },
+    "tools": [
+      {
+        "name": "list_menu_items",
+        "title": "Listar itens do cardápio",
+        "description": "Lista os itens do cardápio com preço, categoria e disponibilidade.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "only_unavailable": {
+              "description": "Se verdadeiro, retorna apenas itens indisponíveis.",
+              "type": "boolean"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_item_availability",
+        "title": "Alterar disponibilidade de item",
+        "description": "Marca um item do cardápio como disponível ou indisponível.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "item_id": {
+              "type": "string",
+              "description": "ID do item do cardápio."
+            },
+            "is_available": {
+              "type": "boolean",
+              "description": "true para disponível, false para esgotado."
+            }
+          },
+          "required": [
+            "item_id",
+            "is_available"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_orders",
+        "title": "Listar pedidos",
+        "description": "Lista os pedidos mais recentes do delivery, opcionalmente filtrados por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtra por status do pedido (ex.: pendente, preparando, entregue).",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Quantidade máxima de pedidos a retornar (padrão 20).",
+              "type": "number"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reservations",
+        "title": "Listar reservas",
+        "description": "Lista as reservas do restaurante, opcionalmente filtradas por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtra pelo status da reserva.",
+              "type": "string",
+              "enum": [
+                "pendente",
+                "confirmada",
+                "cancelada"
+              ]
+            },
+            "limit": {
+              "description": "Quantidade máxima de reservas (padrão 20).",
+              "type": "number"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_reservation_status",
+        "title": "Atualizar status da reserva",
+        "description": "Confirma, cancela ou volta uma reserva para pendente.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "reservation_id": {
+              "type": "string",
+              "description": "ID da reserva."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pendente",
+                "confirmada",
+                "cancelada"
+              ],
+              "description": "Novo status da reserva."
+            }
+          },
+          "required": [
+            "reservation_id",
+            "status"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reviews",
+        "title": "Listar avaliações",
+        "description": "Lista as avaliações anônimas recebidas pelo restaurante.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Quantidade máxima de avaliações (padrão 20).",
+              "type": "number"
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
