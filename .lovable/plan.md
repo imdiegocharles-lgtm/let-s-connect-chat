@@ -1,29 +1,29 @@
-## O que já foi verificado agora
+## Problema
 
-- A trava da coluna `shift_type` já está corrigida no banco: aceita `almoco` e `noite` (confere com o app).
-- **Existe um turno aberto no momento**: tipo "noite", aberto hoje às 19:41 (ainda sem fechamento). Ou seja, a abertura chegou a ser gravada com sucesso — a tela de erro apareceu depois da gravação, não impedindo o registro.
-- Os gatilhos de numeração de pedido e de vínculo do pedido ao turno estão ativos.
-- A página `/operacional` carrega normalmente no servidor (resposta 200), então não é uma falha permanente da rota.
+As telas de login/admin/cozinha caem, de forma intermitente, na tela de erro genérica ("This page didn't load" / "Ocorreu um problema da nossa parte"). Essa tela vem de dois lugares do projeto: o fallback de erro do servidor (`src/lib/error-page.ts`) e o `errorComponent` da rota raiz (`src/routes/__root.tsx`).
 
-Conclusão honesta: a causa da tela genérica "This page didn't load" ainda **não está confirmada**. Não vou chutar um culpado — o primeiro passo do plano é reproduzir e capturar o erro real.
+O que já verifiquei no código:
+- `/operacional` já está com renderização no servidor desligada (`ssr: false`) e tem sua própria tela de erro.
+- `/admin`, `/admin/` e `/auth` ainda são renderizadas no servidor, mesmo sendo páginas 100% dependentes da sessão do navegador (a sessão fica no navegador, o servidor não enxerga). Nenhuma delas tem tela de erro própria, então qualquer falha sobe para a tela genérica.
+- A checagem de permissão (`hasMyRole` / `getMyRoles`) roda sem tratamento de falha; se a chamada ao backend falhar ou demorar, a página quebra em vez de mostrar mensagem.
 
-## Plano
+Observação honesta: não consigo confirmar a causa exata só pelo código, porque em ambiente local as três rotas respondem normalmente — o erro aparece no site publicado. O plano abaixo elimina as causas prováveis (render no servidor de páginas de sessão + ausência de tratamento de falha) e, se ainda ocorrer, deixa a mensagem de erro real visível para eu identificar em um passo.
 
-### 1. Reproduzir com captura de erro
-- Abrir o painel operacional em navegador automatizado com sessão autenticada, fechar o turno atual e abrir um novo turno, capturando console, requisições de rede e tela no momento exato da falha.
-- Ler os logs do servidor durante a ação para identificar se a tela de erro vem de uma falha de renderização (SSR) ou de uma chamada ao banco.
+## O que vou fazer
 
-### 2. Corrigir a causa identificada
-- Aplicar a correção pontual conforme o que a reprodução mostrar (por exemplo: recarregamento da lista de turnos, formato de dado inesperado, ou consulta que falha após o turno abrir).
+1. **Desligar a renderização no servidor** das rotas `/admin`, `/admin/` e `/auth` (como já está em `/operacional`). São páginas privadas, sem necessidade de SEO, e que dependem da sessão do navegador — renderizá-las no servidor é a fonte mais provável da instabilidade.
 
-### 3. Blindar a tela contra tela branca
-- Adicionar tratamento de erro próprio na rota do painel operacional, com mensagem em português e botão "Tentar novamente", em vez da tela genérica em inglês.
-- Evitar duplicidade: se já houver um turno aberto, o botão "Abrir turno" mostra aviso claro em vez de tentar criar outro.
+2. **Tela de erro própria em português** para `/admin`, `/admin/` e `/auth`, com botões "Tentar novamente" e "Ir para o site", exibindo a mensagem técnica em letra pequena (para diagnóstico), no mesmo padrão já usado em `/operacional`.
 
-### 4. Validação
-- Fechar e reabrir turno de ponta a ponta (almoço e noite), conferindo que o faturamento e os pedidos continuam vinculados corretamente ao turno.
+3. **Tornar a verificação de acesso à prova de falha**: envolver a leitura de sessão e de papéis em tratamento de erro, com uma tentativa automática de repetição e mensagem clara ("Não foi possível verificar seu acesso, tente novamente") em vez de derrubar a página inteira.
 
-### Detalhes técnicos
-- Rota: `src/routes/operacional.tsx` (diálogos `OpenShiftDialog` / `CloseShiftDialog`, query `active-shift`).
-- Tela genérica vem de `src/server.ts` + `src/lib/error-page.ts` quando a renderização no servidor falha; será substituída por `errorComponent` na rota.
-- Nenhuma nova migração é prevista neste momento; se a reprodução apontar necessidade de ajuste em `get_active_shift_id()`, ela será proposta separadamente.
+4. **Traduzir a tela de erro genérica** (raiz e fallback do servidor) para português, mantendo os botões de recarregar e voltar ao site.
+
+5. **Verificação**: abrir `/admin`, `/auth` e `/operacional` com o navegador automatizado, recarregando várias vezes, e conferir console/rede para garantir que não há mais falha intermitente.
+
+## Detalhes técnicos
+
+- `src/routes/admin.tsx`, `src/routes/admin.index.tsx`, `src/routes/auth.tsx`: adicionar `ssr: false`, `errorComponent` e `notFoundComponent`.
+- `src/lib/roles.ts`: `getMyRoles` passa a propagar erro de forma controlada (hoje devolve lista vazia silenciosamente, o que faz um admin válido parecer "sem permissão" quando a rede falha) e ganha uma repetição automática.
+- `src/routes/__root.tsx` e `src/lib/error-page.ts`: textos em português.
+- Sem mudanças no banco de dados, no cardápio ou nas regras de pedido.
