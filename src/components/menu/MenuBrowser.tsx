@@ -51,7 +51,7 @@ async function fetchMenu() {
   if (cErr) throw cErr;
   if (iErr) throw iErr;
   const { data: settings } = await (supabase as any)
-    .from("system_settings")
+    .from("public_settings")
     .select("lunch_start, lunch_end, dinner_start, dinner_end")
     .eq("id", 1)
     .maybeSingle();
