@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { hasMyRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,11 +50,7 @@ function AdminPage() {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return setStatus("unauth");
-      await supabase.rpc("claim_admin_if_whitelisted");
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: session.user.id,
-        _role: "admin",
-      });
+      const isAdmin = await hasMyRole("admin");
       setStatus(isAdmin ? "ok" : "not-admin");
     })();
   }, []);

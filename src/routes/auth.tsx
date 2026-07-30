@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMyRoles } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,15 +52,9 @@ function AuthPage() {
   }, [navigate, nextPath]);
 
   async function resolveRole(): Promise<"admin" | "operator" | "none"> {
-    const { data } = await supabase.rpc("claim_role_if_whitelisted");
-    if (data === "admin" || data === "operator") return data;
-    const { data: session } = await supabase.auth.getSession();
-    const uid = session.session?.user.id;
-    if (!uid) return "none";
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" });
-    if (isAdmin) return "admin";
-    const { data: isOp } = await supabase.rpc("has_role", { _user_id: uid, _role: "operator" });
-    if (isOp) return "operator";
+    const roles = await getMyRoles();
+    if (roles.includes("admin")) return "admin";
+    if (roles.includes("operator")) return "operator";
     return "none";
   }
 

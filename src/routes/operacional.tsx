@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getMyRoles, hasMyRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -117,10 +118,8 @@ function KitchenPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return setStatus("unauth");
-        await supabase.rpc("claim_role_if_whitelisted" as never);
-        const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
-        const { data: isOp } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "operator" as never });
-        setStatus(isAdmin || isOp ? "ok" : "denied");
+        const roles = await getMyRoles();
+        setStatus(roles.includes("admin") || roles.includes("operator") ? "ok" : "denied");
       } catch (e) {
         console.error(e);
         setStatus("denied");
@@ -179,10 +178,7 @@ function KitchenDashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
       // Admins get all permissions by default
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: session.user.id,
-        _role: "admin",
-      });
+      const isAdmin = await hasMyRole("admin");
       if (isAdmin) {
         return {
           can_open_close_shift: true,

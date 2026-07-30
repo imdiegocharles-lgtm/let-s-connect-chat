@@ -291,6 +291,39 @@ export type Database = {
         }
         Relationships: []
       }
+      public_settings: {
+        Row: {
+          avg_prep_minutes: number
+          dinner_end: string
+          dinner_start: string
+          id: number
+          lunch_end: string
+          lunch_start: string
+          min_order_value: number
+          updated_at: string
+        }
+        Insert: {
+          avg_prep_minutes?: number
+          dinner_end?: string
+          dinner_start?: string
+          id?: number
+          lunch_end?: string
+          lunch_start?: string
+          min_order_value?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_prep_minutes?: number
+          dinner_end?: string
+          dinner_start?: string
+          id?: number
+          lunch_end?: string
+          lunch_start?: string
+          min_order_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           created_at: string
@@ -446,8 +479,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      claim_admin_if_whitelisted: { Args: never; Returns: boolean }
-      claim_role_if_whitelisted: { Args: never; Returns: string }
       get_active_shift_id: { Args: never; Returns: string }
       get_next_order_number: { Args: never; Returns: number }
       has_role: {
