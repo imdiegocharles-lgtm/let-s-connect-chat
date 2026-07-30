@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ShieldCheck, ChefHat } from "lucide-react";
 import { z } from "zod";
+import { PainelError } from "@/components/PainelError";
 
 const searchSchema = z.object({
   role: z.enum(["admin", "cozinha"]).optional(),
@@ -16,6 +17,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   validateSearch: searchSchema,
   head: () => ({
     meta: [
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/auth")({
     ],
   }),
   component: AuthPage,
+  errorComponent: PainelError,
+  notFoundComponent: () => <PainelError />,
 });
 
 function AuthPage() {
@@ -40,14 +44,18 @@ function AuthPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) return;
-      const role = await resolveRole();
-      if (nextPath) {
-        window.location.href = nextPath;
-        return;
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) return;
+        const role = await resolveRole();
+        if (nextPath) {
+          window.location.href = nextPath;
+          return;
+        }
+        navigate({ to: role === "operator" ? "/operacional" : "/admin" });
+      } catch (err) {
+        console.error(err);
       }
-      navigate({ to: role === "operator" ? "/operacional" : "/admin" });
     })();
   }, [navigate, nextPath]);
 
