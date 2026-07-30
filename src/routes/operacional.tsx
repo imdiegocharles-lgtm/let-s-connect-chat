@@ -65,6 +65,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/operacional")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Painel Operacional — Família Amaral" },
@@ -73,7 +74,39 @@ export const Route = createFileRoute("/operacional")({
     ],
   }),
   component: KitchenPage,
+  errorComponent: OperacionalError,
+  notFoundComponent: () => <OperacionalError />,
 });
+
+function OperacionalError({ error, reset }: { error?: Error; reset?: () => void }) {
+  if (error) console.error(error);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="p-8 max-w-md text-center">
+        <h2 className="text-xl font-bold">Não foi possível carregar o painel</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Houve uma falha temporária. Tente novamente — seus dados de turno e pedidos estão salvos.
+        </p>
+        {error?.message && (
+          <p className="mt-2 text-xs text-muted-foreground break-words">{error.message}</p>
+        )}
+        <div className="mt-4 flex justify-center gap-2">
+          <Button
+            onClick={() => {
+              reset?.();
+              if (typeof window !== "undefined") window.location.reload();
+            }}
+          >
+            Tentar novamente
+          </Button>
+          <Button variant="outline" onClick={() => { if (typeof window !== "undefined") window.location.href = "/"; }}>
+            Ir para o site
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 function KitchenPage() {
   const navigate = useNavigate();
@@ -81,14 +114,23 @@ function KitchenPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return setStatus("unauth");
-      await supabase.rpc("claim_role_if_whitelisted" as never);
-      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
-      const { data: isOp } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "operator" as never });
-      setStatus(isAdmin || isOp ? "ok" : "denied");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return setStatus("unauth");
+        await supabase.rpc("claim_role_if_whitelisted" as never);
+        const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
+        const { data: isOp } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "operator" as never });
+        setStatus(isAdmin || isOp ? "ok" : "denied");
+      } catch (e) {
+        console.error(e);
+        setStatus("denied");
+      }
     })();
   }, []);
+
+  useEffect(() => {
+    if (status === "unauth") navigate({ to: "/auth" });
+  }, [status, navigate]);
 
   if (status === "loading") {
     return (
@@ -98,8 +140,11 @@ function KitchenPage() {
     );
   }
   if (status === "unauth") {
-    navigate({ to: "/auth" });
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   if (status === "denied") {
     return (
@@ -720,6 +765,21 @@ function OpenShiftDialog({
     }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
+    // Evita dois turnos abertos ao mesmo tempo (clique duplo / aba aberta em outro lugar)
+    const { data: existing } = await (supabase as any)
+      .from("shifts")
+      .select("id, shift_type")
+      .is("closed_at", null)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      setSaving(false);
+      toast.error(
+        `Já existe um turno aberto (${existing.shift_type === "almoco" ? "Almoço" : "Noite"}). Feche-o antes de abrir outro.`,
+      );
+      onOpened();
+      return;
+    }
     const { error } = await (supabase as any).from("shifts").insert({
       shift_type: type,
       opening_cash: cashNum,
