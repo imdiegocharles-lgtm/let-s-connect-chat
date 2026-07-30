@@ -765,6 +765,21 @@ function OpenShiftDialog({
     }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
+    // Evita dois turnos abertos ao mesmo tempo (clique duplo / aba aberta em outro lugar)
+    const { data: existing } = await (supabase as any)
+      .from("shifts")
+      .select("id, shift_type")
+      .is("closed_at", null)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      setSaving(false);
+      toast.error(
+        `Já existe um turno aberto (${existing.shift_type === "almoco" ? "Almoço" : "Noite"}). Feche-o antes de abrir outro.`,
+      );
+      onOpened();
+      return;
+    }
     const { error } = await (supabase as any).from("shifts").insert({
       shift_type: type,
       opening_cash: cashNum,
