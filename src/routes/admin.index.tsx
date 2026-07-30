@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat, Star } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { PainelError } from "@/components/PainelError";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listKitchenUsers,
@@ -30,6 +31,7 @@ import {
 } from "@/lib/kitchen-users.functions";
 
 export const Route = createFileRoute("/admin/")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Painel Administrativo — Família Amaral" },
@@ -40,25 +42,55 @@ export const Route = createFileRoute("/admin/")({
     ],
   }),
   component: AdminPage,
+  errorComponent: PainelError,
+  notFoundComponent: () => <PainelError />,
 });
 
 function AdminPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "not-admin">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "unauth" | "not-admin" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return setStatus("unauth");
-      const isAdmin = await hasMyRole("admin");
-      setStatus(isAdmin ? "ok" : "not-admin");
+      try {
+        setStatus("loading");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (!session) return setStatus("unauth");
+        const isAdmin = await hasMyRole("admin");
+        if (cancelled) return;
+        setStatus(isAdmin ? "ok" : "not-admin");
+      } catch (err) {
+        if (cancelled) return;
+        console.error(err);
+        setErrorMsg(err instanceof Error ? err.message : "Falha ao verificar seu acesso.");
+        setStatus("error");
+      }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [attempt]);
 
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="p-8 max-w-md text-center">
+          <h2 className="text-xl font-bold">Não foi possível verificar seu acesso</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Verifique sua conexão e tente novamente.
+          </p>
+          {errorMsg && <p className="mt-2 text-xs text-muted-foreground break-words">{errorMsg}</p>}
+          <Button className="mt-4" onClick={() => setAttempt((a) => a + 1)}>Tentar novamente</Button>
+        </Card>
       </div>
     );
   }
