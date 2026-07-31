@@ -27,6 +27,7 @@ import {
   markPrinted,
   todayISO,
 } from "@/lib/reports-service";
+import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 import {
