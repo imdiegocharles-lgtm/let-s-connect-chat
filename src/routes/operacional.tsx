@@ -1113,3 +1113,171 @@ function MenuAvailabilityPanel() {
     </div>
   );
 }
+
+function ReportsPanel({ agentUrl }: { agentUrl: string }) {
+  const qc = useQueryClient();
+  const date = todayISO();
+
+  const { data: shiftReports = [], isLoading } = useQuery({
+    queryKey: ["shift-reports", date],
+    queryFn: () => getShiftReports(date),
+  });
+  const { data: daily } = useQuery({
+    queryKey: ["daily-report", date],
+    queryFn: () => getDailyReport(date),
+  });
+
+  const types = new Set(shiftReports.map((r: any) => r.shift_type));
+  const bothClosed = types.has("almoco") && types.has("noite");
+
+  const printShift = async (r: any) => {
+    try {
+      await sendBytesToPrinter(agentUrl, buildShiftReportBytes(r));
+      await markPrinted("shift_reports", r.id);
+      qc.invalidateQueries({ queryKey: ["shift-reports", date] });
+      toast.success("Relatório de turno enviado para a impressora");
+    } catch (e: any) {
+      toast.error(`Falha ao imprimir: ${e.message}`);
+    }
+  };
+
+  const generateDaily = useMutation({
+    mutationFn: async () => {
+      const report: any = await createDailyReport(date);
+      try {
+        await sendBytesToPrinter(agentUrl, buildDailyReportBytes(report));
+        await markPrinted("daily_reports", report.id);
+      } catch (e: any) {
+        toast.warning(`Relatório do dia gerado, mas a impressão falhou: ${e.message}`);
+      }
+      return report;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily-report", date] });
+      toast.success("Relatório do dia gerado e impresso");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const printDaily = async () => {
+    if (!daily) return;
+    try {
+      await sendBytesToPrinter(agentUrl, buildDailyReportBytes(daily as any));
+      await markPrinted("daily_reports", (daily as any).id);
+      qc.invalidateQueries({ queryKey: ["daily-report", date] });
+      toast.success("Relatório do dia enviado para a impressora");
+    } catch (e: any) {
+      toast.error(`Falha ao imprimir: ${e.message}`);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <section>
+        <h2 className="text-lg font-bold mb-3">Relatórios de turno — hoje</h2>
+        <div className="space-y-4">
+          {shiftReports.map((r: any) => (
+            <Card key={r.id} className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold">
+                    {r.shift_type === "almoco" ? "Almoço / Dia" : "Churrasco / Noite"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(r.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às{" "}
+                    {new Date(r.closed_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ·{" "}
+                    {r.operator_name ?? "—"}
+                  </p>
+                </div>
+                <p className="text-lg font-black text-primary">{money(Number(r.total_revenue))}</p>
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Pedidos pagos</span>
+                  <span>{r.orders_count}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Caixa inicial</span>
+                  <span>{money(Number(r.opening_cash))}</span>
+                </div>
+                {Object.entries(r.totals_by_payment ?? {}).map(([k, v]) => (
+                  <div key={k} className="flex justify-between text-muted-foreground">
+                    <span>{REPORT_PAYMENT_LABELS[k] ?? k}</span>
+                    <span>{money(Number(v))}</span>
+                  </div>
+                ))}
+              </div>
+              <Button size="sm" variant="outline" className="mt-3" onClick={() => printShift(r)}>
+                <Printer className="h-4 w-4 mr-2" /> Reimprimir turno
+              </Button>
+            </Card>
+          ))}
+          {shiftReports.length === 0 && (
+            <Card className="p-8 text-center text-muted-foreground">
+              Nenhum turno finalizado hoje. O relatório é gerado e impresso automaticamente ao fechar o turno.
+            </Card>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-bold mb-3">Relatório do dia</h2>
+        <Card className="p-4">
+          {daily ? (
+            <>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-bold">Consolidado de hoje</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(daily as any).shifts_count} turnos · {(daily as any).orders_count} pedidos
+                  </p>
+                </div>
+                <p className="text-xl font-black text-primary">
+                  {money(Number((daily as any).total_revenue))}
+                </p>
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                {Object.entries((daily as any).totals_by_payment ?? {}).map(([k, v]) => (
+                  <div key={k} className="flex justify-between text-muted-foreground">
+                    <span>{REPORT_PAYMENT_LABELS[k] ?? k}</span>
+                    <span>{money(Number(v))}</span>
+                  </div>
+                ))}
+              </div>
+              <Button size="sm" variant="outline" className="mt-3" onClick={printDaily}>
+                <Printer className="h-4 w-4 mr-2" /> Reimprimir relatório do dia
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                O relatório do dia só pode ser gerado depois que os dois turnos (almoço e noite) forem
+                finalizados.
+              </p>
+              <ul className="mt-3 space-y-1 text-sm">
+                <li>{types.has("almoco") ? "✅" : "⬜"} Turno almoço / dia finalizado</li>
+                <li>{types.has("noite") ? "✅" : "⬜"} Turno churrasco / noite finalizado</li>
+              </ul>
+              <Button
+                className="mt-4"
+                disabled={!bothClosed || generateDaily.isPending}
+                onClick={() => generateDaily.mutate()}
+              >
+                {generateDaily.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Gerar e imprimir relatório do dia
+              </Button>
+            </>
+          )}
+        </Card>
+      </section>
+    </div>
+  );
+}
