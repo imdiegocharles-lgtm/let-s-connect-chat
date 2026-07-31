@@ -870,6 +870,7 @@ function CloseShiftDialog({
   canClose,
   pendingActive,
   awaitingPayment,
+  agentUrl,
   onClose,
   onClosed,
 }: {
@@ -878,6 +879,7 @@ function CloseShiftDialog({
   canClose: boolean;
   pendingActive: number;
   awaitingPayment: number;
+  agentUrl: string;
   onClose: () => void;
   onClosed: () => void;
 }) {
@@ -885,16 +887,33 @@ function CloseShiftDialog({
   const submit = async () => {
     if (!shift) return;
     setSaving(true);
+    const closedAt = new Date().toISOString();
     const { error } = await (supabase as any)
       .from("shifts")
-      .update({ closed_at: new Date().toISOString() })
+      .update({ closed_at: closedAt })
       .eq("id", shift.id);
-    setSaving(false);
     if (error) {
+      setSaving(false);
       toast.error(error.message);
       return;
     }
-    toast.success("Turno fechado");
+
+    // Gera e imprime automaticamente o relatório do turno
+    try {
+      const report: any = await createShiftReport({ ...shift, closed_at: closedAt });
+      try {
+        await sendBytesToPrinter(agentUrl, buildShiftReportBytes(report));
+        await markPrinted("shift_reports", report.id);
+        toast.success("Turno fechado — relatório enviado para a impressora");
+      } catch (e: any) {
+        toast.warning(
+          `Turno fechado. Relatório salvo, mas a impressão falhou: ${e.message}. Reimprima na aba Relatórios.`,
+        );
+      }
+    } catch (e: any) {
+      toast.warning(`Turno fechado, mas não foi possível gerar o relatório: ${e.message}`);
+    }
+    setSaving(false);
     onClosed();
   };
 
