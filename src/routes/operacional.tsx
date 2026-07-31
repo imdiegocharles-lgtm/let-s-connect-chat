@@ -1150,6 +1150,16 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
       } catch (e: any) {
         toast.warning(`Relatório do dia gerado, mas a impressão falhou: ${e.message}`);
       }
+      try {
+        const res: any = await sendDailyReportEmail({ data: { date } });
+        if (res?.reason === "no_recipients") {
+          toast.info("Cadastre e-mails em Admin → Configurações para receber o relatório.");
+        } else if (res?.sent > 0) {
+          toast.success(`Relatório enviado por e-mail (${res.sent}).`);
+        }
+      } catch (e: any) {
+        toast.warning(`Relatório gerado, mas o envio por e-mail falhou: ${e.message}`);
+      }
       return report;
     },
     onSuccess: () => {
