@@ -12,6 +12,21 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2 } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
+import {
+  buildDailyReportBytes,
+  buildShiftReportBytes,
+  sendBytesToPrinter,
+  money,
+  PAYMENT_LABELS as REPORT_PAYMENT_LABELS,
+} from "@/lib/report";
+import {
+  createDailyReport,
+  createShiftReport,
+  getDailyReport,
+  getShiftReports,
+  markPrinted,
+  todayISO,
+} from "@/lib/reports-service";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -476,6 +491,7 @@ function KitchenDashboard() {
           <Tabs defaultValue="orders">
             <TabsList>
               <TabsTrigger value="orders">Pedidos</TabsTrigger>
+              <TabsTrigger value="reports">Relatórios</TabsTrigger>
               {p.can_manage_menu && <TabsTrigger value="menu">Cardápio</TabsTrigger>}
             </TabsList>
             <TabsContent value="orders" className="mt-4">
@@ -539,6 +555,9 @@ function KitchenDashboard() {
                 </section>
               </div>
             </TabsContent>
+            <TabsContent value="reports" className="mt-4">
+              <ReportsPanel agentUrl={agentUrl} />
+            </TabsContent>
             {p.can_manage_menu && (
               <TabsContent value="menu" className="mt-4">
                 <MenuAvailabilityPanel />
@@ -562,11 +581,14 @@ function KitchenDashboard() {
         canClose={canCloseShift}
         pendingActive={pendingActive.length}
         awaitingPayment={awaitingPayment.length}
+        agentUrl={agentUrl}
         onClose={() => setCloseShiftModal(false)}
         onClosed={() => {
           setCloseShiftModal(false);
           refetchShift();
           qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+          qc.invalidateQueries({ queryKey: ["shift-reports"] });
+          qc.invalidateQueries({ queryKey: ["daily-report"] });
         }}
       />
       <ConfirmPaymentDialog
