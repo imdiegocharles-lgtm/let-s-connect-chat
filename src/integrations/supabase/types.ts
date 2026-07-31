@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_reports: {
+        Row: {
+          created_at: string
+          delivery_fees: number
+          emailed_at: string | null
+          id: string
+          orders_count: number
+          printed_at: string | null
+          report_date: string
+          shifts_count: number
+          shifts_summary: Json
+          total_revenue: number
+          totals_by_payment: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_fees?: number
+          emailed_at?: string | null
+          id?: string
+          orders_count?: number
+          printed_at?: string | null
+          report_date: string
+          shifts_count?: number
+          shifts_summary?: Json
+          total_revenue?: number
+          totals_by_payment?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_fees?: number
+          emailed_at?: string | null
+          id?: string
+          orders_count?: number
+          printed_at?: string | null
+          report_date?: string
+          shifts_count?: number
+          shifts_summary?: Json
+          total_revenue?: number
+          totals_by_payment?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kitchen_permissions: {
         Row: {
           can_confirm_payment: boolean
@@ -121,6 +166,30 @@ export type Database = {
           },
         ]
       }
+      motoboys: {
+        Row: {
+          created_at: string
+          daily_rate: number
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          daily_rate?: number
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          daily_rate?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       neighborhoods: {
         Row: {
           created_at: string
@@ -204,6 +273,7 @@ export type Database = {
           delivery_fee: number
           delivery_type: string
           id: string
+          motoboy_id: string | null
           neighborhood: string | null
           notes: string | null
           order_number: number
@@ -225,6 +295,7 @@ export type Database = {
           delivery_fee?: number
           delivery_type: string
           id?: string
+          motoboy_id?: string | null
           neighborhood?: string | null
           notes?: string | null
           order_number?: number
@@ -246,6 +317,7 @@ export type Database = {
           delivery_fee?: number
           delivery_type?: string
           id?: string
+          motoboy_id?: string | null
           neighborhood?: string | null
           notes?: string | null
           order_number?: number
@@ -258,6 +330,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_motoboy_id_fkey"
+            columns: ["motoboy_id"]
+            isOneToOne: false
+            referencedRelation: "motoboys"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_shift_id_fkey"
             columns: ["shift_id"]
@@ -380,6 +459,104 @@ export type Database = {
           rating?: number
         }
         Relationships: []
+      }
+      shift_motoboys: {
+        Row: {
+          created_at: string
+          id: string
+          motoboy_id: string
+          shift_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motoboy_id: string
+          shift_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motoboy_id?: string
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_motoboys_motoboy_id_fkey"
+            columns: ["motoboy_id"]
+            isOneToOne: false
+            referencedRelation: "motoboys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_motoboys_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_reports: {
+        Row: {
+          closed_at: string
+          created_at: string
+          delivery_fees: number
+          id: string
+          opened_at: string
+          opening_cash: number
+          operator_name: string | null
+          orders_count: number
+          printed_at: string | null
+          report_date: string
+          shift_id: string
+          shift_type: string
+          total_revenue: number
+          totals_by_payment: Json
+          updated_at: string
+        }
+        Insert: {
+          closed_at: string
+          created_at?: string
+          delivery_fees?: number
+          id?: string
+          opened_at: string
+          opening_cash?: number
+          operator_name?: string | null
+          orders_count?: number
+          printed_at?: string | null
+          report_date: string
+          shift_id: string
+          shift_type: string
+          total_revenue?: number
+          totals_by_payment?: Json
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string
+          created_at?: string
+          delivery_fees?: number
+          id?: string
+          opened_at?: string
+          opening_cash?: number
+          operator_name?: string | null
+          orders_count?: number
+          printed_at?: string | null
+          report_date?: string
+          shift_id?: string
+          shift_type?: string
+          total_revenue?: number
+          totals_by_payment?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_reports_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: true
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shifts: {
         Row: {
