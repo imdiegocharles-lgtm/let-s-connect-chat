@@ -19,6 +19,18 @@ interface ShiftLine {
   total_revenue?: number
 }
 
+interface ItemLine {
+  group?: string
+  name?: string
+  quantity?: number
+}
+
+interface MotoboyLine {
+  name?: string
+  daily_rate?: number
+  deliveries?: number
+}
+
 interface Props {
   reportDate?: string
   ordersCount?: number
@@ -26,6 +38,8 @@ interface Props {
   deliveryFees?: number
   shifts?: ShiftLine[]
   payments?: { label: string; value: number }[]
+  items?: ItemLine[]
+  motoboys?: MotoboyLine[]
 }
 
 const money = (n: number) =>
@@ -34,6 +48,55 @@ const money = (n: number) =>
 const shiftLabel = (t?: string) =>
   t === 'almoco' ? 'Almoço / Dia' : t === 'noite' ? 'Churrasco / Noite' : (t ?? '-')
 
+export const ItemsSection = ({ items = [] }: { items?: ItemLine[] }) => {
+  const groups: { group: string; lines: ItemLine[] }[] = []
+  for (const i of items) {
+    const g = i.group || 'Outros'
+    const found = groups.find((x) => x.group === g)
+    if (found) found.lines.push(i)
+    else groups.push({ group: g, lines: [i] })
+  }
+  return (
+    <>
+      <Text style={h2}>Itens vendidos (pagamento confirmado)</Text>
+      {groups.length === 0 ? (
+        <Text style={line}>Nenhum item vendido.</Text>
+      ) : (
+        groups.map((g, i) => (
+          <Section key={i} style={{ marginBottom: '10px' }}>
+            <Text style={group}>{g.group}</Text>
+            {g.lines.map((l, j) => (
+              <Text key={j} style={line}>
+                {l.name} — <b>{Number(l.quantity ?? 0)} un</b>
+              </Text>
+            ))}
+          </Section>
+        ))
+      )}
+    </>
+  )
+}
+
+export const MotoboysSection = ({ motoboys = [] }: { motoboys?: MotoboyLine[] }) => {
+  if (motoboys.length === 0) return null
+  const total = motoboys.reduce((s, m) => s + Number(m.daily_rate ?? 0), 0)
+  return (
+    <>
+      <Hr style={hr} />
+      <Text style={h2}>Motoboys</Text>
+      {motoboys.map((m, i) => (
+        <Text key={i} style={line}>
+          {m.name} — {Number(m.deliveries ?? 0)} entregas — diária{' '}
+          <b>{money(Number(m.daily_rate ?? 0))}</b>
+        </Text>
+      ))}
+      <Text style={line}>
+        Total de diárias: <b>{money(total)}</b>
+      </Text>
+    </>
+  )
+}
+
 const Email = ({
   reportDate = '',
   ordersCount = 0,
@@ -41,6 +104,8 @@ const Email = ({
   deliveryFees = 0,
   shifts = [],
   payments = [],
+  items = [],
+  motoboys = [],
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -83,6 +148,11 @@ const Email = ({
         )}
 
         <Hr style={hr} />
+        <ItemsSection items={items} />
+
+        <MotoboysSection motoboys={motoboys} />
+
+        <Hr style={hr} />
         <Text style={footer}>Relatório consolidado automático — Família Amaral</Text>
       </Container>
     </Body>
@@ -107,6 +177,16 @@ export const template = {
       { label: 'Dinheiro', value: 1200 },
       { label: 'Pix (na entrega)', value: 3030.5 },
     ],
+    items: [
+      { group: 'Espetos', name: 'Espeto de Carne', quantity: 42 },
+      { group: 'Espetos', name: 'Espeto de Frango', quantity: 18 },
+      { group: 'Completos', name: 'Batata Completa', quantity: 12 },
+      { group: 'Bebidas', name: 'Coca-Cola 2L', quantity: 9 },
+    ],
+    motoboys: [
+      { name: 'João', daily_rate: 90, deliveries: 22 },
+      { name: 'Pedro', daily_rate: 90, deliveries: 18 },
+    ],
   },
 } satisfies TemplateEntry
 
@@ -115,6 +195,7 @@ const container = { padding: '24px', maxWidth: '600px' }
 const brand = { color: '#c1121f', fontSize: '24px', margin: '0' }
 const sub = { color: '#111111', fontSize: '16px', margin: '4px 0 0' }
 const h2 = { color: '#111111', fontSize: '15px', fontWeight: 700, margin: '0 0 8px' }
+const group = { color: '#c1121f', fontSize: '13px', fontWeight: 700, margin: '8px 0 2px' }
 const line = { color: '#333333', fontSize: '14px', margin: '4px 0' }
 const total = { color: '#c1121f', fontSize: '20px', fontWeight: 700, margin: '12px 0 0' }
 const hr = { borderColor: '#e5e5e5', margin: '18px 0' }
