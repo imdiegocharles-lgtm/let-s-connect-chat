@@ -28,6 +28,7 @@ import {
   todayISO,
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
+import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -277,18 +278,20 @@ function KitchenDashboard() {
   });
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, method }: { id: string; method: string }) => {
+    mutationFn: async ({ id, method, motoboyId }: { id: string; method: string; motoboyId?: string | null }) => {
       const { error } = await (supabase as any)
         .from("orders")
         .update({
           confirmed_payment_method: method,
           payment_confirmed_at: new Date().toISOString(),
+          motoboy_id: motoboyId ?? null,
         })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      qc.invalidateQueries({ queryKey: ["shift-motoboy-deliveries"] });
       setConfirmPayFor(null);
       toast.success("Pagamento confirmado");
     },
@@ -492,6 +495,7 @@ function KitchenDashboard() {
           <Tabs defaultValue="orders">
             <TabsList>
               <TabsTrigger value="orders">Pedidos</TabsTrigger>
+              <TabsTrigger value="motoboys">Motoboys</TabsTrigger>
               <TabsTrigger value="reports">Relatórios</TabsTrigger>
               {p.can_manage_menu && <TabsTrigger value="menu">Cardápio</TabsTrigger>}
             </TabsList>
