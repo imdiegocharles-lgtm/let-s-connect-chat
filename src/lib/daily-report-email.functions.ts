@@ -49,6 +49,8 @@ export const sendDailyReportEmail = createServerFn({ method: "POST" })
       totalRevenue: Number(report.total_revenue ?? 0),
       deliveryFees: Number(report.delivery_fees ?? 0),
       shifts: report.shifts_summary ?? [],
+      items: report.items_summary ?? [],
+      motoboys: report.motoboys_summary ?? [],
       payments: Object.entries(report.totals_by_payment ?? {})
         .filter(([, v]) => Number(v) > 0)
         .map(([k, v]) => ({ label: PAYMENT_LABELS[k] ?? k, value: Number(v) })),

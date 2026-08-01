@@ -28,6 +28,7 @@ import {
   todayISO,
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
+import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -277,18 +278,20 @@ function KitchenDashboard() {
   });
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, method }: { id: string; method: string }) => {
+    mutationFn: async ({ id, method, motoboyId }: { id: string; method: string; motoboyId?: string | null }) => {
       const { error } = await (supabase as any)
         .from("orders")
         .update({
           confirmed_payment_method: method,
           payment_confirmed_at: new Date().toISOString(),
+          motoboy_id: motoboyId ?? null,
         })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      qc.invalidateQueries({ queryKey: ["shift-motoboy-deliveries"] });
       setConfirmPayFor(null);
       toast.success("Pagamento confirmado");
     },
@@ -492,6 +495,7 @@ function KitchenDashboard() {
           <Tabs defaultValue="orders">
             <TabsList>
               <TabsTrigger value="orders">Pedidos</TabsTrigger>
+              <TabsTrigger value="motoboys">Motoboys</TabsTrigger>
               <TabsTrigger value="reports">Relatórios</TabsTrigger>
               {p.can_manage_menu && <TabsTrigger value="menu">Cardápio</TabsTrigger>}
             </TabsList>
@@ -556,6 +560,9 @@ function KitchenDashboard() {
                 </section>
               </div>
             </TabsContent>
+            <TabsContent value="motoboys" className="mt-4">
+              <MotoboysPanel activeShiftId={activeShift?.id ?? null} />
+            </TabsContent>
             <TabsContent value="reports" className="mt-4">
               <ReportsPanel agentUrl={agentUrl} />
             </TabsContent>
@@ -594,9 +601,10 @@ function KitchenDashboard() {
       />
       <ConfirmPaymentDialog
         order={confirmPayFor}
+        shiftId={activeShift?.id ?? null}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(method) =>
-          confirmPayFor && confirmPayment.mutate({ id: confirmPayFor.id, method })
+        onConfirm={(method, motoboyId) =>
+          confirmPayFor && confirmPayment.mutate({ id: confirmPayFor.id, method, motoboyId })
         }
         isPending={confirmPayment.isPending}
       />
@@ -955,19 +963,37 @@ function CloseShiftDialog({
 
 function ConfirmPaymentDialog({
   order,
+  shiftId,
   onClose,
   onConfirm,
   isPending,
 }: {
   order: Order | null;
+  shiftId: string | null;
   onClose: () => void;
-  onConfirm: (method: string) => void;
+  onConfirm: (method: string, motoboyId: string | null) => void;
   isPending: boolean;
 }) {
   const [method, setMethod] = useState<string>("dinheiro");
+  const [motoboyId, setMotoboyId] = useState<string>("none");
   useEffect(() => {
     if (order) setMethod(order.payment_method ?? "dinheiro");
+    if (order) setMotoboyId(((order as any).motoboy_id as string) ?? "none");
   }, [order]);
+
+  const { data: shiftMotoboys } = useQuery({
+    queryKey: ["shift-motoboys", shiftId],
+    enabled: !!shiftId && !!order,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("shift_motoboys")
+        .select("motoboy_id, motoboys(name)")
+        .eq("shift_id", shiftId);
+      if (error) throw error;
+      return (data ?? []) as { motoboy_id: string; motoboys: { name: string } | null }[];
+    },
+  });
+
   return (
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
@@ -993,6 +1019,27 @@ function ConfirmPaymentDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid gap-1.5">
+            <Label>Motoboy da entrega</Label>
+            <Select value={motoboyId} onValueChange={setMotoboyId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Não informar</SelectItem>
+                {(shiftMotoboys ?? []).map((m) => (
+                  <SelectItem key={m.motoboy_id} value={m.motoboy_id}>
+                    {m.motoboys?.name ?? "Motoboy"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(shiftMotoboys ?? []).length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Nenhum motoboy escalado no turno — cadastre na aba Motoboys.
+              </p>
+            )}
+          </div>
           {order && (
             <p className="text-sm text-muted-foreground">
               Total do pedido:{" "}
@@ -1006,7 +1053,10 @@ function ConfirmPaymentDialog({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={() => onConfirm(method)} disabled={isPending}>
+          <Button
+            onClick={() => onConfirm(method, motoboyId === "none" ? null : motoboyId)}
+            disabled={isPending}
+          >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar recebimento
           </Button>

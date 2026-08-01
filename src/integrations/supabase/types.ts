@@ -20,6 +20,8 @@ export type Database = {
           delivery_fees: number
           emailed_at: string | null
           id: string
+          items_summary: Json
+          motoboys_summary: Json
           orders_count: number
           printed_at: string | null
           report_date: string
@@ -34,6 +36,8 @@ export type Database = {
           delivery_fees?: number
           emailed_at?: string | null
           id?: string
+          items_summary?: Json
+          motoboys_summary?: Json
           orders_count?: number
           printed_at?: string | null
           report_date: string
@@ -48,6 +52,8 @@ export type Database = {
           delivery_fees?: number
           emailed_at?: string | null
           id?: string
+          items_summary?: Json
+          motoboys_summary?: Json
           orders_count?: number
           printed_at?: string | null
           report_date?: string
@@ -502,6 +508,8 @@ export type Database = {
           created_at: string
           delivery_fees: number
           id: string
+          items_summary: Json
+          motoboys_summary: Json
           opened_at: string
           opening_cash: number
           operator_name: string | null
@@ -519,6 +527,8 @@ export type Database = {
           created_at?: string
           delivery_fees?: number
           id?: string
+          items_summary?: Json
+          motoboys_summary?: Json
           opened_at: string
           opening_cash?: number
           operator_name?: string | null
@@ -536,6 +546,8 @@ export type Database = {
           created_at?: string
           delivery_fees?: number
           id?: string
+          items_summary?: Json
+          motoboys_summary?: Json
           opened_at?: string
           opening_cash?: number
           operator_name?: string | null
