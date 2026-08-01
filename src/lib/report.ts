@@ -102,6 +102,42 @@ function paymentBlock(out: number[], totals: Record<string, number>) {
   }
 }
 
+function itemsBlock(out: number[], items?: ItemLine[]) {
+  out.push(...ESC.boldOn, ...line("ITENS VENDIDOS (PAGAMENTO CONFIRMADO)"), ...ESC.boldOff);
+  const list = (items ?? []).filter((i) => Number(i.quantity) > 0);
+  if (list.length === 0) {
+    out.push(...line("Nenhum item vendido"));
+    return;
+  }
+  const groups = new Map<string, ItemLine[]>();
+  for (const i of list) {
+    const g = i.group || "Outros";
+    groups.set(g, [...(groups.get(g) ?? []), i]);
+  }
+  let totalQty = 0;
+  for (const [group, lines] of groups) {
+    out.push(...line(`> ${group.toUpperCase()}`));
+    for (const i of lines) {
+      totalQty += Number(i.quantity);
+      out.push(...line(pad(`  ${i.name}`, `${i.quantity} un`)));
+    }
+  }
+  out.push(...ESC.boldOn, ...line(pad("TOTAL DE ITENS", `${totalQty} un`)), ...ESC.boldOff);
+}
+
+function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
+  const list = motoboys ?? [];
+  if (list.length === 0) return;
+  out.push(...line(""));
+  out.push(...ESC.boldOn, ...line("MOTOBOYS"), ...ESC.boldOff);
+  let total = 0;
+  for (const m of list) {
+    total += Number(m.daily_rate ?? 0);
+    out.push(...line(pad(`${m.name} (${m.deliveries} entregas)`, money(Number(m.daily_rate ?? 0)))));
+  }
+  out.push(...ESC.boldOn, ...line(pad("TOTAL DIARIAS", money(total))), ...ESC.boldOff);
+}
+
 export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   const out: number[] = [];
   header(out, "RELATORIO DE TURNO");
@@ -116,6 +152,9 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   out.push(...ESC.boldOn, ...line(pad("TOTAL FATURADO", money(r.total_revenue))), ...ESC.boldOff);
   out.push(...line(""));
   paymentBlock(out, r.totals_by_payment);
+  out.push(...line(""));
+  itemsBlock(out, r.items_summary);
+  motoboysBlock(out, r.motoboys_summary);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
   out.push(...line(""), ...line(""), ...ESC.cut);
@@ -144,6 +183,9 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   out.push(...ESC.normal, ...ESC.boldOff);
   out.push(...line(""));
   paymentBlock(out, r.totals_by_payment);
+  out.push(...line(""));
+  itemsBlock(out, r.items_summary);
+  motoboysBlock(out, r.motoboys_summary);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio consolidado do dia"));
   out.push(...line("Familia Amaral"));
