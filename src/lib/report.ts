@@ -38,6 +38,9 @@ export const PAYMENT_LABELS: Record<string, string> = {
   pix: "Pix (na entrega)",
 };
 
+export type ItemLine = { group: string; name: string; quantity: number };
+export type MotoboyLine = { name: string; daily_rate: number; deliveries: number };
+
 export type ShiftReport = {
   report_date: string;
   shift_type: string;
@@ -49,6 +52,8 @@ export type ShiftReport = {
   total_revenue: number;
   delivery_fees: number;
   totals_by_payment: Record<string, number>;
+  items_summary?: ItemLine[];
+  motoboys_summary?: MotoboyLine[];
 };
 
 export type DailyReport = {
@@ -58,6 +63,8 @@ export type DailyReport = {
   total_revenue: number;
   delivery_fees: number;
   totals_by_payment: Record<string, number>;
+  items_summary?: ItemLine[];
+  motoboys_summary?: MotoboyLine[];
   shifts_summary: {
     shift_type: string;
     operator_name: string | null;
