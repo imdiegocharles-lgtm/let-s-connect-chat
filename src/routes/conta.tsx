@@ -99,7 +99,7 @@ function ContaPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div
-        className="relative overflow-hidden px-4 pb-24 pt-10 text-white"
+        className="relative overflow-hidden px-4 pb-10 pt-10 text-white"
         style={{ background: "var(--gradient-hero)" }}
       >
         <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_40%)]" />
@@ -124,7 +124,7 @@ function ContaPage() {
         </div>
       </div>
 
-      <div className="mx-auto -mt-16 max-w-md px-4 pb-16">
+      <div className="mx-auto mt-6 max-w-md px-4 pb-16">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)]">
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
