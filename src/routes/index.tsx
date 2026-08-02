@@ -191,7 +191,7 @@ function Home() {
           />
         </div>
         <div className="mx-auto max-w-6xl px-4 pb-6 text-xs text-muted-foreground">
-          Taxa de entrega a partir de R$ 5, conforme o bairro.
+          Taxa de entrega a partir de R$ 4,00, conforme o bairro.
         </div>
       </section>
 
