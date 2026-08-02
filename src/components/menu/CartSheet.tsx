@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, useCart } from "@/lib/cart";
 import { fetchMyProfile, useCustomerSession } from "@/lib/customer-auth";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Minus, Plus, ShoppingBag, Trash2, CheckCircle2, UserRound } from "lucide-react";
+import { Minus, Plus, Trash2, CheckCircle2, UserRound, CalendarX2 } from "lucide-react";
+import { getStoreStatus, useHorarios } from "@/lib/store-hours";
 
 type Neighborhood = { id: string; name: string; fee: number };
 
@@ -26,11 +27,13 @@ const PAYMENT_METHODS = [
 ];
 
 export function CartSheet() {
-  const { items, inc, dec, remove, subtotal, count, clear } = useCart();
+  const { items, inc, dec, remove, subtotal, clear, sheetOpen, setSheetOpen } = useCart();
   const { user, loading: authLoading } = useCustomerSession();
-  const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
+  const { data: horarios = [] } = useHorarios();
+  const store = getStoreStatus(horarios);
+  const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -79,6 +82,8 @@ export function CartSheet() {
   const submit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Entre na sua conta para finalizar o pedido.");
+      if (deliveryBlocked)
+        throw new Error(`Não fazemos delivery ${store.todayLabel.toLowerCase()}. Atendimento somente presencial hoje.`);
       if (!name.trim()) throw new Error("Preencha seu nome.");
       if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
       if (!address.trim()) throw new Error("Informe o endereço com número.");
@@ -144,28 +149,17 @@ export function CartSheet() {
   const reset = () => {
     setStep("cart");
     setOrderNumber(null);
-    setOpen(false);
+    setSheetOpen(false);
   };
 
   return (
     <Sheet
-      open={open}
+      open={sheetOpen}
       onOpenChange={(v) => {
-        setOpen(v);
+        setSheetOpen(v);
         if (!v) setTimeout(() => setStep("cart"), 300);
       }}
     >
-      <SheetTrigger asChild>
-        <button className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-2xl transition hover:brightness-110 md:bottom-6 md:right-6">
-          <ShoppingBag className="h-5 w-5" />
-          <span>Meu Pedido</span>
-          {count > 0 && (
-            <span className="ml-1 grid h-6 min-w-6 place-items-center rounded-full bg-black/25 px-1.5 text-xs">
-              {count}
-            </span>
-          )}
-        </button>
-      </SheetTrigger>
       <SheetContent className="flex w-full flex-col p-0 sm:max-w-lg">
         <SheetHeader className="border-b border-border p-4">
           <SheetTitle>
@@ -178,6 +172,15 @@ export function CartSheet() {
         {step === "cart" && (
           <>
             <div className="flex-1 overflow-y-auto p-4">
+              {deliveryBlocked && (
+                <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                  <CalendarX2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <p>
+                    <b>Sem delivery {store.todayLabel.toLowerCase()}.</b> Hoje o atendimento é somente
+                    presencial na loja. Te esperamos lá! 🍢
+                  </p>
+                </div>
+              )}
               {items.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
                   Seu carrinho está vazio. Explore o cardápio 🍢
@@ -222,10 +225,10 @@ export function CartSheet() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={items.length === 0}
+                disabled={items.length === 0 || deliveryBlocked}
                 onClick={() => setStep("checkout")}
               >
-                Continuar
+                {deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
               </Button>
             </div>
           </>
