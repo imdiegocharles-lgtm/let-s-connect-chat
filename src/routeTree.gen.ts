@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OperacionalRouteImport } from './routes/operacional'
+import { Route as MeusPedidosRouteImport } from './routes/meus-pedidos'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -25,6 +26,11 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 const OperacionalRoute = OperacionalRouteImport.update({
   id: '/operacional',
   path: '/operacional',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusPedidosRoute = MeusPedidosRouteImport.update({
+  id: '/meus-pedidos',
+  path: '/meus-pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ContaRoute: typeof ContaRoute
   McpRoute: typeof McpRoute
+  MeusPedidosRoute: typeof MeusPedidosRoute
   OperacionalRoute: typeof OperacionalRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/operacional'
       fullPath: '/operacional'
       preLoaderRoute: typeof OperacionalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-pedidos': {
+      id: '/meus-pedidos'
+      path: '/meus-pedidos'
+      fullPath: '/meus-pedidos'
+      preLoaderRoute: typeof MeusPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -292,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ContaRoute: ContaRoute,
   McpRoute: McpRoute,
+  MeusPedidosRoute: MeusPedidosRoute,
   OperacionalRoute: OperacionalRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
