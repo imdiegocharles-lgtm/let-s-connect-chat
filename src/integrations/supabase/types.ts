@@ -193,8 +193,10 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean
+          is_completo_skewer_option: boolean
           name: string
           price: number
+          requires_skewer_choice: boolean
           sort_order: number
           updated_at: string
         }
@@ -205,8 +207,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_completo_skewer_option?: boolean
           name: string
           price: number
+          requires_skewer_choice?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -217,8 +221,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_completo_skewer_option?: boolean
           name?: string
           price?: number
+          requires_skewer_choice?: boolean
           sort_order?: number
           updated_at?: string
         }

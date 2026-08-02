@@ -32,6 +32,8 @@ type Item = {
   image_url: string | null;
   is_available: boolean;
   sort_order: number;
+  is_completo_skewer_option: boolean;
+  requires_skewer_choice: boolean;
 };
 
 async function fetchMenu() {
@@ -42,7 +44,9 @@ async function fetchMenu() {
       .order("sort_order"),
     supabase
       .from("menu_items")
-      .select("id, category_id, name, description, price, image_url, is_available, sort_order")
+      .select(
+        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice",
+      )
       .eq("is_available", true)
       .order("price", { ascending: true })
       .order("name", { ascending: true }),
@@ -101,15 +105,14 @@ export function MenuBrowser() {
       return a.sort_order - b.sort_order;
     });
 
-  // Opções de espeto vêm do banco (categoria de espetos), sem filtro fixo de preço:
-  // basta cadastrar/desativar itens no Admin para mudar a lista.
-  const espetosCatId = data.cats.find((c) => norm(c.name).includes("espeto"))?.id;
+  // Opções de espeto: marcadas item a item no Admin ("Aparece na escolha seu espeto").
   const skewerOptions = data.items
-    .filter((i) => i.category_id === espetosCatId)
+    .filter((i) => i.is_completo_skewer_option)
     .sort((a, b) => Number(a.price) - Number(b.price) || a.name.localeCompare(b.name, "pt-BR"));
 
   const handleAdd = (item: Item) => {
-    if (item.category_id === completosCatId && skewerOptions.length > 0) {
+    // Vinculado ao PRODUTO: vale em qualquer seção onde ele apareça.
+    if (item.requires_skewer_choice && skewerOptions.length > 0) {
       setPendingCompleto(item);
       return;
     }
