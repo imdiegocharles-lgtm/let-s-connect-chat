@@ -245,7 +245,7 @@ function AccountLink() {
   );
 }
 
-function Strip({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
+function Strip({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-4">
       <span className="grid h-10 w-10 place-items-center rounded-full bg-primary/10">{icon}</span>
