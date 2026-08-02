@@ -21,6 +21,14 @@ import {
 import { toast } from "sonner";
 import { Loader2, Pencil, Plus, Trash2, LogOut, ArrowLeft, ShieldCheck, ChefHat, Star } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import {
+  fetchHorarios,
+  fetchConfigEntrega,
+  DAY_LABELS,
+  SERVICE_LABELS,
+  type Horario,
+  type ConfigEntrega,
+} from "@/lib/store-hours";
 import { PainelError } from "@/components/PainelError";
 import { useServerFn } from "@tanstack/react-start";
 import {
