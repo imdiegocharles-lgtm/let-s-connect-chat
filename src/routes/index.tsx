@@ -180,13 +180,13 @@ function Home() {
             icon={<Star className="h-5 w-5 text-primary" />}
             title="Avaliação 4.9"
             sub={
-              (<ReviewDialog
+              <ReviewDialog
                 trigger={
                   <button className="underline decoration-dotted underline-offset-2 hover:text-foreground">
                     Avaliar o restaurante
                   </button>
                 }
-              />) as unknown as string
+              />
             }
           />
         </div>
@@ -223,19 +223,8 @@ function Home() {
           <p className="mt-1">© {new Date().getFullYear()} · Todos os direitos reservados.</p>
         </div>
       </footer>
-      <CartSheet />
-    </div>
-  );
-}
-
-function Info({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10">{icon}</span>
-      <div className="leading-tight">
-        <p className="font-bold">{label}</p>
-        <p className="text-xs text-white/60">{sub}</p>
-      </div>
+      {/* espaço para o menu inferior fixo */}
+      <div aria-hidden className="h-[86px]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
     </div>
   );
 }
