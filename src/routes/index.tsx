@@ -9,16 +9,22 @@ import {
   Phone,
   ShoppingBag,
   Flame,
-  ShieldCheck,
   Navigation,
   CalendarDays,
   UserRound,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
-import { CartSheet } from "@/components/menu/CartSheet";
 import { ReservationDialog } from "@/components/reservations/ReservationDialog";
 import { ReviewDialog } from "@/components/reviews/ReviewDialog";
 import { useCustomerSession } from "@/lib/customer-auth";
+import { useCart } from "@/lib/cart";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  formatSchedule,
+  getStoreStatus,
+  useConfigEntrega,
+  useHorarios,
+} from "@/lib/store-hours";
 
 export const Route = createFileRoute("/")({
   component: Home,
