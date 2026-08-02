@@ -71,6 +71,17 @@ function toMin(t: string) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m || 0);
 }
+
+/** normaliza nomes de categoria: remove emojis, acentos, pontuação e caixa */
+function norm(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9 ]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function currentWindow(s: Settings): "lunch" | "dinner" | "closed" {
   const now = new Date();
   const cur = now.getHours() * 60 + now.getMinutes();
@@ -90,9 +101,15 @@ export function MenuBrowser() {
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
   const svcWindow = currentWindow(data.settings);
-  const completosCatId = data.cats.find((c) => c.name.toLowerCase() === "completos")?.id;
-  const displayName = (name: string) =>
-    name.toLowerCase() === "completos" ? "🏆 O MAIS PEDIDO" : name;
+  // Categoria dos "Completos" (O MAIS PEDIDO): busca flexível, com fallback
+  // pelos próprios itens ("Completo com Maionese/Salpicão").
+  const completosCatId =
+    data.cats.find((c) => {
+      const n = norm(c.name);
+      return n.includes("completo") || n.includes("mais pedido");
+    })?.id ??
+    data.items.find((i) => norm(i.name).startsWith("completo"))?.category_id;
+  const displayName = (name: string) => name;
 
   const grouped = data.cats
     .filter((c) =>
@@ -106,25 +123,29 @@ export function MenuBrowser() {
       return a.sort_order - b.sort_order;
     });
 
-  const espetosCatId = data.cats.find((c) => c.name.toLowerCase() === "espetos")?.id;
-  const skewerOptions = data.items.filter(
-    (i) => i.category_id === espetosCatId && Number(i.price) === 15,
-  );
+  // Opções de espeto vêm do banco (categoria de espetos), sem filtro fixo de preço:
+  // basta cadastrar/desativar itens no Admin para mudar a lista.
+  const espetosCatId = data.cats.find((c) => norm(c.name).includes("espeto"))?.id;
+  const skewerOptions = data.items
+    .filter((i) => i.category_id === espetosCatId)
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   const handleAdd = (item: Item) => {
-    if (item.category_id === completosCatId) {
+    if (item.category_id === completosCatId && skewerOptions.length > 0) {
       setPendingCompleto(item);
       return;
     }
-    add({ id: item.id, name: item.name, price: Number(item.price) });
+    add({ id: item.id, menuItemId: item.id, name: item.name, price: Number(item.price) });
   };
 
   const confirmCompleto = (skewer: Item) => {
     if (!pendingCompleto) return;
     add({
       id: `${pendingCompleto.id}:${skewer.id}`,
+      menuItemId: pendingCompleto.id,
       name: `${pendingCompleto.name} (Espeto: ${skewer.name})`,
       price: Number(pendingCompleto.price),
+      extras: { espeto: skewer.name, espeto_id: skewer.id },
     });
     setPendingCompleto(null);
   };
@@ -209,12 +230,12 @@ export function MenuBrowser() {
       ))}
 
       <Dialog open={!!pendingCompleto} onOpenChange={(v) => !v && setPendingCompleto(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Escolha seu espeto</DialogTitle>
             <DialogDescription>
-              O {pendingCompleto?.name} acompanha um espeto de R$ 15,00 à sua escolha, sem alterar o
-              valor.
+              O {pendingCompleto?.name} acompanha um espeto à sua escolha, sem alterar o valor do
+              prato. Escolha uma opção para continuar.
             </DialogDescription>
           </DialogHeader>
           <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
