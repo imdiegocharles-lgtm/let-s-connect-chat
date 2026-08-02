@@ -811,6 +811,7 @@ function SettingsPanel() {
 
   if (isLoading || !form) return <Loader2 className="h-5 w-5 animate-spin" />;
   return (
+    <>
     <Card className="p-6 max-w-2xl space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div><Label>Almoço — início</Label><Input type="time" value={form.lunch_start?.slice(0,5)} onChange={(e) => setForm({ ...form, lunch_start: e.target.value })} /></div>
@@ -824,6 +825,168 @@ function SettingsPanel() {
       <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" /></div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
     </Card>
+    <HorariosPanel />
+    </>
+  );
+}
+
+/* ------------------- HORÁRIOS & PRAZO DE ENTREGA ------------------- */
+
+function HorariosPanel() {
+  const qc = useQueryClient();
+  const { data: horarios, isLoading } = useQuery({
+    queryKey: ["horarios_funcionamento"],
+    queryFn: fetchHorarios,
+  });
+  const { data: entrega } = useQuery({
+    queryKey: ["configuracoes_entrega"],
+    queryFn: fetchConfigEntrega,
+  });
+
+  const [rows, setRows] = useState<Horario[] | null>(null);
+  const [prazo, setPrazo] = useState<ConfigEntrega | null>(null);
+  useEffect(() => { if (horarios) setRows(horarios); }, [horarios]);
+  useEffect(() => { if (entrega) setPrazo(entrega); }, [entrega]);
+
+  const saveHorarios = useMutation({
+    mutationFn: async () => {
+      if (!rows) return;
+      for (const r of rows) {
+        const { error } = await supabase
+          .from("horarios_funcionamento")
+          .update({
+            hora_abertura: r.hora_abertura.slice(0, 5),
+            hora_fechamento: r.hora_fechamento.slice(0, 5),
+            delivery_disponivel: r.delivery_disponivel,
+          })
+          .eq("id", r.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Horários atualizados");
+      qc.invalidateQueries({ queryKey: ["horarios_funcionamento"] });
+      qc.invalidateQueries({ queryKey: ["menu"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const savePrazo = useMutation({
+    mutationFn: async () => {
+      if (!prazo) return;
+      const { error } = await supabase
+        .from("configuracoes_entrega")
+        .update({
+          prazo_minimo_minutos: Number(prazo.prazo_minimo_minutos) || 0,
+          prazo_maximo_minutos: Number(prazo.prazo_maximo_minutos) || 0,
+          texto_observacao: prazo.texto_observacao,
+        })
+        .eq("id", 1);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Prazo de entrega atualizado");
+      qc.invalidateQueries({ queryKey: ["configuracoes_entrega"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading || !rows) return <Loader2 className="h-5 w-5 animate-spin mt-6" />;
+
+  const update = (id: string, patch: Partial<Horario>) =>
+    setRows((prev) => (prev ? prev.map((r) => (r.id === id ? { ...r, ...patch } : r)) : prev));
+
+  const ordered = [...rows].sort((a, b) => {
+    const oa = a.dia_semana === 0 ? 7 : a.dia_semana;
+    const ob = b.dia_semana === 0 ? 7 : b.dia_semana;
+    return oa - ob || a.tipo.localeCompare(b.tipo);
+  });
+
+  return (
+    <>
+      <Card className="p-6 max-w-3xl space-y-4 mt-6">
+        <div>
+          <h3 className="font-bold">Horários de funcionamento</h3>
+          <p className="text-sm text-muted-foreground">
+            Define quando o cardápio aceita pedidos e o que aparece na página inicial.
+          </p>
+        </div>
+        <div className="space-y-2">
+          {ordered.map((r) => (
+            <div
+              key={r.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border p-3 sm:flex sm:flex-wrap"
+            >
+              <div className="min-w-0 sm:w-44">
+                <p className="font-semibold text-sm">{DAY_LABELS[r.dia_semana]}</p>
+                <p className="text-xs text-muted-foreground">{SERVICE_LABELS[r.tipo]}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="time"
+                  className="w-[110px]"
+                  value={r.hora_abertura.slice(0, 5)}
+                  onChange={(e) => update(r.id, { hora_abertura: e.target.value })}
+                />
+                <span className="text-muted-foreground">às</span>
+                <Input
+                  type="time"
+                  className="w-[110px]"
+                  value={r.hora_fechamento.slice(0, 5)}
+                  onChange={(e) => update(r.id, { hora_fechamento: e.target.value })}
+                />
+              </div>
+              <label className="col-span-2 flex items-center gap-2 text-sm sm:col-auto">
+                <Switch
+                  checked={r.delivery_disponivel}
+                  onCheckedChange={(v) => update(r.id, { delivery_disponivel: v })}
+                />
+                Delivery
+              </label>
+            </div>
+          ))}
+        </div>
+        <Button onClick={() => saveHorarios.mutate()} disabled={saveHorarios.isPending}>
+          {saveHorarios.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar horários
+        </Button>
+      </Card>
+
+      {prazo && (
+        <Card className="p-6 max-w-2xl space-y-4 mt-6">
+          <div>
+            <h3 className="font-bold">Prazo de entrega</h3>
+            <p className="text-sm text-muted-foreground">Aparece no card da página inicial.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Prazo mínimo (min)</Label>
+              <Input
+                type="number"
+                value={prazo.prazo_minimo_minutos}
+                onChange={(e) => setPrazo({ ...prazo, prazo_minimo_minutos: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <Label>Prazo máximo (min)</Label>
+              <Input
+                type="number"
+                value={prazo.prazo_maximo_minutos}
+                onChange={(e) => setPrazo({ ...prazo, prazo_maximo_minutos: Number(e.target.value) })}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Observação exibida abaixo</Label>
+            <Input
+              value={prazo.texto_observacao}
+              onChange={(e) => setPrazo({ ...prazo, texto_observacao: e.target.value })}
+            />
+          </div>
+          <Button onClick={() => savePrazo.mutate()} disabled={savePrazo.isPending}>
+            {savePrazo.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar prazo
+          </Button>
+        </Card>
+      )}
     </>
   );
 }
