@@ -141,9 +141,4 @@ export function BottomNavSpacer() {
   return <div aria-hidden className="h-[82px]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />;
 }
 
-export function useRequireAuthLink() {
-  const { user, loading } = useCustomerSession();
-  return { user, loading } as const;
-}
-
-export { Link };
+export type { };
