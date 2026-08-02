@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, UserRound } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useCustomerSession } from "@/lib/customer-auth";
@@ -140,5 +140,3 @@ export function BottomNav() {
 export function BottomNavSpacer() {
   return <div aria-hidden className="h-[82px]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />;
 }
-
-export type { };
