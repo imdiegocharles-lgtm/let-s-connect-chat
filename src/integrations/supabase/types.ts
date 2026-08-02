@@ -290,6 +290,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           change_for?: number | null
@@ -312,6 +313,7 @@ export type Database = {
           subtotal?: number
           total: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           change_for?: number | null
@@ -334,6 +336,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -358,6 +361,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -365,6 +369,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -372,6 +377,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []

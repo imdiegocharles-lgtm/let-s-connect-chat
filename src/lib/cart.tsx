@@ -2,10 +2,13 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 export type CartItem = {
   id: string;
+  /** id real do item no cardápio (menu_items.id) — o `id` pode ser composto (combo+espeto) */
+  menuItemId?: string;
   name: string;
   price: number;
   quantity: number;
   note?: string;
+  extras?: Record<string, unknown> | null;
 };
 
 type CartCtx = {

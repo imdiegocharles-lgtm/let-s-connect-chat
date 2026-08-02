@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OperacionalRouteImport } from './routes/operacional'
+import { Route as MeusPedidosRouteImport } from './routes/meus-pedidos'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as ContaRouteImport } from './routes/conta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,9 +28,19 @@ const OperacionalRoute = OperacionalRouteImport.update({
   path: '/operacional',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeusPedidosRoute = MeusPedidosRouteImport.update({
+  id: '/meus-pedidos',
+  path: '/meus-pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContaRoute = ContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -85,7 +97,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -97,7 +111,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -111,7 +127,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/conta': typeof ContaRoute
   '/mcp': typeof McpRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/operacional': typeof OperacionalRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -126,7 +144,9 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -138,7 +158,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -151,7 +173,9 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/conta'
     | '/mcp'
+    | '/meus-pedidos'
     | '/operacional'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -165,7 +189,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ContaRoute: typeof ContaRoute
   McpRoute: typeof McpRoute
+  MeusPedidosRoute: typeof MeusPedidosRoute
   OperacionalRoute: typeof OperacionalRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -183,11 +209,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperacionalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/meus-pedidos': {
+      id: '/meus-pedidos'
+      path: '/meus-pedidos'
+      fullPath: '/meus-pedidos'
+      preLoaderRoute: typeof MeusPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conta': {
+      id: '/conta'
+      path: '/conta'
+      fullPath: '/conta'
+      preLoaderRoute: typeof ContaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -270,7 +310,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  ContaRoute: ContaRoute,
   McpRoute: McpRoute,
+  MeusPedidosRoute: MeusPedidosRoute,
   OperacionalRoute: OperacionalRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:

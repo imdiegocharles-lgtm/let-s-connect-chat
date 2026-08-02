@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, useCart } from "@/lib/cart";
+import { fetchMyProfile, useCustomerSession } from "@/lib/customer-auth";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Minus, Plus, ShoppingBag, Trash2, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, CheckCircle2, UserRound } from "lucide-react";
 
 type Neighborhood = { id: string; name: string; fee: number };
 
@@ -25,6 +27,7 @@ const PAYMENT_METHODS = [
 
 export function CartSheet() {
   const { items, inc, dec, remove, subtotal, count, clear } = useCart();
+  const { user, loading: authLoading } = useCustomerSession();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -37,6 +40,20 @@ export function CartSheet() {
   const [changeFor, setChangeFor] = useState<string>("");
   const [needsChange, setNeedsChange] = useState<"sim" | "nao">("nao");
   const [notes, setNotes] = useState("");
+
+  // Pré-preenche nome e WhatsApp com os dados da conta do cliente
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    fetchMyProfile(user.id).then((p) => {
+      if (!active || !p) return;
+      setName((v) => v || p.full_name || "");
+      setPhone((v) => v || p.phone || "");
+    });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const { data: neighborhoods = [] } = useQuery({
     queryKey: ["neighborhoods"],
@@ -61,6 +78,7 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("Entre na sua conta para finalizar o pedido.");
       if (!name.trim()) throw new Error("Preencha seu nome.");
       if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
       if (!address.trim()) throw new Error("Informe o endereço com número.");
@@ -84,6 +102,7 @@ export function CartSheet() {
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .insert({
+          user_id: user.id,
           customer_name: name.trim(),
           customer_phone: phone.trim(),
           customer_address: address.trim(),
@@ -103,10 +122,11 @@ export function CartSheet() {
 
       const orderItemsPayload = items.map((i) => ({
         order_id: order.id,
-        menu_item_id: i.id,
+        menu_item_id: i.menuItemId ?? i.id.split(":")[0],
         name: i.name,
         price: i.price,
         quantity: i.quantity,
+        extras: (i.extras ?? null) as never,
       }));
       const { error: iErr } = await supabase.from("order_items").insert(orderItemsPayload);
       if (iErr) throw iErr;
@@ -211,7 +231,28 @@ export function CartSheet() {
           </>
         )}
 
-        {step === "checkout" && (
+        {step === "checkout" && !authLoading && !user && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10">
+              <UserRound className="h-7 w-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-black">Entre para finalizar</h3>
+            <p className="text-sm text-muted-foreground">
+              Com a sua conta você acompanha o preparo e a entrega do pedido em tempo real. Leva
+              menos de 1 minuto.
+            </p>
+            <Button asChild size="lg" className="w-full">
+              <Link to="/conta" search={{ next: "/" }}>
+                Entrar ou criar conta
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setStep("cart")}>
+              Voltar ao carrinho
+            </Button>
+          </div>
+        )}
+
+        {step === "checkout" && !!user && (
           <>
             <div className="flex-1 space-y-4 overflow-y-auto p-4">
               <div className="grid gap-2">
@@ -362,7 +403,10 @@ export function CartSheet() {
                 Nº do pedido: <span className="font-mono">{orderId.slice(0, 8).toUpperCase()}</span>
               </p>
             )}
-            <Button className="mt-2 w-full" onClick={reset}>
+            <Button asChild className="mt-2 w-full">
+              <Link to="/meus-pedidos">Acompanhar meu pedido</Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={reset}>
               Fechar
             </Button>
           </div>
