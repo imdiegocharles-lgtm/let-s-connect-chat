@@ -126,7 +126,7 @@ export function CartSheet() {
         name: i.name,
         price: i.price,
         quantity: i.quantity,
-        extras: i.extras ?? null,
+        extras: (i.extras ?? null) as never,
       }));
       const { error: iErr } = await supabase.from("order_items").insert(orderItemsPayload);
       if (iErr) throw iErr;
@@ -231,7 +231,28 @@ export function CartSheet() {
           </>
         )}
 
-        {step === "checkout" && (
+        {step === "checkout" && !authLoading && !user && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10">
+              <UserRound className="h-7 w-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-black">Entre para finalizar</h3>
+            <p className="text-sm text-muted-foreground">
+              Com a sua conta você acompanha o preparo e a entrega do pedido em tempo real. Leva
+              menos de 1 minuto.
+            </p>
+            <Button asChild size="lg" className="w-full">
+              <Link to="/conta" search={{ next: "/" }}>
+                Entrar ou criar conta
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setStep("cart")}>
+              Voltar ao carrinho
+            </Button>
+          </div>
+        )}
+
+        {step === "checkout" && !!user && (
           <>
             <div className="flex-1 space-y-4 overflow-y-auto p-4">
               <div className="grid gap-2">
@@ -382,7 +403,10 @@ export function CartSheet() {
                 Nº do pedido: <span className="font-mono">{orderId.slice(0, 8).toUpperCase()}</span>
               </p>
             )}
-            <Button className="mt-2 w-full" onClick={reset}>
+            <Button asChild className="mt-2 w-full">
+              <Link to="/meus-pedidos">Acompanhar meu pedido</Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={reset}>
               Fechar
             </Button>
           </div>
