@@ -223,8 +223,6 @@ function Home() {
           <p className="mt-1">© {new Date().getFullYear()} · Todos os direitos reservados.</p>
         </div>
       </footer>
-      {/* espaço para o menu inferior fixo */}
-      <div aria-hidden className="h-[86px]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
     </div>
   );
 }
