@@ -188,6 +188,7 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
+  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
 
   const { data: perms } = useQuery({
     queryKey: ["my-kitchen-perms"],
