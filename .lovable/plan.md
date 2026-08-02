@@ -1,27 +1,52 @@
-## Objetivo
+## Observações antes de começar
 
-Os produtos passam a ser exibidos automaticamente do menor para o maior preço dentro de cada categoria, sem depender do campo manual de "posição". As categorias continuam com a ordem que você define no Admin (incluindo "O MAIS PEDIDO 🏆" sempre primeiro).
+- Hoje **não existe** uma barra de navegação inferior no site (verifiquei o código): as 5 abas serão criadas do zero, reaproveitando as rotas e a lógica que já existem (`/` com âncora `#cardapio`, carrinho `CartSheet`, `/meus-pedidos`, `/conta`).
+- O seu prompt pula a "PARTE 3" — considerei que não existe.
+- Os horários hoje vivem em `system_settings` / `public_settings` (um horário único, sem dia da semana). Vou criar as tabelas novas que você pediu e migrar a leitura para elas.
 
-## O que muda
+## 1. Menu inferior (Bottom Navigation)
 
-1. **Cardápio do cliente** (`src/components/menu/MenuBrowser.tsx`)
-   - Itens buscados e ordenados por preço crescente (desempate por nome), agrupados por categoria como hoje.
-   - A lista de espetos do diálogo do "Completo" também passa a sair por preço crescente.
+Novo componente `src/components/layout/BottomNav.tsx`, montado no layout raiz e exibido em todas as páginas públicas:
 
-2. **Painel Admin** (`src/routes/admin.index.tsx`)
-   - Lista de produtos ordenada por categoria e depois por preço crescente.
-   - Campo "Posição" removido do formulário de produto (novos produtos entram com valor padrão, sem você precisar preencher nada).
-   - A ordenação de categorias continua manual, como está hoje.
+- Barra fixa, altura 82px + safe area do iPhone, fundo escuro translúcido com blur, borda superior discreta e sombra.
+- 5 abas: Início, Cardápio, **Meu Pedido** (central, destacado: círculo vermelho da marca, ícone e texto brancos, sombra, animação de toque), Pedidos, Conta.
+- Abas laterais: ícone outline, texto pequeno, cinza claro quando inativo, vermelho quando ativo, com transição suave e indicador animado.
+- Badge de quantidade no botão central usando a contagem já existente do carrinho.
+- Aba "Conta" lê a sessão real: deslogado → ícone + "Entrar" (vai para `/conta`); logado → inicial do nome em avatar circular + "Minha Conta" (vai para `/meus-pedidos`).
+- Padding inferior extra nas páginas para o conteúdo nunca ficar coberto.
+- As informações "A partir de R$ 5 / Taxa de entrega" e "4.9 Avaliar" saem da faixa do hero e ficam apenas na seção da página do restaurante.
 
-3. **Painel Operacional** (`src/routes/operacional.tsx`)
-   - Lista de itens para marcar disponível/indisponível também ordenada por preço crescente dentro da categoria.
+## 2. Horários e prazo de entrega editáveis
 
-4. **Correção dos dados já cadastrados**
-   - Atualização única no banco recalculando o campo de posição de todos os produtos existentes: dentro de cada categoria, posição 1, 2, 3… seguindo o preço do menor para o maior. Isso deixa o banco coerente com a nova exibição e sem misturar categorias.
+Banco (migração):
+
+- Tabela `horarios_funcionamento`: dia da semana, tipo (almoço/churrasquinho), hora de abertura, hora de fechamento, delivery disponível. Leitura pública, escrita só para admin.
+- Tabela `configuracoes_entrega`: prazo mínimo, prazo máximo e texto de observação. Leitura pública, escrita só para admin.
+- Dados iniciais: almoço seg–sáb 11:00–14:30; churrasquinho seg–sáb 18:00–00:00; domingo churrasco 11:00–00:00 com delivery desativado; prazo 40–80 min com a observação atual.
+
+Aplicativo:
+
+- Nova aba dentro de **Configurações** no Admin para editar a grade de horários (por dia e tipo, com o interruptor de delivery) e o prazo de entrega + observação.
+- Card "Horário do churrasco" da home passa a montar o texto a partir da tabela.
+- Card de entrega passa a exibir "Entrega em X–Y min" e a observação vindas da tabela.
+- A liberação do cardápio deixa de usar os horários fixos e passa a usar a janela do dia atual vinda de `horarios_funcionamento`; fora da janela, o cardápio fica indisponível para pedido.
+- Quando o dia estiver com delivery desativado (domingo), a home e o carrinho bloqueiam o pedido e exibem aviso de atendimento somente presencial nesse dia.
+- Card "Pedido seguro / Sem cadastro, direto pelo site" removido da home.
+
+## 3. Login/cadastro unificado
+
+- Remove o aviso de texto solto abaixo de "Fazer Pedido Agora".
+- "Fazer Pedido Agora" e a finalização do pedido verificam a sessão: deslogado → leva direto para a tela de login/cadastro e retorna ao fluxo depois; logado → segue normal.
+- Pontos de entrada de login passam a ser apenas o botão do topo e a aba "Conta" do menu inferior.
+
+## 4. Testes
+
+Rodo verificação de tipos/build e testo no navegador headless: navegação entre abas, badge do carrinho, alternância Entrar/Minha Conta, edição de horário e prazo refletindo na home, simulação de domingo (bloqueio de delivery), simulação de horário fora da janela (cardápio indisponível), fluxo de pedido logado e deslogado, e leitura do console em busca de erros.
 
 ## Detalhes técnicos
 
-- Consulta passa de `.order("sort_order")` para `.order("price", { ascending: true }).order("name")` nos três pontos de leitura de `menu_items`.
-- O agrupamento por categoria continua sendo feito em memória a partir de `category_id`, então nenhum item vaza para outra categoria.
-- A coluna `sort_order` não é removida do banco (evita quebrar tipos gerados e outros pontos), apenas deixa de ser usada para exibição de produtos.
-- Correção dos dados via UPDATE com `row_number() over (partition by category_id order by price, name)`.
+- `BottomNav` usa `useRouterState` para aba ativa, `useCart` para o badge e `useCustomerSession` para o estado de auth.
+- Horários/prazo consumidos via TanStack Query com invalidação após salvar no Admin (atualiza sem recarregar).
+- Cálculo da janela considera fechamento à meia-noite (00:00 tratado como fim do dia) e o fuso America/Sao_Paulo.
+- Migração cria as tabelas com GRANTs, RLS (leitura anônima, escrita via `has_role(auth.uid(),'admin')`) e os INSERTs dos valores padrão.
+- `public_settings`/`system_settings` continuam existindo para os demais campos (pedido mínimo, tempo médio de preparo); apenas a fonte dos horários muda.
