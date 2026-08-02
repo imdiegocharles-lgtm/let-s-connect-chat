@@ -732,6 +732,38 @@ function OrderCard({
         </div>
       )}
 
+      {canUpdateStatus && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+            Etapa do pedido
+          </p>
+          <div className="flex items-stretch gap-1">
+            {STATUS_FLOW.map((s, i) => {
+              const done = i <= currentIndex;
+              const clickable = i > currentIndex;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={!clickable || isPending}
+                  onClick={() => clickable && onStatus(s)}
+                  className={`flex-1 rounded-md border px-1 py-1.5 text-[11px] font-semibold leading-tight transition-colors ${
+                    done
+                      ? "border-primary/50 bg-primary/15 text-primary"
+                      : "border-border bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+                >
+                  {STATUS_LABELS[s]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Toque em qualquer etapa à frente para avançar direto.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={onPrint}>
           <Printer className="h-4 w-4 mr-2" /> Reimprimir
