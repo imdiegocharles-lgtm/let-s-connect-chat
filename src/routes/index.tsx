@@ -31,6 +31,23 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const navigate = useNavigate();
+  const { user } = useCustomerSession();
+  const { setSheetOpen } = useCart();
+  const { data: horarios = [] } = useHorarios();
+  const { data: entrega } = useConfigEntrega();
+  const store = getStoreStatus(horarios);
+  const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
+
+  const handleOrderClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      navigate({ to: "/conta", search: { next: "/" } });
+      return;
+    }
+    document.getElementById("cardapio")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
@@ -99,6 +116,7 @@ function Home() {
               <a
                 id="pedido"
                 href="#cardapio"
+                onClick={handleOrderClick}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-bold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:scale-[1.02] hover:brightness-110"
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -123,28 +141,11 @@ function Home() {
                 Como Chegar
               </a>
             </div>
-            <p className="mt-3 text-xs font-semibold text-white/80">
-              É necessário criar conta ou entrar para finalizar o pedido.{" "}
-              <Link to="/conta" className="underline underline-offset-2 hover:text-white">
-                Entrar / criar conta
-              </Link>
-            </p>
-            <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
-              <Info icon={<Bike className="h-4 w-4" />} label="A partir de R$ 5" sub="Taxa de entrega" />
-              <ReviewDialog
-                trigger={
-                  <button className="flex items-center gap-2 text-left transition hover:opacity-80">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
-                      <Star className="h-4 w-4 fill-current" />
-                    </span>
-                    <span className="leading-tight">
-                      <span className="block font-bold">4.9</span>
-                      <span className="block text-xs text-white/60 underline decoration-dotted">Avaliar</span>
-                    </span>
-                  </button>
-                }
-              />
-            </div>
+            {deliveryBlocked && (
+              <p className="mt-4 inline-flex rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/90">
+                Hoje ({store.todayLabel}) não temos delivery — atendimento somente presencial na loja.
+              </p>
+            )}
           </div>
 
           <div className="relative mx-auto flex items-center justify-center">
@@ -161,9 +162,36 @@ function Home() {
       {/* Quick info strip */}
       <section className="border-b border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-3">
-          <Strip icon={<Clock className="h-5 w-5 text-primary" />} title="Horário do churrasco" sub="Seg–Sáb 17h às 00h · Dom 11h às 00h" />
-          <Strip icon={<Bike className="h-5 w-5 text-primary" />} title="Entrega em 40–80 min" sub="Podendo ocorrer antes do prazo informado" />
-          <Strip icon={<ShieldCheck className="h-5 w-5 text-primary" />} title="Pedido seguro" sub="Sem cadastro, direto pelo site" />
+          <Strip
+            icon={<Clock className="h-5 w-5 text-primary" />}
+            title="Horário do churrasco"
+            sub={formatSchedule(horarios, "churrasquinho") || "Consulte nossos horários"}
+          />
+          <Strip
+            icon={<Bike className="h-5 w-5 text-primary" />}
+            title={
+              entrega
+                ? `Entrega em ${entrega.prazo_minimo_minutos}–${entrega.prazo_maximo_minutos} min`
+                : "Entrega rápida"
+            }
+            sub={entrega?.texto_observacao ?? ""}
+          />
+          <Strip
+            icon={<Star className="h-5 w-5 text-primary" />}
+            title="Avaliação 4.9"
+            sub={
+              (<ReviewDialog
+                trigger={
+                  <button className="underline decoration-dotted underline-offset-2 hover:text-foreground">
+                    Avaliar o restaurante
+                  </button>
+                }
+              />) as unknown as string
+            }
+          />
+        </div>
+        <div className="mx-auto max-w-6xl px-4 pb-6 text-xs text-muted-foreground">
+          Taxa de entrega a partir de R$ 5, conforme o bairro.
         </div>
       </section>
 
