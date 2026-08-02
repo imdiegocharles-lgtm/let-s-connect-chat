@@ -46,7 +46,8 @@ async function fetchMenu() {
       .from("menu_items")
       .select("id, category_id, name, description, price, image_url, is_available, sort_order")
       .eq("is_available", true)
-      .order("sort_order"),
+      .order("price", { ascending: true })
+      .order("name", { ascending: true }),
   ]);
   if (cErr) throw cErr;
   if (iErr) throw iErr;
@@ -128,7 +129,7 @@ export function MenuBrowser() {
   const espetosCatId = data.cats.find((c) => norm(c.name).includes("espeto"))?.id;
   const skewerOptions = data.items
     .filter((i) => i.category_id === espetosCatId)
-    .sort((a, b) => a.sort_order - b.sort_order);
+    .sort((a, b) => Number(a.price) - Number(b.price) || a.name.localeCompare(b.name, "pt-BR"));
 
   const handleAdd = (item: Item) => {
     if (item.category_id === completosCatId && skewerOptions.length > 0) {
