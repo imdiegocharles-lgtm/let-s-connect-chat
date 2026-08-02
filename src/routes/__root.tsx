@@ -146,6 +146,8 @@ function PublicShell() {
   if (!isPublic) return null;
   return (
     <>
+      {/* espaço para o conteúdo não ficar sob a barra fixa */}
+      <div aria-hidden className="h-[86px]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
       <CartSheet />
       <BottomNav />
     </>
