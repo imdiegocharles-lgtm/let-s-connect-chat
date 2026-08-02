@@ -2,6 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, useCart } from "@/lib/cart";
+import {
+  formatSchedule,
+  getStoreStatus,
+  useHorarios,
+} from "@/lib/store-hours";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -29,13 +34,6 @@ type Item = {
   sort_order: number;
 };
 
-type Settings = {
-  lunch_start: string;
-  lunch_end: string;
-  dinner_start: string;
-  dinner_end: string;
-};
-
 async function fetchMenu() {
   const [{ data: cats, error: cErr }, { data: items, error: iErr }] = await Promise.all([
     supabase
@@ -51,26 +49,10 @@ async function fetchMenu() {
   ]);
   if (cErr) throw cErr;
   if (iErr) throw iErr;
-  const { data: settings } = await (supabase as any)
-    .from("public_settings")
-    .select("lunch_start, lunch_end, dinner_start, dinner_end")
-    .eq("id", 1)
-    .maybeSingle();
   return {
     cats: (cats ?? []) as unknown as Category[],
     items: (items ?? []) as Item[],
-    settings: (settings ?? {
-      lunch_start: "11:00",
-      lunch_end: "14:30",
-      dinner_start: "18:00",
-      dinner_end: "23:59",
-    }) as Settings,
   };
-}
-
-function toMin(t: string) {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + (m || 0);
 }
 
 /** normaliza nomes de categoria: remove emojis, acentos, pontuação e caixa */
@@ -83,25 +65,20 @@ function norm(s: string) {
     .toLowerCase();
 }
 
-function currentWindow(s: Settings): "lunch" | "dinner" | "closed" {
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
-  if (cur >= toMin(s.lunch_start) && cur <= toMin(s.lunch_end)) return "lunch";
-  if (cur >= toMin(s.dinner_start) && cur <= toMin(s.dinner_end)) return "dinner";
-  return "closed";
-}
-
 export function MenuBrowser() {
   const { data, isLoading, error } = useQuery({ queryKey: ["menu"], queryFn: fetchMenu });
+  const { data: horarios = [], isLoading: hoursLoading } = useHorarios();
   const { add } = useCart();
   const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
 
-  if (isLoading)
+  if (isLoading || hoursLoading)
     return <p className="py-10 text-center text-sm text-muted-foreground">Carregando cardápio…</p>;
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
-  const svcWindow = currentWindow(data.settings);
+  const store = getStoreStatus(horarios);
+  const svcWindow: "lunch" | "dinner" | "closed" =
+    store.openService === "almoco" ? "lunch" : store.openService === "churrasquinho" ? "dinner" : "closed";
   // Categoria dos "Completos" (O MAIS PEDIDO): busca flexível, com fallback
   // pelos próprios itens ("Completo com Maionese/Salpicão").
   const completosCatId =
@@ -157,7 +134,17 @@ export function MenuBrowser() {
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">Estamos fechados no momento</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Almoço: {data.settings.lunch_start.slice(0,5)}–{data.settings.lunch_end.slice(0,5)} · Churrasco: {data.settings.dinner_start.slice(0,5)}–{data.settings.dinner_end.slice(0,5)}
+            Almoço: {formatSchedule(horarios, "almoco") || "—"} · Churrasquinho:{" "}
+            {formatSchedule(horarios, "churrasquinho") || "—"}
+          </p>
+        </div>
+      )}
+      {svcWindow !== "closed" && !store.deliveryToday && (
+        <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
+          <p className="text-lg font-black text-primary">Sem delivery hoje ({store.todayLabel})</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O atendimento hoje é somente presencial na loja. Você pode ver o cardápio, mas não é
+            possível finalizar pedidos para entrega.
           </p>
         </div>
       )}

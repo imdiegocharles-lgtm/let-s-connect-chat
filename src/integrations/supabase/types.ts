@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes_entrega: {
+        Row: {
+          created_at: string
+          id: number
+          prazo_maximo_minutos: number
+          prazo_minimo_minutos: number
+          texto_observacao: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          prazo_maximo_minutos?: number
+          prazo_minimo_minutos?: number
+          texto_observacao?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          prazo_maximo_minutos?: number
+          prazo_minimo_minutos?: number
+          texto_observacao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_reports: {
         Row: {
           created_at: string
@@ -61,6 +88,39 @@ export type Database = {
           shifts_summary?: Json
           total_revenue?: number
           totals_by_payment?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      horarios_funcionamento: {
+        Row: {
+          created_at: string
+          delivery_disponivel: boolean
+          dia_semana: number
+          hora_abertura: string
+          hora_fechamento: string
+          id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_disponivel?: boolean
+          dia_semana: number
+          hora_abertura: string
+          hora_fechamento: string
+          id?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_disponivel?: boolean
+          dia_semana?: number
+          hora_abertura?: string
+          hora_fechamento?: string
+          id?: string
+          tipo?: string
           updated_at?: string
         }
         Relationships: []

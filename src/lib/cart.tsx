@@ -20,6 +20,9 @@ type CartCtx = {
   clear: () => void;
   subtotal: number;
   count: number;
+  /** controle do painel lateral do carrinho (usado pelo menu inferior) */
+  sheetOpen: boolean;
+  setSheetOpen: (open: boolean) => void;
 };
 
 const Ctx = createContext<CartCtx | null>(null);
@@ -28,6 +31,7 @@ const KEY = "familia-amaral-cart-v1";
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -51,6 +55,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       subtotal,
       count,
+      sheetOpen,
+      setSheetOpen,
       add: (item) =>
         setItems((prev) => {
           const existing = prev.find((p) => p.id === item.id);
@@ -68,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       remove: (id) => setItems((p) => p.filter((i) => i.id !== id)),
       clear: () => setItems([]),
     };
-  }, [items]);
+  }, [items, sheetOpen]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
