@@ -273,8 +273,30 @@ function KitchenDashboard() {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kitchen-orders"] }),
-    onError: (e: any) => toast.error(e.message),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["kitchen-orders"] });
+      const previous = qc.getQueryData(["kitchen-orders"]);
+      qc.setQueryData(["kitchen-orders"], (old: (Order & { order_items: OrderItem[] })[] = []) =>
+        old.map((o) => (o.id === id ? { ...o, status } : o)),
+      );
+      return { previous };
+    },
+    onError: (e: any, _vars, ctx: any) => {
+      if (ctx?.previous) qc.setQueryData(["kitchen-orders"], ctx.previous);
+      toast.error(e.message);
+    },
+    onSuccess: (_data, { id, status }) => {
+      if (status === "delivered") {
+        const list = (qc.getQueryData(["kitchen-orders"]) ?? []) as (Order & {
+          order_items: OrderItem[];
+        })[];
+        const target = list.find((o) => o.id === id);
+        if (target && !(target as any).payment_confirmed_at && p.can_confirm_payment) {
+          setConfirmPayFor({ ...target, status: "delivered" });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+    },
   });
 
   const confirmPayment = useMutation({
