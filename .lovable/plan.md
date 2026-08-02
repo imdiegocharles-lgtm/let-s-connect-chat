@@ -1,28 +1,27 @@
-## Resultado da revisão (verificado agora)
+## Objetivo
 
-Revisei código + banco. **Não encontrei erros de tipo, chamadas quebradas nem conflitos entre as partes.** `tsgo --noEmit` passa sem nenhum erro.
+Os produtos passam a ser exibidos automaticamente do menor para o maior preço dentro de cada categoria, sem depender do campo manual de "posição". As categorias continuam com a ordem que você define no Admin (incluindo "O MAIS PEDIDO 🏆" sempre primeiro).
 
-### O que conferi
+## O que muda
 
-**Seleção de espeto**
-- Categoria "O MAIS PEDIDO 🏆" contém exatamente os 2 Completos (60 e 65), então o diálogo só abre neles.
-- Lista de espetos vem da categoria "Espetos 🍖" (26 itens, todos os preços — sem filtro de R$ 15), ordenada por `sort_order` e só com itens disponíveis.
-- O carrinho grava `menuItemId` real do combo e o espeto em `extras`, com o nome `Completo … (Espeto: X)` — exatamente o formato que o `COMBO_RE` dos relatórios lê.
+1. **Cardápio do cliente** (`src/components/menu/MenuBrowser.tsx`)
+   - Itens buscados e ordenados por preço crescente (desempate por nome), agrupados por categoria como hoje.
+   - A lista de espetos do diálogo do "Completo" também passa a sair por preço crescente.
 
-**Login obrigatório e RLS**
-- Checkout sem sessão mostra a tela "Entre para finalizar" (carrinho fica salvo no localStorage); com sessão, envia `user_id`.
-- Políticas em `orders`: insert só `authenticated` com `user_id = auth.uid()`, `status = 'received'` e pagamento não confirmado; leitura só do próprio pedido; admin/operador com acesso total. `order_items` idem, ainda validando quantidade, preço mínimo do item e dono do pedido. Nenhuma política anônima restou.
-- Gatilhos existentes e ativos: número diário do pedido, vínculo com turno, `updated_at` e criação automática de `profiles` no signup (nome + WhatsApp).
-- Realtime habilitado em `orders` (e `order_items`); a tela do cliente assina filtrando por `user_id` e limpa o canal ao sair.
+2. **Painel Admin** (`src/routes/admin.index.tsx`)
+   - Lista de produtos ordenada por categoria e depois por preço crescente.
+   - Campo "Posição" removido do formulário de produto (novos produtos entram com valor padrão, sem você precisar preencher nada).
+   - A ordenação de categorias continua manual, como está hoje.
 
-**Fluxo de status + pagamento/motoboy**
-- Barra de etapas clicável avança direto para qualquer etapa à frente, com update otimista e rollback em erro.
-- Ao marcar "Entregue", o diálogo de pagamento/motoboy abre sozinho (só se o operador tiver permissão e o pedido ainda não estiver confirmado), já pré-selecionando o último motoboy usado.
-- Continua existindo a lista de "entregues sem pagamento confirmado" caso o operador feche o diálogo.
+3. **Painel Operacional** (`src/routes/operacional.tsx`)
+   - Lista de itens para marcar disponível/indisponível também ordenada por preço crescente dentro da categoria.
 
-## Dois ajustes cosméticos (opcionais)
+4. **Correção dos dados já cadastrados**
+   - Atualização única no banco recalculando o campo de posição de todos os produtos existentes: dentro de cada categoria, posição 1, 2, 3… seguindo o preço do menor para o maior. Isso deixa o banco coerente com a nova exibição e sem misturar categorias.
 
-1. `/conta`: no cadastro ainda existe a mensagem de fallback "Confirme seu e-mail para entrar", que nunca deve aparecer agora que a confirmação automática está ligada — trocar por uma mensagem neutra de erro.
-2. Tela "Pedido recebido!": mostra um código truncado do id interno em vez do número diário do pedido (`#12`) que a cozinha usa. Passar a exibir o `order_number` deixaria cliente e cozinha falando a mesma língua.
+## Detalhes técnicos
 
-Se quiser, aplico esses dois ajustes; caso contrário pode testar como está.
+- Consulta passa de `.order("sort_order")` para `.order("price", { ascending: true }).order("name")` nos três pontos de leitura de `menu_items`.
+- O agrupamento por categoria continua sendo feito em memória a partir de `category_id`, então nenhum item vaza para outra categoria.
+- A coluna `sort_order` não é removida do banco (evita quebrar tipos gerados e outros pontos), apenas deixa de ser usada para exibição de produtos.
+- Correção dos dados via UPDATE com `row_number() over (partition by category_id order by price, name)`.
