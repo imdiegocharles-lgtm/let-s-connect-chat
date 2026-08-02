@@ -134,7 +134,17 @@ export function MenuBrowser() {
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">Estamos fechados no momento</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Almoço: {data.settings.lunch_start.slice(0,5)}–{data.settings.lunch_end.slice(0,5)} · Churrasco: {data.settings.dinner_start.slice(0,5)}–{data.settings.dinner_end.slice(0,5)}
+            Almoço: {formatSchedule(horarios, "almoco") || "—"} · Churrasquinho:{" "}
+            {formatSchedule(horarios, "churrasquinho") || "—"}
+          </p>
+        </div>
+      )}
+      {svcWindow !== "closed" && !store.deliveryToday && (
+        <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
+          <p className="text-lg font-black text-primary">Sem delivery hoje ({store.todayLabel})</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O atendimento hoje é somente presencial na loja. Você pode ver o cardápio, mas não é
+            possível finalizar pedidos para entrega.
           </p>
         </div>
       )}
