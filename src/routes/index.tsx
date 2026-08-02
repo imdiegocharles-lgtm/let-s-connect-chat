@@ -222,18 +222,6 @@ function AccountLink() {
   );
 }
 
-function InfoLegacy({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10">{icon}</span>
-      <div className="leading-tight">
-        <p className="font-bold">{label}</p>
-        <p className="text-xs text-white/60">{sub}</p>
-      </div>
-    </div>
-  );
-}
-
 function Strip({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-4">
