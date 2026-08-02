@@ -116,7 +116,7 @@ export function CartSheet() {
           notes: combinedNotes || null,
           status: "received",
         })
-        .select("id")
+        .select("id, order_number")
         .single();
       if (oErr) throw oErr;
 
@@ -131,10 +131,10 @@ export function CartSheet() {
       const { error: iErr } = await supabase.from("order_items").insert(orderItemsPayload);
       if (iErr) throw iErr;
 
-      return order.id as string;
+      return order.order_number as number;
     },
-    onSuccess: (id) => {
-      setOrderId(id);
+    onSuccess: (num) => {
+      setOrderNumber(num);
       setStep("done");
       clear();
     },
