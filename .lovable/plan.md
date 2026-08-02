@@ -1,49 +1,25 @@
-## O que descobri (verificado agora)
+## 1. Confirmação automática de e-mail
 
-**Por que a seleção de espeto sumiu:** o código procura as categorias pelo nome exato `"completos"` e `"espetos"`, mas no banco elas foram renomeadas para **"O MAIS PEDIDO 🏆"** e **"Espetos 🍖"**. Como nenhum nome bate, o diálogo nunca abre. Além disso a lista de espetos está travada em `price === 15` no código.
+Ativar o auto-confirm no cadastro: o cliente cria a conta e já entra direto, sem precisar clicar em link no e-mail. (Configuração de autenticação, sem mudança de banco.)
 
-**Bug relacionado:** quando o combo era adicionado, o item ia pro carrinho com id `uuid:uuid`, o que quebra a gravação do item do pedido (a coluna `menu_item_id` espera um id válido).
+## 2. Painel Operacional — fluxo mais rápido
 
-**RLS hoje:** `orders` e `order_items` permitem INSERT para `anon` e — mais grave — existem políticas `Permitir leitura de pedidos para anonimos` (SELECT `true`) que deixam **qualquer visitante ler todos os pedidos com nome, telefone e endereço dos clientes**. Isso será corrigido nesta mudança.
+Hoje o operador precisa de 3 cliques de status ("Mover para em preparo" → "saiu para entrega" → "entregue") e depois ainda um 4º clique em "Confirmar pagamento", que abre outro diálogo. Vou reduzir isso mantendo tudo que já existe.
 
-A tabela `orders` **não tem** coluna `user_id` hoje.
+**No cartão do pedido:**
 
-## Estratégia proposta
+- Uma barra de etapas clicável (Recebido · Em preparo · Saiu p/ entrega · Entregue): o operador pode tocar direto em qualquer etapa adiante e o pedido pula para ela — de "recebido" para "entregue" em um único toque quando for pedido de balcão/entrega rápida.
+- O botão principal continua sendo "avançar uma etapa", só que maior e sem sair do lugar (não muda a posição do cartão até concluir), com atualização otimista: a etapa muda na hora, sem esperar a resposta do servidor.
+- Quando o operador marcar **"entregue"**, o diálogo de confirmação de pagamento + motoboy **abre sozinho na sequência**, já preenchido com a forma de pagamento que o cliente escolheu e com o motoboy usado por último no turno pré-selecionado. Um clique em "Confirmar" fecha o ciclo.
+- Se o operador fechar o diálogo sem confirmar, o pedido segue como está hoje: fica em "Entregues" com o aviso âmbar e o botão "Confirmar pagamento" para retomar depois.
 
-- **Autenticação:** e-mail + senha do próprio Auth já disponível no projeto (é o caminho mais simples e confiável; login por telefone exigiria SMS pago). No cadastro o cliente informa nome, WhatsApp, e-mail e senha; nome e telefone ficam em `profiles` e pré-preenchem o checkout. Confirmação de e-mail desativada para o cliente entrar na hora.
+**Resultado:** um pedido normal passa a ser resolvido em ~2 interações (etapa "entregue" + confirmar pagamento), em vez de 4 cliques espalhados.
 
-**Tempo real:** a tela do cliente assina as mudanças da tabela `orders` filtradas pelo `user_id` dele (Realtime), atualizando o status na hora em que a cozinha muda no painel — sem recarregar.
+## 3. O que NÃO muda
 
-**RLS:** adiciono `user_id` em `orders`, preenchido automaticamente com o usuário logado; INSERT passa a exigir `authenticated` + `user_id = auth.uid()`; cliente só lê os próprios pedidos; `order_items` idem via pedido dono. As políticas anônimas de leitura e inserção são removidas. Admin e operador continuam com acesso total.
-
-## Etapas
-
-### 1. Banco (migração)
-
-- `orders.user_id` (referência ao usuário) + preenchimento automático no insert.
-- `order_items.extras` já existe — passa a guardar o espeto escolhido.
-- Remover: `Anyone can place orders`, `Anyone can add order items`, `Permitir leitura de pedidos para anonimos`, `Permitir leitura de itens de pedido para anonimos`.
-- Criar: insert/leitura de pedidos e itens apenas para `authenticated` dono; `GRANT` correspondentes; Realtime habilitado em `orders`.
-- Cadastro automático de `profiles` (nome + telefone) no signup.
-
-### 2. Cardápio — seleção de espeto (dinâmica)
-
-- Identificar as categorias por correspondência flexível (ignorando emojis/acentos), com fallback pelos nomes dos itens ("Completo com Maionese/Salpicão").
-- A lista de espetos passa a vir inteira da tabela `menu_items` da categoria de espetos disponíveis — **sem filtro fixo de R$ 15**, ordenada pelo `sort_order`. Novos espetos cadastrados no Admin aparecem sozinhos.
-- Seleção obrigatória (só fecha escolhendo), preço do combo inalterado.
-- Corrigir o carrinho para guardar `menuItemId` real do combo + o espeto em `extras`, mantendo o nome "Combo (Espeto: X)" que os relatórios já sabem ler.
-
-### 3. Conta do cliente
-
-- Nova página `/conta` (entrar / criar conta) com a identidade visual do site.
-- Nova página `/meus-pedidos`: cabeçalho com a logo Família Amaral, cartões de pedido com linha do tempo de status (Recebido → Em preparo → Saiu para entrega → Entregue), itens, total e horário — em tempo real.
-- Link "Meus pedidos / Entrar" no topo do site.
-
-### 4. Checkout obrigatoriamente logado
-
-- Sem sessão, o botão de finalizar vira "Entrar para finalizar o pedido" e leva ao login, voltando ao carrinho depois (carrinho preservado).
-- Nome e telefone pré-preenchidos pelo perfil; o pedido é gravado vinculado ao cliente e a tela de sucesso leva direto para o acompanhamento.
+- Nenhuma tabela, coluna ou tela nova. Usa `orders.status`, `confirmed_payment_method`, `payment_confirmed_at`, `motoboy_id` e a tabela `motoboys` já existentes.
+- Permissões (`can_update_order_status`, `can_confirm_payment`), relatórios, impressão e o acompanhamento do cliente em `/meus-pedidos` continuam iguais.
 
 ## Detalhes técnicos
 
-Arquivos afetados: `src/components/menu/MenuBrowser.tsx`, `src/lib/cart.tsx`, `src/components/menu/CartSheet.tsx`, `src/routes/index.tsx`, novas rotas `src/routes/conta.tsx` e `src/routes/meus-pedidos.tsx`, mais uma migração de banco. Painéis admin/operacional e relatórios não mudam de comportamento.
+Alterações concentradas em `src/routes/operacional.tsx`: `OrderCard` ganha a barra de etapas clicável e passa a chamar `onStatus(status)` para qualquer etapa à frente; `updateStatus` recebe update otimista no cache do React Query; `onSuccess` da mutação abre o `ConfirmPaymentDialog` quando o novo status é `delivered` e o pedido ainda não tem `payment_confirmed_at`; `ConfirmPaymentDialog` passa a inicializar o método com `order.payment_method` e o motoboy com o último usado no turno. Configuração de auth: auto-confirm de e-mail ativado.

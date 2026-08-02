@@ -188,6 +188,7 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
+  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
 
   const { data: perms } = useQuery({
     queryKey: ["my-kitchen-perms"],
@@ -273,8 +274,30 @@ function KitchenDashboard() {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kitchen-orders"] }),
-    onError: (e: any) => toast.error(e.message),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["kitchen-orders"] });
+      const previous = qc.getQueryData(["kitchen-orders"]);
+      qc.setQueryData(["kitchen-orders"], (old: (Order & { order_items: OrderItem[] })[] = []) =>
+        old.map((o) => (o.id === id ? { ...o, status } : o)),
+      );
+      return { previous };
+    },
+    onError: (e: any, _vars, ctx: any) => {
+      if (ctx?.previous) qc.setQueryData(["kitchen-orders"], ctx.previous);
+      toast.error(e.message);
+    },
+    onSuccess: (_data, { id, status }) => {
+      if (status === "delivered") {
+        const list = (qc.getQueryData(["kitchen-orders"]) ?? []) as (Order & {
+          order_items: OrderItem[];
+        })[];
+        const target = list.find((o) => o.id === id);
+        if (target && !(target as any).payment_confirmed_at && p.can_confirm_payment) {
+          setConfirmPayFor({ ...target, status: "delivered" });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+    },
   });
 
   const confirmPayment = useMutation({
@@ -603,10 +626,13 @@ function KitchenDashboard() {
       <ConfirmPaymentDialog
         order={confirmPayFor}
         shiftId={activeShift?.id ?? null}
+        lastMotoboyId={lastMotoboyId}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(method, motoboyId) =>
-          confirmPayFor && confirmPayment.mutate({ id: confirmPayFor.id, method, motoboyId })
-        }
+        onConfirm={(method, motoboyId) => {
+          if (!confirmPayFor) return;
+          setLastMotoboyId(motoboyId);
+          confirmPayment.mutate({ id: confirmPayFor.id, method, motoboyId });
+        }}
         isPending={confirmPayment.isPending}
       />
     </div>
@@ -707,6 +733,38 @@ function OrderCard({
       {payConfirmed && (
         <div className="mb-3 rounded-md border border-green-500/40 bg-green-500/10 p-2 text-xs">
           Pagamento confirmado: {PAYMENT_LABELS[anyOrder.confirmed_payment_method] ?? anyOrder.confirmed_payment_method}
+        </div>
+      )}
+
+      {canUpdateStatus && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+            Etapa do pedido
+          </p>
+          <div className="flex items-stretch gap-1">
+            {STATUS_FLOW.map((s, i) => {
+              const done = i <= currentIndex;
+              const clickable = i > currentIndex;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={!clickable || isPending}
+                  onClick={() => clickable && onStatus(s)}
+                  className={`flex-1 rounded-md border px-1 py-1.5 text-[11px] font-semibold leading-tight transition-colors ${
+                    done
+                      ? "border-primary/50 bg-primary/15 text-primary"
+                      : "border-border bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+                >
+                  {STATUS_LABELS[s]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Toque em qualquer etapa à frente para avançar direto.
+          </p>
         </div>
       )}
 
@@ -965,12 +1023,14 @@ function CloseShiftDialog({
 function ConfirmPaymentDialog({
   order,
   shiftId,
+  lastMotoboyId,
   onClose,
   onConfirm,
   isPending,
 }: {
   order: Order | null;
   shiftId: string | null;
+  lastMotoboyId?: string | null;
   onClose: () => void;
   onConfirm: (method: string, motoboyId: string | null) => void;
   isPending: boolean;
@@ -979,8 +1039,9 @@ function ConfirmPaymentDialog({
   const [motoboyId, setMotoboyId] = useState<string>("none");
   useEffect(() => {
     if (order) setMethod(order.payment_method ?? "dinheiro");
-    if (order) setMotoboyId(((order as any).motoboy_id as string) ?? "none");
-  }, [order]);
+    if (order)
+      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "none");
+  }, [order, lastMotoboyId]);
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
