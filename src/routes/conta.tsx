@@ -68,7 +68,7 @@ function ContaPage() {
         });
         if (error) throw error;
         if (!data.session) {
-          toast.success("Conta criada! Confirme seu e-mail para entrar.");
+          toast.message("Conta criada! Faça login para continuar.");
           setMode("login");
           return;
         }

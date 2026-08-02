@@ -30,7 +30,7 @@ export function CartSheet() {
   const { user, loading: authLoading } = useCustomerSession();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<number | null>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -116,7 +116,7 @@ export function CartSheet() {
           notes: combinedNotes || null,
           status: "received",
         })
-        .select("id")
+        .select("id, order_number")
         .single();
       if (oErr) throw oErr;
 
@@ -131,10 +131,10 @@ export function CartSheet() {
       const { error: iErr } = await supabase.from("order_items").insert(orderItemsPayload);
       if (iErr) throw iErr;
 
-      return order.id as string;
+      return order.order_number as number;
     },
-    onSuccess: (id) => {
-      setOrderId(id);
+    onSuccess: (num) => {
+      setOrderNumber(num);
       setStep("done");
       clear();
     },
@@ -143,7 +143,7 @@ export function CartSheet() {
 
   const reset = () => {
     setStep("cart");
-    setOrderId(null);
+    setOrderNumber(null);
     setOpen(false);
   };
 
@@ -398,9 +398,9 @@ export function CartSheet() {
             <p className="text-sm text-muted-foreground">
               Seu pedido foi enviado para a cozinha. Tempo estimado: <b>30 a 45 minutos</b>.
             </p>
-            {orderId && (
+            {orderNumber != null && (
               <p className="text-xs text-muted-foreground">
-                Nº do pedido: <span className="font-mono">{orderId.slice(0, 8).toUpperCase()}</span>
+                Nº do pedido: <span className="font-mono font-bold">#{orderNumber}</span>
               </p>
             )}
             <Button asChild className="mt-2 w-full">
