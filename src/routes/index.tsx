@@ -18,6 +18,7 @@ import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { CartSheet } from "@/components/menu/CartSheet";
 import { ReservationDialog } from "@/components/reservations/ReservationDialog";
 import { ReviewDialog } from "@/components/reviews/ReviewDialog";
+import { useCustomerSession } from "@/lib/customer-auth";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -38,13 +39,7 @@ function Home() {
             <p className="text-sm font-black uppercase tracking-wide leading-tight">Família Amaral</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to="/meus-pedidos"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
-            >
-              <UserRound className="h-4 w-4" />
-              <span className="hidden sm:inline">Meus pedidos</span>
-            </Link>
+            <AccountLink />
             <ReservationDialog
               trigger={
                 <button className="hidden sm:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
@@ -122,6 +117,12 @@ function Home() {
                 Como Chegar
               </a>
             </div>
+            <p className="mt-3 text-xs font-semibold text-white/80">
+              É necessário criar conta ou entrar para finalizar o pedido.{" "}
+              <Link to="/conta" className="underline underline-offset-2 hover:text-white">
+                Entrar / criar conta
+              </Link>
+            </p>
             <div className="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
               <Info icon={<Bike className="h-4 w-4" />} label="A partir de R$ 5" sub="Taxa de entrega" />
               <ReviewDialog
