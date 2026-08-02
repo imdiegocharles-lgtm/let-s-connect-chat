@@ -1,25 +1,28 @@
-## 1. Confirmação automática de e-mail
+## Resultado da revisão (verificado agora)
 
-Ativar o auto-confirm no cadastro: o cliente cria a conta e já entra direto, sem precisar clicar em link no e-mail. (Configuração de autenticação, sem mudança de banco.)
+Revisei código + banco. **Não encontrei erros de tipo, chamadas quebradas nem conflitos entre as partes.** `tsgo --noEmit` passa sem nenhum erro.
 
-## 2. Painel Operacional — fluxo mais rápido
+### O que conferi
 
-Hoje o operador precisa de 3 cliques de status ("Mover para em preparo" → "saiu para entrega" → "entregue") e depois ainda um 4º clique em "Confirmar pagamento", que abre outro diálogo. Vou reduzir isso mantendo tudo que já existe.
+**Seleção de espeto**
+- Categoria "O MAIS PEDIDO 🏆" contém exatamente os 2 Completos (60 e 65), então o diálogo só abre neles.
+- Lista de espetos vem da categoria "Espetos 🍖" (26 itens, todos os preços — sem filtro de R$ 15), ordenada por `sort_order` e só com itens disponíveis.
+- O carrinho grava `menuItemId` real do combo e o espeto em `extras`, com o nome `Completo … (Espeto: X)` — exatamente o formato que o `COMBO_RE` dos relatórios lê.
 
-**No cartão do pedido:**
+**Login obrigatório e RLS**
+- Checkout sem sessão mostra a tela "Entre para finalizar" (carrinho fica salvo no localStorage); com sessão, envia `user_id`.
+- Políticas em `orders`: insert só `authenticated` com `user_id = auth.uid()`, `status = 'received'` e pagamento não confirmado; leitura só do próprio pedido; admin/operador com acesso total. `order_items` idem, ainda validando quantidade, preço mínimo do item e dono do pedido. Nenhuma política anônima restou.
+- Gatilhos existentes e ativos: número diário do pedido, vínculo com turno, `updated_at` e criação automática de `profiles` no signup (nome + WhatsApp).
+- Realtime habilitado em `orders` (e `order_items`); a tela do cliente assina filtrando por `user_id` e limpa o canal ao sair.
 
-- Uma barra de etapas clicável (Recebido · Em preparo · Saiu p/ entrega · Entregue): o operador pode tocar direto em qualquer etapa adiante e o pedido pula para ela — de "recebido" para "entregue" em um único toque quando for pedido de balcão/entrega rápida.
-- O botão principal continua sendo "avançar uma etapa", só que maior e sem sair do lugar (não muda a posição do cartão até concluir), com atualização otimista: a etapa muda na hora, sem esperar a resposta do servidor.
-- Quando o operador marcar **"entregue"**, o diálogo de confirmação de pagamento + motoboy **abre sozinho na sequência**, já preenchido com a forma de pagamento que o cliente escolheu e com o motoboy usado por último no turno pré-selecionado. Um clique em "Confirmar" fecha o ciclo.
-- Se o operador fechar o diálogo sem confirmar, o pedido segue como está hoje: fica em "Entregues" com o aviso âmbar e o botão "Confirmar pagamento" para retomar depois.
+**Fluxo de status + pagamento/motoboy**
+- Barra de etapas clicável avança direto para qualquer etapa à frente, com update otimista e rollback em erro.
+- Ao marcar "Entregue", o diálogo de pagamento/motoboy abre sozinho (só se o operador tiver permissão e o pedido ainda não estiver confirmado), já pré-selecionando o último motoboy usado.
+- Continua existindo a lista de "entregues sem pagamento confirmado" caso o operador feche o diálogo.
 
-**Resultado:** um pedido normal passa a ser resolvido em ~2 interações (etapa "entregue" + confirmar pagamento), em vez de 4 cliques espalhados.
+## Dois ajustes cosméticos (opcionais)
 
-## 3. O que NÃO muda
+1. `/conta`: no cadastro ainda existe a mensagem de fallback "Confirme seu e-mail para entrar", que nunca deve aparecer agora que a confirmação automática está ligada — trocar por uma mensagem neutra de erro.
+2. Tela "Pedido recebido!": mostra um código truncado do id interno em vez do número diário do pedido (`#12`) que a cozinha usa. Passar a exibir o `order_number` deixaria cliente e cozinha falando a mesma língua.
 
-- Nenhuma tabela, coluna ou tela nova. Usa `orders.status`, `confirmed_payment_method`, `payment_confirmed_at`, `motoboy_id` e a tabela `motoboys` já existentes.
-- Permissões (`can_update_order_status`, `can_confirm_payment`), relatórios, impressão e o acompanhamento do cliente em `/meus-pedidos` continuam iguais.
-
-## Detalhes técnicos
-
-Alterações concentradas em `src/routes/operacional.tsx`: `OrderCard` ganha a barra de etapas clicável e passa a chamar `onStatus(status)` para qualquer etapa à frente; `updateStatus` recebe update otimista no cache do React Query; `onSuccess` da mutação abre o `ConfirmPaymentDialog` quando o novo status é `delivered` e o pedido ainda não tem `payment_confirmed_at`; `ConfirmPaymentDialog` passa a inicializar o método com `order.payment_method` e o motoboy com o último usado no turno. Configuração de auth: auto-confirm de e-mail ativado.
+Se quiser, aplico esses dois ajustes; caso contrário pode testar como está.
