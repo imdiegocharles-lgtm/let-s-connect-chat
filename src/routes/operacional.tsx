@@ -1023,12 +1023,14 @@ function CloseShiftDialog({
 function ConfirmPaymentDialog({
   order,
   shiftId,
+  lastMotoboyId,
   onClose,
   onConfirm,
   isPending,
 }: {
   order: Order | null;
   shiftId: string | null;
+  lastMotoboyId?: string | null;
   onClose: () => void;
   onConfirm: (method: string, motoboyId: string | null) => void;
   isPending: boolean;
@@ -1037,8 +1039,9 @@ function ConfirmPaymentDialog({
   const [motoboyId, setMotoboyId] = useState<string>("none");
   useEffect(() => {
     if (order) setMethod(order.payment_method ?? "dinheiro");
-    if (order) setMotoboyId(((order as any).motoboy_id as string) ?? "none");
-  }, [order]);
+    if (order)
+      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "none");
+  }, [order, lastMotoboyId]);
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
