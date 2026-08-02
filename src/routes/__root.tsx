@@ -13,6 +13,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/lib/cart";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { CartSheet } from "@/components/menu/CartSheet";
+import { useRouterState } from "@tanstack/react-router";
 
 function NotFoundComponent() {
   return (
@@ -128,8 +131,23 @@ function RootComponent() {
       <CartProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <PublicShell />
         <Toaster richColors position="top-center" />
       </CartProvider>
     </QueryClientProvider>
+  );
+}
+
+/** Carrinho + menu inferior apenas nas páginas públicas do cliente. */
+function PublicShell() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPublic =
+    pathname === "/" || pathname.startsWith("/conta") || pathname.startsWith("/meus-pedidos");
+  if (!isPublic) return null;
+  return (
+    <>
+      <CartSheet />
+      <BottomNav />
+    </>
   );
 }
