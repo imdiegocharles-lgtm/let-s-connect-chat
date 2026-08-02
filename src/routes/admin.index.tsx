@@ -492,7 +492,11 @@ function ItemsPanel() {
   const { data: items, isLoading } = useQuery({
     queryKey: ["admin-items"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("menu_items").select("*").order("sort_order");
+      const { data, error } = await supabase
+        .from("menu_items")
+        .select("*")
+        .order("price", { ascending: true })
+        .order("name", { ascending: true });
       if (error) throw error;
       return data as MenuItem[];
     },
@@ -564,7 +568,6 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [price, setPrice] = useState(item?.price?.toString() ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
   const [available, setAvailable] = useState(item?.is_available ?? true);
-  const [sortOrder, setSortOrder] = useState(item?.sort_order ?? 0);
 
   useEffect(() => {
     if (open) {
@@ -574,7 +577,6 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setPrice(item?.price?.toString() ?? "");
       setImageUrl(item?.image_url ?? null);
       setAvailable(item?.is_available ?? true);
-      setSortOrder(item?.sort_order ?? 0);
     }
   }, [open, item, categories]);
 
@@ -587,7 +589,6 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         price: Number(price.replace(",", ".")),
         image_url: imageUrl || null,
         is_available: available,
-        sort_order: sortOrder,
       };
       if (item) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
@@ -622,9 +623,12 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
           </div>
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div><Label>Descrição</Label><Textarea value={description ?? ""} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Preço (R$)</Label><Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0,00" /></div>
-            <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
+          <div>
+            <Label>Preço (R$)</Label>
+            <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0,00" />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Os itens são exibidos automaticamente do menor para o maior preço dentro da categoria.
+            </p>
           </div>
           <div>
             <Label>Foto do produto</Label>

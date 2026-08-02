@@ -1140,7 +1140,8 @@ function MenuAvailabilityPanel() {
         supabase
           .from("menu_items")
           .select("id, category_id, name, is_available, price, sort_order")
-          .order("sort_order"),
+          .order("price", { ascending: true })
+          .order("name", { ascending: true }),
       ]);
       return { cats: cats ?? [], items: items ?? [] };
     },
