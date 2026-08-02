@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
 import {
   Clock,
@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Navigation,
   CalendarDays,
+  UserRound,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { CartSheet } from "@/components/menu/CartSheet";
@@ -37,6 +38,13 @@ function Home() {
             <p className="text-sm font-black uppercase tracking-wide leading-tight">Família Amaral</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/meus-pedidos"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
+            >
+              <UserRound className="h-4 w-4" />
+              <span className="hidden sm:inline">Meus pedidos</span>
+            </Link>
             <ReservationDialog
               trigger={
                 <button className="hidden sm:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
