@@ -485,6 +485,8 @@ type MenuItem = {
   image_url: string | null;
   is_available: boolean;
   sort_order: number;
+  is_completo_skewer_option?: boolean;
+  requires_skewer_choice?: boolean;
 };
 
 function ItemsPanel() {
@@ -576,6 +578,8 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [price, setPrice] = useState(item?.price?.toString() ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
   const [available, setAvailable] = useState(item?.is_available ?? true);
+  const [skewerOption, setSkewerOption] = useState(item?.is_completo_skewer_option ?? false);
+  const [requiresSkewer, setRequiresSkewer] = useState(item?.requires_skewer_choice ?? false);
 
   useEffect(() => {
     if (open) {
@@ -585,6 +589,8 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setPrice(item?.price?.toString() ?? "");
       setImageUrl(item?.image_url ?? null);
       setAvailable(item?.is_available ?? true);
+      setSkewerOption(item?.is_completo_skewer_option ?? false);
+      setRequiresSkewer(item?.requires_skewer_choice ?? false);
     }
   }, [open, item, categories]);
 
@@ -597,6 +603,8 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         price: Number(price.replace(",", ".")),
         image_url: imageUrl || null,
         is_available: available,
+        is_completo_skewer_option: skewerOption,
+        requires_skewer_choice: requiresSkewer,
       };
       if (item) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
@@ -645,6 +653,29 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
           <div className="flex items-center gap-2">
             <Switch checked={available} onCheckedChange={setAvailable} />
             <Label>Disponível para pedido</Label>
+          </div>
+          <div className="rounded-lg border border-border p-3 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Espeto do Completo
+            </p>
+            <div className="flex items-start gap-2">
+              <Switch checked={skewerOption} onCheckedChange={setSkewerOption} />
+              <div>
+                <Label>Aparece na escolha "Escolha seu espeto"</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque nos espetos que podem vir inclusos nos pratos Completo, sem alterar o preço.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Switch checked={requiresSkewer} onCheckedChange={setRequiresSkewer} />
+              <div>
+                <Label>Este prato pede escolha de espeto</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque nos pratos Completo (Salpicão e Maionese). Vale em qualquer seção do cardápio.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         <DialogFooter>
