@@ -31,6 +31,12 @@ interface MotoboyLine {
   deliveries?: number
 }
 
+interface ComboLine {
+  combo?: string
+  total?: number
+  skewers?: { name?: string; quantity?: number }[]
+}
+
 interface Props {
   reportDate?: string
   ordersCount?: number
@@ -40,6 +46,7 @@ interface Props {
   payments?: { label: string; value: number }[]
   items?: ItemLine[]
   motoboys?: MotoboyLine[]
+  combos?: ComboLine[]
 }
 
 const money = (n: number) =>
@@ -97,6 +104,31 @@ export const MotoboysSection = ({ motoboys = [] }: { motoboys?: MotoboyLine[] })
   )
 }
 
+export const CombosSection = ({ combos = [] }: { combos?: ComboLine[] }) => {
+  if (combos.length === 0) return null
+  return (
+    <>
+      <Hr style={hr} />
+      <Text style={h2}>Espetos inclusos nos Completos</Text>
+      <Text style={note}>
+        Escolha inclusa no prato — não são vendas avulsas de espeto.
+      </Text>
+      {combos.map((c, i) => (
+        <Section key={i} style={{ marginBottom: '10px' }}>
+          <Text style={group}>
+            {c.combo}: {Number(c.total ?? 0)} vendidos
+          </Text>
+          {(c.skewers ?? []).map((s, j) => (
+            <Text key={j} style={line}>
+              - {s.name}: <b>{Number(s.quantity ?? 0)}</b>
+            </Text>
+          ))}
+        </Section>
+      ))}
+    </>
+  )
+}
+
 const Email = ({
   reportDate = '',
   ordersCount = 0,
@@ -106,6 +138,7 @@ const Email = ({
   payments = [],
   items = [],
   motoboys = [],
+  combos = [],
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -150,6 +183,8 @@ const Email = ({
         <Hr style={hr} />
         <ItemsSection items={items} />
 
+        <CombosSection combos={combos} />
+
         <MotoboysSection motoboys={motoboys} />
 
         <Hr style={hr} />
@@ -187,6 +222,25 @@ export const template = {
       { name: 'João', daily_rate: 90, deliveries: 22 },
       { name: 'Pedro', daily_rate: 90, deliveries: 18 },
     ],
+    combos: [
+      {
+        combo: 'Completo com Salpicão',
+        total: 50,
+        skewers: [
+          { name: 'Frango empanado', quantity: 20 },
+          { name: 'Linguiça mineira', quantity: 15 },
+          { name: 'Tulipa da asa', quantity: 15 },
+        ],
+      },
+      {
+        combo: 'Completo com Maionese',
+        total: 20,
+        skewers: [
+          { name: 'Frango grelhado', quantity: 10 },
+          { name: 'Coração', quantity: 10 },
+        ],
+      },
+    ],
   },
 } satisfies TemplateEntry
 
@@ -197,6 +251,7 @@ const sub = { color: '#111111', fontSize: '16px', margin: '4px 0 0' }
 const h2 = { color: '#111111', fontSize: '15px', fontWeight: 700, margin: '0 0 8px' }
 const group = { color: '#c1121f', fontSize: '13px', fontWeight: 700, margin: '8px 0 2px' }
 const line = { color: '#333333', fontSize: '14px', margin: '4px 0' }
+const note = { color: '#888888', fontSize: '12px', margin: '0 0 6px' }
 const total = { color: '#c1121f', fontSize: '20px', fontWeight: 700, margin: '12px 0 0' }
 const hr = { borderColor: '#e5e5e5', margin: '18px 0' }
 const footer = { color: '#888888', fontSize: '12px', margin: '0' }
