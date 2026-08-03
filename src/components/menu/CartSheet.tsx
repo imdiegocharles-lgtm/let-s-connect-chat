@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Minus, Plus, Trash2, CheckCircle2, CalendarX2 } from "lucide-react";
 import { getStoreStatus, useHorarios } from "@/lib/store-hours";
+import { createGuestOrder } from "@/lib/orders.functions";
 
 type Neighborhood = { id: string; name: string; fee: number };
 
@@ -86,38 +87,24 @@ export function CartSheet() {
         .filter(Boolean)
         .join(" | ");
 
-      const { data: order, error: oErr } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: name.trim(),
-          customer_phone: phone.trim(),
-          customer_address: address.trim(),
-          delivery_type: "delivery",
-          neighborhood: neighborhood?.name ?? null,
-          delivery_fee: deliveryFee,
-          subtotal,
-          total,
-          payment_method: payment,
-          change_for: payment === "dinheiro" && needsChange === "sim" ? Number(changeFor) : null,
+      const res = await createGuestOrder({
+        data: {
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          neighborhoodId,
+          paymentMethod: payment as never,
+          changeFor: payment === "dinheiro" && needsChange === "sim" ? Number(changeFor) : null,
           notes: combinedNotes || null,
-          status: "received",
-        })
-        .select("id, order_number")
-        .single();
-      if (oErr) throw oErr;
+          items: items.map((i) => ({
+            menuItemId: (i.menuItemId ?? i.id.split(":")[0]) as string,
+            name: i.name,
+            quantity: i.quantity,
+          })),
+        },
+      });
 
-      const orderItemsPayload = items.map((i) => ({
-        order_id: order.id,
-        menu_item_id: i.menuItemId ?? i.id.split(":")[0],
-        name: i.name,
-        price: i.price,
-        quantity: i.quantity,
-        extras: (i.extras ?? null) as never,
-      }));
-      const { error: iErr } = await supabase.from("order_items").insert(orderItemsPayload);
-      if (iErr) throw iErr;
-
-      return order.order_number as number;
+      return res.orderNumber;
     },
     onSuccess: (num) => {
       setOrderNumber(num);
