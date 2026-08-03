@@ -141,8 +141,7 @@ function RootComponent() {
 /** Carrinho + menu inferior apenas nas páginas públicas do cliente. */
 function PublicShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isPublic =
-    pathname === "/" || pathname.startsWith("/conta") || pathname.startsWith("/meus-pedidos");
+  const isPublic = pathname === "/";
   if (!isPublic) return null;
   return (
     <>

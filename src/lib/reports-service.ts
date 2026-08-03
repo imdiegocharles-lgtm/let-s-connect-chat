@@ -10,6 +10,11 @@ export const todayISO = () => {
 
 export type ItemLine = { group: string; name: string; quantity: number };
 export type MotoboyLine = { name: string; daily_rate: number; deliveries: number };
+export type ComboLine = {
+  combo: string;
+  total: number;
+  skewers: { name: string; quantity: number }[];
+};
 
 const COMBO_RE = /^(.*?)\s*\(Espeto:\s*(.+?)\)\s*$/;
 
@@ -22,14 +27,16 @@ function sortItems(map: Map<string, ItemLine>): ItemLine[] {
 const keyOf = (group: string, name: string) => `${group}||${name}`;
 
 /** Agrega os itens vendidos (somente pedidos com pagamento confirmado) de um turno. */
-export async function aggregateShiftItems(shiftId: string): Promise<ItemLine[]> {
+export async function aggregateShiftItems(
+  shiftId: string,
+): Promise<{ items: ItemLine[]; combos: ComboLine[] }> {
   const { data: orders, error: ordErr } = await sb
     .from("orders")
     .select("id, payment_confirmed_at")
     .eq("shift_id", shiftId);
   if (ordErr) throw ordErr;
   const paidIds = (orders ?? []).filter((o: any) => o.payment_confirmed_at).map((o: any) => o.id);
-  if (paidIds.length === 0) return [];
+  if (paidIds.length === 0) return { items: [], combos: [] };
 
   const { data: items, error } = await sb
     .from("order_items")
@@ -38,11 +45,20 @@ export async function aggregateShiftItems(shiftId: string): Promise<ItemLine[]> 
   if (error) throw error;
 
   const map = new Map<string, ItemLine>();
+  const combos = new Map<string, ComboLine>();
   const add = (group: string, name: string, qty: number) => {
     const k = keyOf(group, name);
     const cur = map.get(k);
     if (cur) cur.quantity += qty;
     else map.set(k, { group, name, quantity: qty });
+  };
+  const addCombo = (combo: string, skewer: string, qty: number) => {
+    const cur = combos.get(combo) ?? { combo, total: 0, skewers: [] };
+    cur.total += qty;
+    const s = cur.skewers.find((x) => x.name === skewer);
+    if (s) s.quantity += qty;
+    else cur.skewers.push({ name: skewer, quantity: qty });
+    combos.set(combo, cur);
   };
 
   for (const it of items ?? []) {
@@ -51,13 +67,36 @@ export async function aggregateShiftItems(shiftId: string): Promise<ItemLine[]> 
     const m = COMBO_RE.exec(String(it.name ?? ""));
     if (m) {
       add(group, m[1], qty);
-      // o espeto que acompanha o combo entra na contagem de espetos
-      add("Espetos", m[2], qty);
+      // o espeto incluso NÃO entra na contagem de espetos avulsos
+      addCombo(m[1], m[2], qty);
     } else {
       add(group, String(it.name ?? "Item"), qty);
     }
   }
-  return sortItems(map);
+  const comboList = [...combos.values()]
+    .map((c) => ({ ...c, skewers: c.skewers.sort((a, b) => b.quantity - a.quantity) }))
+    .sort((a, b) => b.total - a.total);
+  return { items: sortItems(map), combos: comboList };
+}
+
+/** Soma as escolhas de espeto dos Completos de vários turnos. */
+export function mergeComboLines(lists: ComboLine[][]): ComboLine[] {
+  const map = new Map<string, ComboLine>();
+  for (const list of lists) {
+    for (const c of list ?? []) {
+      const cur = map.get(c.combo) ?? { combo: c.combo, total: 0, skewers: [] };
+      cur.total += Number(c.total ?? 0);
+      for (const s of c.skewers ?? []) {
+        const found = cur.skewers.find((x) => x.name === s.name);
+        if (found) found.quantity += Number(s.quantity ?? 0);
+        else cur.skewers.push({ name: s.name, quantity: Number(s.quantity ?? 0) });
+      }
+      map.set(c.combo, cur);
+    }
+  }
+  return [...map.values()]
+    .map((c) => ({ ...c, skewers: c.skewers.sort((a, b) => b.quantity - a.quantity) }))
+    .sort((a, b) => b.total - a.total);
 }
 
 /** Soma listas de itens de vários turnos em uma só. */
@@ -149,7 +188,7 @@ export async function createShiftReport(shift: {
 
   const closed_at = shift.closed_at ?? new Date().toISOString();
   const agg = aggregate(orders ?? []);
-  const [items_summary, motoboys_summary] = await Promise.all([
+  const [itemsAgg, motoboys_summary] = await Promise.all([
     aggregateShiftItems(shift.id),
     aggregateShiftMotoboys(shift.id),
   ]);
@@ -161,7 +200,8 @@ export async function createShiftReport(shift: {
     opened_at: shift.opened_at,
     closed_at,
     opening_cash: Number(shift.opening_cash ?? 0),
-    items_summary,
+    items_summary: itemsAgg.items,
+    combos_summary: itemsAgg.combos,
     motoboys_summary,
     ...agg,
   };
@@ -237,6 +277,7 @@ export async function createDailyReport(date = todayISO()) {
     delivery_fees,
     totals_by_payment,
     items_summary: mergeItemLines(reports.map((r: any) => r.items_summary ?? [])),
+    combos_summary: mergeComboLines(reports.map((r: any) => r.combos_summary ?? [])),
     motoboys_summary: mergeMotoboyLines(reports.map((r: any) => r.motoboys_summary ?? [])),
     shifts_summary: reports.map((r) => ({
       shift_type: r.shift_type,

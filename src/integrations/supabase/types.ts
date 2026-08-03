@@ -43,6 +43,7 @@ export type Database = {
       }
       daily_reports: {
         Row: {
+          combos_summary: Json
           created_at: string
           delivery_fees: number
           emailed_at: string | null
@@ -59,6 +60,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          combos_summary?: Json
           created_at?: string
           delivery_fees?: number
           emailed_at?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          combos_summary?: Json
           created_at?: string
           delivery_fees?: number
           emailed_at?: string | null
@@ -577,6 +580,7 @@ export type Database = {
       shift_reports: {
         Row: {
           closed_at: string
+          combos_summary: Json
           created_at: string
           delivery_fees: number
           id: string
@@ -596,6 +600,7 @@ export type Database = {
         }
         Insert: {
           closed_at: string
+          combos_summary?: Json
           created_at?: string
           delivery_fees?: number
           id?: string
@@ -615,6 +620,7 @@ export type Database = {
         }
         Update: {
           closed_at?: string
+          combos_summary?: Json
           created_at?: string
           delivery_fees?: number
           id?: string

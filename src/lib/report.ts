@@ -40,6 +40,11 @@ export const PAYMENT_LABELS: Record<string, string> = {
 
 export type ItemLine = { group: string; name: string; quantity: number };
 export type MotoboyLine = { name: string; daily_rate: number; deliveries: number };
+export type ComboLine = {
+  combo: string;
+  total: number;
+  skewers: { name: string; quantity: number }[];
+};
 
 export type ShiftReport = {
   report_date: string;
@@ -54,6 +59,7 @@ export type ShiftReport = {
   totals_by_payment: Record<string, number>;
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
+  combos_summary?: ComboLine[];
 };
 
 export type DailyReport = {
@@ -65,6 +71,7 @@ export type DailyReport = {
   totals_by_payment: Record<string, number>;
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
+  combos_summary?: ComboLine[];
   shifts_summary: {
     shift_type: string;
     operator_name: string | null;
@@ -125,6 +132,20 @@ function itemsBlock(out: number[], items?: ItemLine[]) {
   out.push(...ESC.boldOn, ...line(pad("TOTAL DE ITENS", `${totalQty} un`)), ...ESC.boldOff);
 }
 
+function combosBlock(out: number[], combos?: ComboLine[]) {
+  const list = (combos ?? []).filter((c) => Number(c.total) > 0);
+  if (list.length === 0) return;
+  out.push(...line(""));
+  out.push(...ESC.boldOn, ...line("ESPETOS INCLUSOS NOS COMPLETOS"), ...ESC.boldOff);
+  out.push(...line("(escolha do prato - nao e venda avulsa)"));
+  for (const c of list) {
+    out.push(...line(pad(c.combo, `${c.total} vendidos`)));
+    for (const s of c.skewers ?? []) {
+      out.push(...line(pad(`  - ${s.name}`, `${s.quantity}`)));
+    }
+  }
+}
+
 function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
   const list = motoboys ?? [];
   if (list.length === 0) return;
@@ -154,6 +175,7 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   paymentBlock(out, r.totals_by_payment);
   out.push(...line(""));
   itemsBlock(out, r.items_summary);
+  combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
@@ -185,6 +207,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   paymentBlock(out, r.totals_by_payment);
   out.push(...line(""));
   itemsBlock(out, r.items_summary);
+  combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio consolidado do dia"));

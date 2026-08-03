@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
 import {
   Clock,
@@ -11,14 +11,10 @@ import {
   Flame,
   Navigation,
   CalendarDays,
-  UserRound,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { ReservationDialog } from "@/components/reservations/ReservationDialog";
 import { ReviewDialog } from "@/components/reviews/ReviewDialog";
-import { useCustomerSession } from "@/lib/customer-auth";
-import { useCart } from "@/lib/cart";
-import { useNavigate } from "@tanstack/react-router";
 import {
   formatSchedule,
   getStoreStatus,
@@ -31,9 +27,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const navigate = useNavigate();
-  const { user } = useCustomerSession();
-  const { setSheetOpen } = useCart();
   const { data: horarios = [] } = useHorarios();
   const { data: entrega } = useConfigEntrega();
   const store = getStoreStatus(horarios);
@@ -41,10 +34,6 @@ function Home() {
 
   const handleOrderClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!user) {
-      navigate({ to: "/conta", search: { next: "/" } });
-      return;
-    }
     document.getElementById("cardapio")?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -62,7 +51,6 @@ function Home() {
             <p className="text-sm font-black uppercase tracking-wide leading-tight">Família Amaral</p>
           </div>
           <div className="flex items-center gap-2">
-            <AccountLink />
             <ReservationDialog
               trigger={
                 <button className="hidden sm:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/20">
@@ -224,22 +212,6 @@ function Home() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function AccountLink() {
-  const { user, loading } = useCustomerSession();
-  const name =
-    (user?.user_metadata?.full_name as string | undefined)?.trim().split(" ")[0] ??
-    user?.email?.split("@")[0];
-  return (
-    <Link
-      to={user ? "/meus-pedidos" : "/conta"}
-      className="inline-flex max-w-[9rem] items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
-    >
-      <UserRound className="h-4 w-4 shrink-0" />
-      <span className="truncate">{loading ? "Conta" : user ? name : "Entrar"}</span>
-    </Link>
   );
 }
 

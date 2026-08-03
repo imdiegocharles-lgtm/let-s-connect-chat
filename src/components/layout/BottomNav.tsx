@@ -1,7 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, UserRound } from "lucide-react";
+import { Home, UtensilsCrossed, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { useCustomerSession } from "@/lib/customer-auth";
 import { cn } from "@/lib/utils";
 
 function TabButton({
@@ -51,21 +50,11 @@ function TabButton({
 export function BottomNav() {
   const navigate = useNavigate();
   const { count, setSheetOpen } = useCart();
-  const { user } = useCustomerSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hash = useRouterState({ select: (s) => s.location.hash });
 
   const isHome = pathname === "/" && hash !== "cardapio";
   const isMenu = pathname === "/" && hash === "cardapio";
-  const isOrders = pathname.startsWith("/meus-pedidos");
-  const isAccount = pathname.startsWith("/conta");
-
-  const displayName =
-    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
-    user?.email?.split("@")[0] ||
-    "";
-  const initial = displayName.charAt(0).toUpperCase();
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   const goHome = () => navigate({ to: "/", hash: "" });
   const goMenu = () => {
@@ -83,15 +72,12 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#1A1A1A]/90 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto flex h-[82px] max-w-3xl items-stretch px-2">
+      <div className="mx-auto flex h-[82px] max-w-3xl items-stretch px-6">
         <TabButton active={isHome} label="Início" onClick={goHome}>
           <Home className="h-[22px] w-[22px]" strokeWidth={1.9} />
         </TabButton>
-        <TabButton active={isMenu} label="Cardápio" onClick={goMenu}>
-          <UtensilsCrossed className="h-[22px] w-[22px]" strokeWidth={1.9} />
-        </TabButton>
 
-        <div className="relative flex w-[92px] shrink-0 items-center justify-center">
+        <div className="relative flex flex-1 items-center justify-center">
           <button
             type="button"
             onClick={() => setSheetOpen(true)}
@@ -107,29 +93,8 @@ export function BottomNav() {
           </button>
         </div>
 
-        <TabButton active={isOrders} label="Pedidos" onClick={() => navigate({ to: "/meus-pedidos" })}>
-          <ClipboardList className="h-[22px] w-[22px]" strokeWidth={1.9} />
-        </TabButton>
-        <TabButton
-          active={isAccount}
-          label={user ? "Minha Conta" : "Entrar"}
-          onClick={() => navigate({ to: user ? "/meus-pedidos" : "/conta", search: user ? undefined : {} })}
-        >
-          {user ? (
-            avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                className="h-[26px] w-[26px] rounded-full object-cover ring-1 ring-white/30"
-              />
-            ) : (
-              <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-white/10 text-[12px] font-black text-white">
-                {initial || "?"}
-              </span>
-            )
-          ) : (
-            <UserRound className="h-[22px] w-[22px]" strokeWidth={1.9} />
-          )}
+        <TabButton active={isMenu} label="Cardápio" onClick={goMenu}>
+          <UtensilsCrossed className="h-[22px] w-[22px]" strokeWidth={1.9} />
         </TabButton>
       </div>
     </nav>
