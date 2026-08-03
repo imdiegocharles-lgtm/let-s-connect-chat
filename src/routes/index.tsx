@@ -215,22 +215,6 @@ function Home() {
   );
 }
 
-function AccountLink() {
-  const { user, loading } = useCustomerSession();
-  const name =
-    (user?.user_metadata?.full_name as string | undefined)?.trim().split(" ")[0] ??
-    user?.email?.split("@")[0];
-  return (
-    <Link
-      to={user ? "/meus-pedidos" : "/conta"}
-      className="inline-flex max-w-[9rem] items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-bold text-foreground transition hover:border-primary hover:text-primary"
-    >
-      <UserRound className="h-4 w-4 shrink-0" />
-      <span className="truncate">{loading ? "Conta" : user ? name : "Entrar"}</span>
-    </Link>
-  );
-}
-
 function Strip({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-4">
