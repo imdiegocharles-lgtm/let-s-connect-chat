@@ -24,10 +24,13 @@ import { ImageUploader } from "@/components/admin/ImageUploader";
 import {
   fetchHorarios,
   fetchConfigEntrega,
+  fetchAvisoLoja,
+  DEFAULT_AVISO,
   DAY_LABELS,
   SERVICE_LABELS,
   type Horario,
   type ConfigEntrega,
+  type AvisoLoja,
 } from "@/lib/store-hours";
 import { PainelError } from "@/components/PainelError";
 import { useServerFn } from "@tanstack/react-start";
@@ -1026,7 +1029,79 @@ function HorariosPanel() {
           </Button>
         </Card>
       )}
+      <AvisoFechadoPanel />
     </>
+  );
+}
+
+/* ------------------- AVISO DE LOJA FECHADA ------------------- */
+
+function AvisoFechadoPanel() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ["avisos_loja"], queryFn: fetchAvisoLoja });
+  const [aviso, setAviso] = useState<AvisoLoja | null>(null);
+  useEffect(() => { if (data) setAviso(data); }, [data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!aviso) return;
+      const { error } = await supabase
+        .from("avisos_loja")
+        .update({
+          titulo_fechado: aviso.titulo_fechado.trim() || DEFAULT_AVISO.titulo_fechado,
+          horarios_modo: aviso.horarios_modo,
+          horarios_texto: aviso.horarios_texto,
+        })
+        .eq("id", 1);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Aviso atualizado");
+      qc.invalidateQueries({ queryKey: ["avisos_loja"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (!aviso) return null;
+
+  return (
+    <Card className="p-6 max-w-2xl space-y-4 mt-6">
+      <div>
+        <h3 className="font-bold">Aviso de loja fechada</h3>
+        <p className="text-sm text-muted-foreground">
+          Mensagem exibida no cardápio quando não estamos em horário de atendimento.
+        </p>
+      </div>
+      <div>
+        <Label>Título do aviso</Label>
+        <Input
+          value={aviso.titulo_fechado}
+          onChange={(e) => setAviso({ ...aviso, titulo_fechado: e.target.value })}
+          placeholder={DEFAULT_AVISO.titulo_fechado}
+        />
+      </div>
+      <label className="flex items-center gap-3 text-sm">
+        <Switch
+          checked={aviso.horarios_modo === "manual"}
+          onCheckedChange={(v) => setAviso({ ...aviso, horarios_modo: v ? "manual" : "auto" })}
+        />
+        Escrever os horários manualmente (desligado = gerado automaticamente pelos horários acima)
+      </label>
+      {aviso.horarios_modo === "manual" && (
+        <div>
+          <Label>Texto dos horários no aviso</Label>
+          <Textarea
+            rows={3}
+            value={aviso.horarios_texto}
+            onChange={(e) => setAviso({ ...aviso, horarios_texto: e.target.value })}
+            placeholder="Almoço: Seg–Sáb 11h às 14h30 · Churrasquinho: Seg–Sáb 18h às 00h · Dom 11h às 00h"
+          />
+        </div>
+      )}
+      <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar aviso
+      </Button>
+    </Card>
   );
 }
 

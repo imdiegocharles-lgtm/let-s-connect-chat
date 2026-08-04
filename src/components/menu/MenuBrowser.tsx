@@ -6,6 +6,8 @@ import {
   formatSchedule,
   getStoreStatus,
   useHorarios,
+  useAvisoLoja,
+  DEFAULT_AVISO,
 } from "@/lib/store-hours";
 import { Plus } from "lucide-react";
 import {
@@ -72,6 +74,7 @@ function norm(s: string) {
 export function MenuBrowser() {
   const { data, isLoading, error } = useQuery({ queryKey: ["menu"], queryFn: fetchMenu });
   const { data: horarios = [], isLoading: hoursLoading } = useHorarios();
+  const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
   const { add } = useCart();
   const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
 
@@ -135,10 +138,15 @@ export function MenuBrowser() {
     <div className="space-y-12">
       {svcWindow === "closed" && (
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
-          <p className="text-lg font-black text-primary">Estamos fechados no momento</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Almoço: {formatSchedule(horarios, "almoco") || "—"} · Churrasquinho:{" "}
-            {formatSchedule(horarios, "churrasquinho") || "—"}
+          <p className="text-lg font-black text-primary">
+            {aviso.titulo_fechado || DEFAULT_AVISO.titulo_fechado}
+          </p>
+          <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+            {aviso.horarios_modo === "manual" && aviso.horarios_texto.trim()
+              ? aviso.horarios_texto
+              : `Almoço: ${formatSchedule(horarios, "almoco") || "—"} · Churrasquinho: ${
+                  formatSchedule(horarios, "churrasquinho") || "—"
+                }`}
           </p>
         </div>
       )}
