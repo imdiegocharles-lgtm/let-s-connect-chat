@@ -18,6 +18,12 @@ export type ConfigEntrega = {
   texto_observacao: string;
 };
 
+export type AvisoLoja = {
+  titulo_fechado: string;
+  horarios_modo: "auto" | "manual";
+  horarios_texto: string;
+};
+
 export const DAY_LABELS = [
   "Domingo",
   "Segunda",
@@ -39,6 +45,12 @@ const DEFAULT_DELIVERY: ConfigEntrega = {
   prazo_minimo_minutos: 40,
   prazo_maximo_minutos: 80,
   texto_observacao: "Podendo ocorrer antes do prazo informado",
+};
+
+export const DEFAULT_AVISO: AvisoLoja = {
+  titulo_fechado: "Estamos fechados no momento",
+  horarios_modo: "auto",
+  horarios_texto: "",
 };
 
 export async function fetchHorarios(): Promise<Horario[]> {
@@ -66,6 +78,19 @@ export function useHorarios() {
 
 export function useConfigEntrega() {
   return useQuery({ queryKey: ["configuracoes_entrega"], queryFn: fetchConfigEntrega });
+}
+
+export async function fetchAvisoLoja(): Promise<AvisoLoja> {
+  const { data } = await supabase
+    .from("avisos_loja")
+    .select("titulo_fechado, horarios_modo, horarios_texto")
+    .eq("id", 1)
+    .maybeSingle();
+  return (data as AvisoLoja) ?? DEFAULT_AVISO;
+}
+
+export function useAvisoLoja() {
+  return useQuery({ queryKey: ["avisos_loja"], queryFn: fetchAvisoLoja });
 }
 
 /** Momento atual no fuso America/Sao_Paulo. */
