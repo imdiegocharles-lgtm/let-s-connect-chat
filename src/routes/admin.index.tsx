@@ -24,6 +24,8 @@ import { ImageUploader } from "@/components/admin/ImageUploader";
 import {
   fetchHorarios,
   fetchConfigEntrega,
+  fetchAvisoLoja,
+  DEFAULT_AVISO,
   DAY_LABELS,
   SERVICE_LABELS,
   type Horario,
