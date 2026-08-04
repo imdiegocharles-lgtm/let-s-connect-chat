@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      avisos_loja: {
+        Row: {
+          created_at: string
+          horarios_modo: string
+          horarios_texto: string
+          id: number
+          titulo_fechado: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          horarios_modo?: string
+          horarios_texto?: string
+          id?: number
+          titulo_fechado?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          horarios_modo?: string
+          horarios_texto?: string
+          id?: number
+          titulo_fechado?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracoes_entrega: {
         Row: {
           created_at: string
