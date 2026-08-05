@@ -17,6 +17,8 @@ export type Database = {
       avisos_loja: {
         Row: {
           created_at: string
+          home_horario_texto: string
+          home_horario_titulo: string
           horarios_modo: string
           horarios_texto: string
           id: number
@@ -25,6 +27,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          home_horario_texto?: string
+          home_horario_titulo?: string
           horarios_modo?: string
           horarios_texto?: string
           id?: number
@@ -33,6 +37,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          home_horario_texto?: string
+          home_horario_titulo?: string
           horarios_modo?: string
           horarios_texto?: string
           id?: number
