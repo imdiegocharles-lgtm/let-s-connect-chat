@@ -20,6 +20,8 @@ import {
   getStoreStatus,
   useConfigEntrega,
   useHorarios,
+  useAvisoLoja,
+  DEFAULT_AVISO,
 } from "@/lib/store-hours";
 
 export const Route = createFileRoute("/")({
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/")({
 function Home() {
   const { data: horarios = [] } = useHorarios();
   const { data: entrega } = useConfigEntrega();
+  const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
   const store = getStoreStatus(horarios);
   const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
 
@@ -152,8 +155,14 @@ function Home() {
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-3">
           <Strip
             icon={<Clock className="h-5 w-5 text-primary" />}
-            title="Horário do churrasco"
-            sub={formatSchedule(horarios, "churrasquinho") || "Consulte nossos horários"}
+            title={aviso.home_horario_titulo?.trim() || DEFAULT_AVISO.home_horario_titulo}
+            sub={
+              aviso.home_horario_texto?.trim() ? (
+                <span className="whitespace-pre-line">{aviso.home_horario_texto}</span>
+              ) : (
+                formatSchedule(horarios, "churrasquinho") || "Consulte nossos horários"
+              )
+            }
           />
           <Strip
             icon={<Bike className="h-5 w-5 text-primary" />}
