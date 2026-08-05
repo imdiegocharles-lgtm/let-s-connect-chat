@@ -162,6 +162,7 @@ function AdminDashboard() {
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
             <TabsTrigger value="reservations">🍽️ Reservas</TabsTrigger>
             <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
+            <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
@@ -170,6 +171,7 @@ function AdminDashboard() {
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
           <TabsContent value="reservations" className="mt-6"><ReservationsPanel /></TabsContent>
           <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
+          <TabsContent value="reports" className="mt-6"><ReportsViewer /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
@@ -1051,12 +1053,14 @@ function AvisoFechadoPanel() {
           titulo_fechado: aviso.titulo_fechado.trim() || DEFAULT_AVISO.titulo_fechado,
           horarios_modo: aviso.horarios_modo,
           horarios_texto: aviso.horarios_texto,
+          home_horario_titulo: aviso.home_horario_titulo,
+          home_horario_texto: aviso.home_horario_texto,
         })
         .eq("id", 1);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Aviso atualizado");
+      toast.success("Textos atualizados");
       qc.invalidateQueries({ queryKey: ["avisos_loja"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -1067,9 +1071,9 @@ function AvisoFechadoPanel() {
   return (
     <Card className="p-6 max-w-2xl space-y-4 mt-6">
       <div>
-        <h3 className="font-bold">Aviso de loja fechada</h3>
+        <h3 className="font-bold">Textos do site</h3>
         <p className="text-sm text-muted-foreground">
-          Mensagem exibida no cardápio quando não estamos em horário de atendimento.
+          Aviso de loja fechada no cardápio e o cartão de horários da página inicial.
         </p>
       </div>
       <div>
@@ -1098,8 +1102,28 @@ function AvisoFechadoPanel() {
           />
         </div>
       )}
+      <div className="border-t border-border pt-4">
+        <Label>Título do cartão de horários (página inicial)</Label>
+        <Input
+          value={aviso.home_horario_titulo}
+          onChange={(e) => setAviso({ ...aviso, home_horario_titulo: e.target.value })}
+          placeholder={DEFAULT_AVISO.home_horario_titulo}
+        />
+      </div>
+      <div>
+        <Label>Texto do cartão de horários (página inicial)</Label>
+        <Textarea
+          rows={4}
+          value={aviso.home_horario_texto}
+          onChange={(e) => setAviso({ ...aviso, home_horario_texto: e.target.value })}
+          placeholder={DEFAULT_AVISO.home_horario_texto}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Se ficar em branco, o horário é montado automaticamente pela grade cadastrada.
+        </p>
+      </div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>
-        {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar aviso
+        {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar textos
       </Button>
     </Card>
   );
