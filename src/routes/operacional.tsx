@@ -28,6 +28,8 @@ import {
   todayISO,
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
+import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
+
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
@@ -188,7 +190,9 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
-  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+  const sendShiftEmail = useServerFn(sendShiftReportEmail);
+
 
   const { data: perms } = useQuery({
     queryKey: ["my-kitchen-perms"],
