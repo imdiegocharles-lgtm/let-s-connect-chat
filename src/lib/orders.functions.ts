@@ -15,6 +15,7 @@ const schema = z.object({
         menuItemId: z.string().uuid(),
         name: z.string().trim().min(1).max(200),
         quantity: z.number().int().min(1).max(100),
+        extras: z.record(z.string(), z.any()).nullable().optional(),
       }),
     )
     .min(1)
@@ -23,7 +24,7 @@ const schema = z.object({
 
 /** Cria um pedido de convidado (sem login). Preços e taxas vêm do banco. */
 export const createGuestOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => schema.parse(data))
+  .inputValidator(schema)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
@@ -53,7 +54,13 @@ export const createGuestOrder = createServerFn({ method: "POST" })
       if (!mi) throw new Error("Item do cardápio não encontrado.");
       if (!mi.is_available) throw new Error(`"${i.name}" está indisponível no momento.`);
       subtotal += mi.price * i.quantity;
-      return { menu_item_id: i.menuItemId, name: i.name, price: mi.price, quantity: i.quantity };
+      return { 
+        menu_item_id: i.menuItemId, 
+        name: i.name, 
+        price: mi.price, 
+        quantity: i.quantity,
+        extras: i.extras || null
+      };
     });
 
     const deliveryFee = Number(hood.fee ?? 0);

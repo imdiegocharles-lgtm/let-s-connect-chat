@@ -37,6 +37,7 @@ type Item = {
   sort_order: number;
   is_completo_skewer_option: boolean;
   requires_skewer_choice: boolean;
+  has_side_dish: boolean;
 };
 
 async function fetchMenu() {
@@ -48,7 +49,7 @@ async function fetchMenu() {
     supabase
       .from("menu_items")
       .select(
-        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice",
+        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice, has_side_dish",
       )
       .eq("is_available", true)
       .order("price", { ascending: true })
@@ -78,6 +79,20 @@ export function MenuBrowser() {
   const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
   const { add } = useCart();
   const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
+  const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
+
+  const { data: sides = [] } = useQuery({
+    queryKey: ["active-sides"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("acompanhamentos")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (isLoading || hoursLoading)
     return <p className="py-10 text-center text-sm text-muted-foreground">Carregando cardápio…</p>;
@@ -128,7 +143,23 @@ export function MenuBrowser() {
       setPendingCompleto(item);
       return;
     }
+    if (item.has_side_dish && sides.length > 0) {
+      setPendingSideDish(item);
+      return;
+    }
     add({ id: item.id, menuItemId: item.id, name: item.name, price: Number(item.price) });
+  };
+
+  const confirmSideDish = (side: { id: string; name: string }) => {
+    if (!pendingSideDish) return;
+    add({
+      id: `${pendingSideDish.id}:side:${side.id}`,
+      menuItemId: pendingSideDish.id,
+      name: `${pendingSideDish.name} (Acompanhamento: ${side.name})`,
+      price: Number(pendingSideDish.price),
+      extras: { acompanhamento: side.name, acompanhamento_id: side.id },
+    });
+    setPendingSideDish(null);
   };
 
   const confirmCompleto = (skewer: Item) => {
@@ -252,6 +283,29 @@ export function MenuBrowser() {
               <button
                 key={s.id}
                 onClick={() => confirmCompleto(s)}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+              >
+                <span className="font-semibold">{s.name}</span>
+                <span className="text-sm text-muted-foreground">Incluso</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pendingSideDish} onOpenChange={(v) => !v && setPendingSideDish(null)}>
+        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Escolha seu acompanhamento</DialogTitle>
+            <DialogDescription>
+              O {pendingSideDish?.name} exige a escolha de um acompanhamento, sem custo adicional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+            {sides.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => confirmSideDish(s)}
                 className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
               >
                 <span className="font-semibold">{s.name}</span>

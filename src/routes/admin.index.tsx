@@ -159,6 +159,7 @@ function AdminDashboard() {
         <Tabs defaultValue="items">
           <TabsList>
             <TabsTrigger value="items">Itens</TabsTrigger>
+            <TabsTrigger value="acompanhamentos">Acompanhamentos</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
@@ -168,6 +169,7 @@ function AdminDashboard() {
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
+          <TabsContent value="acompanhamentos" className="mt-6"><AcompanhamentosPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
@@ -550,6 +552,7 @@ type MenuItem = {
   sort_order: number;
   is_completo_skewer_option?: boolean;
   requires_skewer_choice?: boolean;
+  has_side_dish?: boolean;
 };
 
 function ItemsPanel() {
@@ -643,6 +646,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [available, setAvailable] = useState(item?.is_available ?? true);
   const [skewerOption, setSkewerOption] = useState(item?.is_completo_skewer_option ?? false);
   const [requiresSkewer, setRequiresSkewer] = useState(item?.requires_skewer_choice ?? false);
+  const [hasSideDish, setHasSideDish] = useState(item?.has_side_dish ?? false);
 
   useEffect(() => {
     if (open) {
@@ -654,6 +658,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setAvailable(item?.is_available ?? true);
       setSkewerOption(item?.is_completo_skewer_option ?? false);
       setRequiresSkewer(item?.requires_skewer_choice ?? false);
+      setHasSideDish(item?.has_side_dish ?? false);
     }
   }, [open, item, categories]);
 
@@ -668,6 +673,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         is_available: available,
         is_completo_skewer_option: skewerOption,
         requires_skewer_choice: requiresSkewer,
+        has_side_dish: hasSideDish,
       };
       if (item) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
@@ -727,6 +733,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
                 <Label>Aparece na escolha "Escolha seu espeto"</Label>
                 <p className="text-xs text-muted-foreground">
                   Marque nos espetos que podem vir inclusos nos pratos Completo, sem alterar o preço.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Switch checked={hasSideDish} onCheckedChange={setHasSideDish} />
+              <div>
+                <Label>Tem acompanhamento?</Label>
+                <p className="text-xs text-muted-foreground">
+                  O prato exige a seleção de acompanhamento pelo cliente (obrigatório). Exclusivo para Almoço.
                 </p>
               </div>
             </div>
@@ -795,9 +810,135 @@ function NeighborhoodsPanel() {
               </div>
             </Card>
           ))}
+          {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum bairro cadastrado.</p>}
         </div>
       )}
     </div>
+  );
+}
+
+
+/* --------------------------- ACOMPANHAMENTOS --------------------------- */
+
+type Acompanhamento = { id: string; name: string; is_active: boolean };
+
+function AcompanhamentosPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-acompanhamentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("acompanhamentos").select("*").order("name");
+      if (error) throw error;
+      return (data ?? []) as unknown as Acompanhamento[];
+    },
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("acompanhamentos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { 
+      toast.success("Acompanhamento excluído"); 
+      qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] }); 
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggle = useMutation({
+    mutationFn: async (a: Acompanhamento) => {
+      const { error } = await supabase.from("acompanhamentos").update({ is_active: !a.is_active }).eq("id", a.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Acompanhamentos</h2>
+        <AcompanhamentoDialog trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo acompanhamento</Button>} />
+      </div>
+      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+        <div className="grid gap-2">
+          {data?.map((a) => (
+            <Card key={a.id} className="p-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{a.name}</div>
+                <div className="text-xs text-muted-foreground">{a.is_active ? "Ativo" : "Inativo"}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={a.is_active} onCheckedChange={() => toggle.mutate(a)} />
+                <AcompanhamentoDialog acompanhamento={a} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
+                <ConfirmDelete onConfirm={() => del.mutate(a.id)} label={`Excluir "${a.name}"?`} />
+              </div>
+            </Card>
+          ))}
+          {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum acompanhamento cadastrado.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AcompanhamentoDialog({ acompanhamento, trigger }: { acompanhamento?: Acompanhamento; trigger: React.ReactNode }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(acompanhamento?.name ?? "");
+  const [active, setActive] = useState(acompanhamento?.is_active ?? true);
+
+  useEffect(() => {
+    if (open) {
+      setName(acompanhamento?.name ?? "");
+      setActive(acompanhamento?.is_active ?? true);
+    }
+  }, [open, acompanhamento]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { name, is_active: active };
+      if (acompanhamento) {
+        const { error } = await supabase.from("acompanhamentos").update(payload).eq("id", acompanhamento.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("acompanhamentos").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Salvo");
+      qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] });
+      setOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{acompanhamento ? "Editar acompanhamento" : "Novo acompanhamento"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={active} onCheckedChange={setActive} />
+            <Label>Ativo</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
