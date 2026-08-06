@@ -156,6 +156,7 @@ function AdminDashboard() {
           </div>
         </div>
       </header>
+
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Tabs defaultValue="financial">
           <TabsList className="flex flex-wrap h-auto">
@@ -184,7 +185,15 @@ function AdminDashboard() {
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
+      <footer className="border-t bg-card py-4 mt-8">
+        <div className="mx-auto max-w-6xl px-4 flex justify-center">
+          <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+            Acesso Administrativo
+          </Link>
+        </div>
+      </footer>
     </div>
+
   );
 }
 
@@ -224,9 +233,15 @@ function LoginChooser() {
           </Link>
         </div>
       </div>
+      <footer className="w-full max-w-3xl mx-auto mt-12 pb-8 border-t border-border/50 pt-4 flex justify-center">
+        <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+          Acesso Administrativo
+        </Link>
+      </footer>
     </div>
   );
 }
+
 
 /* --------------------------- KITCHEN USERS --------------------------- */
 
@@ -693,10 +708,10 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         extra_question_options: extraQuestionOptions.split(",").map(o => o.trim()).filter(o => o.length > 0) || null,
       };
       if (item) {
-        const { error } = await (supabase.from("menu_items") as any).update(payload).eq("id", item.id);
+        const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from("menu_items") as any).insert(payload);
+        const { error } = await supabase.from("menu_items").insert(payload);
         if (error) throw error;
       }
     },
