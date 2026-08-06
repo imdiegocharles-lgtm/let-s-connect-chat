@@ -693,10 +693,10 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         extra_question_options: extraQuestionOptions.split(",").map(o => o.trim()).filter(o => o.length > 0) || null,
       };
       if (item) {
-        const { error } = await (supabase.from("menu_items") as any).update(payload).eq("id", item.id);
+        const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase.from("menu_items") as any).insert(payload);
+        const { error } = await supabase.from("menu_items").insert(payload);
         if (error) throw error;
       }
     },
