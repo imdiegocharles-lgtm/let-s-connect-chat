@@ -133,7 +133,7 @@ export function FinancialDashboard() {
                 <YAxis stroke="#888" tickFormatter={(val) => `R$${val}`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
-                  labelFormatter={(val) => val ? format(new Date(val), "dd 'de' MMMM", { locale: ptBR }) : ""}
+                  labelFormatter={(val: any) => val ? format(new Date(val), "dd 'de' MMMM", { locale: ptBR }) : ""}
                   formatter={(val: any) => [formatCurrency(Number(val)), "Faturamento"]}
                 />
                 <Area type="monotone" dataKey="total" stroke="#E11D48" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
