@@ -558,6 +558,9 @@ type MenuItem = {
   is_completo_skewer_option?: boolean;
   requires_skewer_choice?: boolean;
   has_side_dish?: boolean;
+  has_extra_question?: boolean;
+  extra_question_text?: string | null;
+  extra_question_options?: string[] | null;
 };
 
 function ItemsPanel() {
@@ -579,7 +582,7 @@ function ItemsPanel() {
         .order("price", { ascending: true })
         .order("name", { ascending: true });
       if (error) throw error;
-      return data as MenuItem[];
+      return data as any[];
     },
   });
 
@@ -652,6 +655,9 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [skewerOption, setSkewerOption] = useState(item?.is_completo_skewer_option ?? false);
   const [requiresSkewer, setRequiresSkewer] = useState(item?.requires_skewer_choice ?? false);
   const [hasSideDish, setHasSideDish] = useState(item?.has_side_dish ?? false);
+  const [hasExtraQuestion, setHasExtraQuestion] = useState(item?.has_extra_question ?? false);
+  const [extraQuestionText, setExtraQuestionText] = useState(item?.extra_question_text ?? "");
+  const [extraQuestionOptions, setExtraQuestionOptions] = useState(item?.extra_question_options?.join(", ") ?? "");
 
   useEffect(() => {
     if (open) {
@@ -664,6 +670,9 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setSkewerOption(item?.is_completo_skewer_option ?? false);
       setRequiresSkewer(item?.requires_skewer_choice ?? false);
       setHasSideDish(item?.has_side_dish ?? false);
+      setHasExtraQuestion(item?.has_extra_question ?? false);
+      setExtraQuestionText(item?.extra_question_text ?? "");
+      setExtraQuestionOptions(item?.extra_question_options?.join(", ") ?? "");
     }
   }, [open, item, categories]);
 
@@ -679,12 +688,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         is_completo_skewer_option: skewerOption,
         requires_skewer_choice: requiresSkewer,
         has_side_dish: hasSideDish,
+        has_extra_question: hasExtraQuestion,
+        extra_question_text: extraQuestionText || null,
+        extra_question_options: extraQuestionOptions.split(",").map(o => o.trim()).filter(o => o.length > 0) || null,
       };
       if (item) {
-        const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
+        const { error } = await (supabase.from("menu_items") as any).update(payload).eq("id", item.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("menu_items").insert(payload);
+        const { error } = await (supabase.from("menu_items") as any).insert(payload);
         if (error) throw error;
       }
     },
@@ -757,6 +769,46 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
                 <p className="text-xs text-muted-foreground">
                   Marque nos pratos Completo (Salpicão e Maionese). Vale em qualquer seção do cardápio.
                 </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 pt-2 border-t border-border">
+              <Switch checked={hasExtraQuestion} onCheckedChange={setHasExtraQuestion} />
+              <div className="flex-1">
+                <Label>Pergunta extra ao adicionar?</Label>
+                <p className="text-xs text-muted-foreground">
+                  Abre uma janela para o cliente escolher uma opção obrigatória (ex: "Acompanha mel?").
+                </p>
+                {hasExtraQuestion && (
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <Label className="text-xs">Texto da Pergunta</Label>
+                      <Input
+                        value={extraQuestionText}
+                        onChange={(e) => setExtraQuestionText(e.target.value)}
+                        placeholder="Ex: Acompanha mel?"
+                        className="h-8 text-sm"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck="false"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Opções (separadas por vírgula)</Label>
+                      <Input
+                        value={extraQuestionOptions}
+                        onChange={(e) => setExtraQuestionOptions(e.target.value)}
+                        placeholder="Ex: Sim, Não"
+                        className="h-8 text-sm"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck="false"
+                      />
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Escreva as opções separadas por vírgula. Ex: Sim, Não
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

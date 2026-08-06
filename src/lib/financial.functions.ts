@@ -90,10 +90,10 @@ export const getFinancialStats = createServerFn({ method: "GET" })
     // Faturamento por categoria
     const { data: categoryData, error: catErr } = await sb
       .from("order_items")
-      .select("quantity, unit_price, name, menu_items(name, menu_categories(name)), order:orders!inner(payment_confirmed_at)")
-      .gte("orders.created_at", startISO)
-      .lte("orders.created_at", endISO)
-      .not("orders.payment_confirmed_at", "is", null);
+      .select("quantity, price, name, menu_items(name, menu_categories(name)), order:orders!inner(payment_confirmed_at)")
+      .gte("order.created_at", startISO)
+      .lte("order.created_at", endISO)
+      .not("order.payment_confirmed_at", "is", null);
 
     if (catErr) throw catErr;
 
@@ -102,7 +102,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
 
     (categoryData ?? []).forEach((item: any) => {
       const catName = item.menu_items?.menu_categories?.name || "Outros";
-      const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
+      const total = Number(item.quantity || 0) * Number(item.price || 0);
       categoriesMap[catName] = (categoriesMap[catName] ?? 0) + total;
       
       const itemName = item.menu_items?.name || item.name || "Item Desconhecido";
@@ -124,7 +124,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
 
     // Faturamento por turno
     const { data: shiftsRevenue } = await sb
-      .from("shift_reports")
+      .from("shifts")
       .select("total_revenue, shift_type")
       .gte("opened_at", startISO)
       .lte("opened_at", endISO);
