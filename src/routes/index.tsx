@@ -5,12 +5,12 @@ import {
   MapPin,
   Bike,
   Star,
-  Instagram,
   Phone,
   ShoppingBag,
   Flame,
   Navigation,
   CalendarDays,
+  Camera as Instagram,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { ReservationDialog } from "@/components/reservations/ReservationDialog";
