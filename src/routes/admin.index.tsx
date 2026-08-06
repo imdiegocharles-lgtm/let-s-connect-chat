@@ -707,7 +707,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
             </Select>
           </div>
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
-          <div><Label>Descrição</Label><Textarea value={description ?? ""} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
+          <div><Label>Descrição</Label><Textarea value={description ?? ""} onChange={(e) => setDescription(e.target.value)} rows={3} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
           <div>
             <Label>Preço (R$)</Label>
             <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0,00" />
@@ -980,8 +980,8 @@ function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighbor
       <DialogContent>
         <DialogHeader><DialogTitle>{neighborhood ? "Editar bairro" : "Novo bairro"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" /></div>
+          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
+          <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
         </div>
         <DialogFooter>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !name || !fee}>
@@ -1064,8 +1064,8 @@ function SettingsPanel() {
         <div><Label>Tempo médio de preparo (min)</Label><Input type="number" value={form.avg_prep_minutes} onChange={(e) => setForm({ ...form, avg_prep_minutes: e.target.value })} /></div>
         <div><Label>Pedido mínimo (R$)</Label><Input type="number" step="0.01" value={form.min_order_value} onChange={(e) => setForm({ ...form, min_order_value: e.target.value })} /></div>
       </div>
-      <div><Label>URL do agente da impressora</Label><Input value={form.printer_url} onChange={(e) => setForm({ ...form, printer_url: e.target.value })} placeholder="http://localhost:8080/print" /></div>
-      <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" /></div>
+      <div><Label>URL do agente da impressora</Label><Input value={form.printer_url} onChange={(e) => setForm({ ...form, printer_url: e.target.value })} placeholder="http://localhost:8080/print" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
+      <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
     </Card>
     <HorariosPanel />
@@ -1402,11 +1402,11 @@ function ReservationsPanel() {
       <Card className="p-4 grid gap-3 sm:grid-cols-3">
         <div>
           <Label>Buscar por nome</Label>
-          <Input value={searchName} onChange={(e) => setSearchName(e.target.value)} placeholder="Nome do cliente" />
+          <Input value={searchName} onChange={(e) => setSearchName(e.target.value)} placeholder="Nome do cliente" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
         </div>
         <div>
           <Label>Buscar por telefone</Label>
-          <Input value={searchPhone} onChange={(e) => setSearchPhone(e.target.value)} placeholder="Telefone" />
+          <Input value={searchPhone} onChange={(e) => setSearchPhone(e.target.value)} placeholder="Telefone" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
         </div>
         <div>
           <Label>Filtrar por data</Label>
