@@ -15,7 +15,7 @@ const schema = z.object({
         menuItemId: z.string().uuid(),
         name: z.string().trim().min(1).max(200),
         quantity: z.number().int().min(1).max(100),
-        extras: z.record(z.any()).nullable().optional(),
+        extras: z.record(z.string(), z.any()).nullable().optional(),
       }),
     )
     .min(1)
