@@ -795,7 +795,133 @@ function NeighborhoodsPanel() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Bairros e taxas de entrega</h2>
         <NeighborhoodDialog trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo bairro</Button>} />
+    </div>
+  );
+}
+
+/* --------------------------- ACOMPANHAMENTOS --------------------------- */
+
+type Acompanhamento = { id: string; name: string; is_active: boolean };
+
+function AcompanhamentosPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-acompanhamentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("acompanhamentos").select("*").order("name");
+      if (error) throw error;
+      return (data ?? []) as unknown as Acompanhamento[];
+    },
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("acompanhamentos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { 
+      toast.success("Acompanhamento excluído"); 
+      qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] }); 
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggle = useMutation({
+    mutationFn: async (a: Acompanhamento) => {
+      const { error } = await supabase.from("acompanhamentos").update({ is_active: !a.is_active }).eq("id", a.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Acompanhamentos</h2>
+        <AcompanhamentoDialog trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo acompanhamento</Button>} />
       </div>
+      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+        <div className="grid gap-2">
+          {data?.map((a) => (
+            <Card key={a.id} className="p-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{a.name}</div>
+                <div className="text-xs text-muted-foreground">{a.is_active ? "Ativo" : "Inativo"}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={a.is_active} onCheckedChange={() => toggle.mutate(a)} />
+                <AcompanhamentoDialog acompanhamento={a} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
+                <ConfirmDelete onConfirm={() => del.mutate(a.id)} label={`Excluir "${a.name}"?`} />
+              </div>
+            </Card>
+          ))}
+          {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum acompanhamento cadastrado.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AcompanhamentoDialog({ acompanhamento, trigger }: { acompanhamento?: Acompanhamento; trigger: React.ReactNode }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(acompanhamento?.name ?? "");
+  const [active, setActive] = useState(acompanhamento?.is_active ?? true);
+
+  useEffect(() => {
+    if (open) {
+      setName(acompanhamento?.name ?? "");
+      setActive(acompanhamento?.is_active ?? true);
+    }
+  }, [open, acompanhamento]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { name, is_active: active };
+      if (acompanhamento) {
+        const { error } = await supabase.from("acompanhamentos").update(payload).eq("id", acompanhamento.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("acompanhamentos").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Salvo");
+      qc.invalidateQueries({ queryKey: ["admin-acompanhamentos"] });
+      setOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{acompanhamento ? "Editar acompanhamento" : "Novo acompanhamento"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={active} onCheckedChange={setActive} />
+            <Label>Ativo</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
       {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
         <div className="grid gap-2">
           {data?.map((n) => (
