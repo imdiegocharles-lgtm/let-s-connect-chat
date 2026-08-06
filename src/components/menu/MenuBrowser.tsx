@@ -10,6 +10,7 @@ import {
   DEFAULT_AVISO,
 } from "@/lib/store-hours";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -97,9 +98,13 @@ export function MenuBrowser() {
   const displayName = (name: string) => name;
 
   const grouped = data.cats
-    .filter((c) =>
-      svcWindow === "lunch" ? c.available_lunch : svcWindow === "dinner" ? c.available_dinner : false,
-    )
+    .filter((c) => {
+      // Se estiver aberto, filtra pelo turno atual
+      if (svcWindow === "lunch") return c.available_lunch;
+      if (svcWindow === "dinner") return c.available_dinner;
+      // Se estiver fechado, mostra tudo o que estiver disponível em algum turno
+      return c.available_lunch || c.available_dinner;
+    })
     .map((c) => ({ ...c, items: data.items.filter((i) => i.category_id === c.id) }))
     .filter((c) => c.items.length)
     .sort((a, b) => {
@@ -114,6 +119,10 @@ export function MenuBrowser() {
     .sort((a, b) => Number(a.price) - Number(b.price) || a.name.localeCompare(b.name, "pt-BR"));
 
   const handleAdd = (item: Item) => {
+    if (svcWindow === "closed") {
+      toast.error("Estamos fechados no momento. Não é possível adicionar itens ao pedido.");
+      return;
+    }
     // Vinculado ao PRODUTO: vale em qualquer seção onde ele apareça.
     if (item.requires_skewer_choice && skewerOptions.length > 0) {
       setPendingCompleto(item);
@@ -216,7 +225,8 @@ export function MenuBrowser() {
                   <button
                     onClick={() => handleAdd(item)}
                     aria-label={`Adicionar ${item.name}`}
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110"
+                    disabled={svcWindow === "closed"}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="h-5 w-5" />
                   </button>
