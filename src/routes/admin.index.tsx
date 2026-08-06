@@ -233,6 +233,13 @@ function LoginChooser() {
           </Link>
         </div>
       </div>
+      <footer className="w-full max-w-3xl mx-auto mt-12 pb-8 border-t border-border/50 pt-4 flex justify-center">
+        <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+          Acesso Administrativo
+        </Link>
+      </footer>
+    </div>
+
     </div>
   );
 }
