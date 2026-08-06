@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      acompanhamentos: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       avisos_loja: {
         Row: {
           created_at: string
@@ -226,6 +250,7 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
+          has_side_dish: boolean
           id: string
           image_url: string | null
           is_available: boolean
@@ -240,6 +265,7 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
+          has_side_dish?: boolean
           id?: string
           image_url?: string | null
           is_available?: boolean
@@ -254,6 +280,7 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
+          has_side_dish?: boolean
           id?: string
           image_url?: string | null
           is_available?: boolean
