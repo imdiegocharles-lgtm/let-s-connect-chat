@@ -737,6 +737,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
               </div>
             </div>
             <div className="flex items-start gap-2">
+              <Switch checked={hasSideDish} onCheckedChange={setHasSideDish} />
+              <div>
+                <Label>Tem acompanhamento?</Label>
+                <p className="text-xs text-muted-foreground">
+                  O prato exige a seleção de acompanhamento pelo cliente (obrigatório). Exclusivo para Almoço.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
               <Switch checked={requiresSkewer} onCheckedChange={setRequiresSkewer} />
               <div>
                 <Label>Este prato pede escolha de espeto</Label>
