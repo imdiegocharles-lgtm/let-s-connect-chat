@@ -10,7 +10,7 @@ import {
   Flame,
   Navigation,
   CalendarDays,
-  Instagram,
+  Camera as Instagram,
 } from "lucide-react";
 import { MenuBrowser } from "@/components/menu/MenuBrowser";
 import { ReservationDialog } from "@/components/reservations/ReservationDialog";
