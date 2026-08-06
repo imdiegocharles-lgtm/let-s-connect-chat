@@ -25,7 +25,7 @@ export function FinancialDashboard() {
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["financial-stats", period],
-    queryFn: () => getStats({ period }),
+    queryFn: () => getStats({ data: { period } }),
   });
 
   const stats = data;
@@ -133,8 +133,8 @@ export function FinancialDashboard() {
                 <YAxis stroke="#888" tickFormatter={(val) => `R$${val}`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
-                  labelFormatter={(val) => format(new Date(val), "dd 'de' MMMM", { locale: ptBR })}
-                  formatter={(val: number) => [formatCurrency(val), "Faturamento"]}
+                  labelFormatter={(val) => val ? format(new Date(val), "dd 'de' MMMM", { locale: ptBR }) : ""}
+                  formatter={(val: any) => [formatCurrency(Number(val)), "Faturamento"]}
                 />
                 <Area type="monotone" dataKey="total" stroke="#E11D48" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
               </AreaChart>
@@ -164,7 +164,7 @@ export function FinancialDashboard() {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
-                  formatter={(val: number) => formatCurrency(val)}
+                  formatter={(val: any) => formatCurrency(Number(val))}
                 />
                 <Legend />
               </PieChart>
@@ -184,7 +184,7 @@ export function FinancialDashboard() {
                 <YAxis stroke="#888" />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
-                  formatter={(val: number) => [val, "Pedidos"]}
+                  formatter={(val: any) => [val, "Pedidos"]}
                 />
                 <Bar dataKey="count" fill="#E11D48" radius={[4, 4, 0, 0]} />
               </BarChart>
