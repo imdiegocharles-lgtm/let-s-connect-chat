@@ -552,6 +552,7 @@ type MenuItem = {
   sort_order: number;
   is_completo_skewer_option?: boolean;
   requires_skewer_choice?: boolean;
+  has_side_dish?: boolean;
 };
 
 function ItemsPanel() {
