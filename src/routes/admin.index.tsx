@@ -1223,6 +1223,7 @@ function HorariosPanel() {
             <Input
               value={prazo.texto_observacao}
               onChange={(e) => setPrazo({ ...prazo, texto_observacao: e.target.value })}
+              autoCapitalize="none" autoCorrect="off" spellCheck="false"
             />
           </div>
           <Button onClick={() => savePrazo.mutate()} disabled={savePrazo.isPending}>
@@ -1281,6 +1282,7 @@ function AvisoFechadoPanel() {
           value={aviso.titulo_fechado}
           onChange={(e) => setAviso({ ...aviso, titulo_fechado: e.target.value })}
           placeholder={DEFAULT_AVISO.titulo_fechado}
+          autoCapitalize="none" autoCorrect="off" spellCheck="false"
         />
       </div>
       <label className="flex items-center gap-3 text-sm">
@@ -1298,6 +1300,7 @@ function AvisoFechadoPanel() {
             value={aviso.horarios_texto}
             onChange={(e) => setAviso({ ...aviso, horarios_texto: e.target.value })}
             placeholder="Almoço: Seg–Sáb 11h às 14h30 · Churrasquinho: Seg–Sáb 18h às 00h · Dom 11h às 00h"
+            autoCapitalize="none" autoCorrect="off" spellCheck="false"
           />
         </div>
       )}
@@ -1307,6 +1310,7 @@ function AvisoFechadoPanel() {
           value={aviso.home_horario_titulo}
           onChange={(e) => setAviso({ ...aviso, home_horario_titulo: e.target.value })}
           placeholder={DEFAULT_AVISO.home_horario_titulo}
+          autoCapitalize="none" autoCorrect="off" spellCheck="false"
         />
       </div>
       <div>
@@ -1316,6 +1320,7 @@ function AvisoFechadoPanel() {
           value={aviso.home_horario_texto}
           onChange={(e) => setAviso({ ...aviso, home_horario_texto: e.target.value })}
           placeholder={DEFAULT_AVISO.home_horario_texto}
+          autoCapitalize="none" autoCorrect="off" spellCheck="false"
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Se ficar em branco, o horário é montado automaticamente pela grade cadastrada.
