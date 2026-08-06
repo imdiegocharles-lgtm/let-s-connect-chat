@@ -924,7 +924,7 @@ function AcompanhamentoDialog({ acompanhamento, trigger }: { acompanhamento?: Ac
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={active} onCheckedChange={setActive} />
