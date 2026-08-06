@@ -62,7 +62,7 @@ async function fetchMenu() {
   if (iErr) throw iErr;
   return {
     cats: (cats ?? []) as unknown as Category[],
-    items: (items ?? []) as Item[],
+    items: (items ?? []) as any[],
   };
 }
 
