@@ -239,10 +239,9 @@ function LoginChooser() {
         </Link>
       </footer>
     </div>
-
-    </div>
   );
 }
+
 
 /* --------------------------- KITCHEN USERS --------------------------- */
 
