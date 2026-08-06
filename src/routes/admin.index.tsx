@@ -991,25 +991,6 @@ function AcompanhamentoDialog({ acompanhamento, trigger }: { acompanhamento?: Ac
     </Dialog>
   );
 }
-      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-        <div className="grid gap-2">
-          {data?.map((n) => (
-            <Card key={n.id} className="p-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium">{n.name}</div>
-                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")}</div>
-              </div>
-              <div className="flex gap-2">
-                <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
-                <ConfirmDelete onConfirm={() => del.mutate(n.id)} label={`Excluir "${n.name}"?`} />
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighborhood; trigger: React.ReactNode }) {
   const qc = useQueryClient();
