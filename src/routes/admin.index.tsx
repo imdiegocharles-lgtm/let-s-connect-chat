@@ -646,6 +646,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [available, setAvailable] = useState(item?.is_available ?? true);
   const [skewerOption, setSkewerOption] = useState(item?.is_completo_skewer_option ?? false);
   const [requiresSkewer, setRequiresSkewer] = useState(item?.requires_skewer_choice ?? false);
+  const [hasSideDish, setHasSideDish] = useState(item?.has_side_dish ?? false);
 
   useEffect(() => {
     if (open) {
