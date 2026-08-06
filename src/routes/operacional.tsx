@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2 } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
 import {
   buildDailyReportBytes,
@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 
@@ -463,7 +464,30 @@ function KitchenDashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-              <Label htmlFor="agentUrl" className="text-xs whitespace-nowrap">Impressora (agente)</Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="agentUrl" className="text-xs whitespace-nowrap">Impressora (agente)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">Configuração de Impressão</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Para imprimir diretamente na Elgin i9, você precisa de um "Agente de Impressão" rodando no seu computador.
+                      </p>
+                      <ul className="text-xs space-y-1 list-disc pl-4">
+                        <li>O site envia os dados (ESC/POS) para o endereço ao lado.</li>
+                        <li>O agente recebe esses dados e os repassa para a impressora USB/Rede.</li>
+                        <li>O endereço padrão é <strong>http://localhost:8080/print</strong>.</li>
+                        <li>Certifique-se de que o driver da Elgin está instalado no Windows/Linux.</li>
+                      </ul>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
               <Input
                 id="agentUrl"
                 value={agentUrl}
