@@ -673,6 +673,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         is_available: available,
         is_completo_skewer_option: skewerOption,
         requires_skewer_choice: requiresSkewer,
+        has_side_dish: hasSideDish,
       };
       if (item) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
