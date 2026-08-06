@@ -62,16 +62,29 @@ export const sendShiftReportEmail = createServerFn({ method: "POST" })
         .map(([k, v]) => ({ label: PAYMENT_LABELS[k] ?? k, value: Number(v) })),
     };
 
+    console.log(`[Email] Enviando relatório de turno ${report.id} para ${recipients.length} destinatários`);
+
     let sent = 0;
     const skipped: string[] = [];
     for (const to of recipients) {
-      const result = await sendTemplateEmail("shift-report", to, {
-        templateData,
-        idempotencyKey: `shift-report-${report.id}-${to}`,
-      });
-      if (result.sent) sent += 1;
-      else skipped.push(to);
+      try {
+        const result = await sendTemplateEmail("shift-report", to, {
+          templateData,
+          idempotencyKey: `shift-report-${report.id}-${to}-${Date.now()}`,
+        });
+        if (result.sent) {
+          sent += 1;
+        } else {
+          console.warn(`[Email] Destinatário suprimido: ${to}`);
+          skipped.push(to);
+        }
+      } catch (err) {
+        console.error(`[Email] Erro ao enviar para ${to}:`, err);
+        skipped.push(to);
+      }
     }
+
+    console.log(`[Email] Concluído: ${sent} enviados, ${skipped.length} falhas/supressões`);
 
     await (supabaseAdmin as any)
       .from("shift_reports")

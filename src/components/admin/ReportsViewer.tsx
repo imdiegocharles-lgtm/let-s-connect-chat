@@ -220,7 +220,7 @@ export function ReportsViewer() {
             <h2 className="mb-3 text-lg font-bold">Relatórios de turno</h2>
             <div className="space-y-4">
               {shiftReports.map((r: any) => (
-                <Card key={r.id} className="p-4">
+                <Card key={`shift-${r.id}`} className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-bold">{shiftLabel(r.shift_type)}</p>
@@ -260,14 +260,19 @@ export function ReportsViewer() {
                       size="sm"
                       variant="outline"
                       disabled={emailShift.isPending}
-                      onClick={() => emailShift.mutate(r.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        emailShift.mutate(r.id);
+                      }}
                     >
-                      {emailShift.isPending && emailShift.variables === r.id ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Mail className="mr-2 h-4 w-4" />
-                      )}
-                      Reenviar e-mail
+                      <span className="flex items-center">
+                        {emailShift.isPending && emailShift.variables === r.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="mr-2 h-4 w-4" />
+                        )}
+                        Reenviar e-mail
+                      </span>
                     </Button>
                   </div>
 
@@ -330,14 +335,19 @@ export function ReportsViewer() {
                       size="sm"
                       variant="outline"
                       disabled={emailDaily.isPending}
-                      onClick={() => emailDaily.mutate()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        emailDaily.mutate();
+                      }}
                     >
-                      {emailDaily.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Mail className="mr-2 h-4 w-4" />
-                      )}
-                      Reenviar por e-mail
+                      <span className="flex items-center">
+                        {emailDaily.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="mr-2 h-4 w-4" />
+                        )}
+                        Reenviar por e-mail
+                      </span>
                     </Button>
                   </div>
                 </>
