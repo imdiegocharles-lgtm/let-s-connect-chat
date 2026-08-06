@@ -658,6 +658,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setAvailable(item?.is_available ?? true);
       setSkewerOption(item?.is_completo_skewer_option ?? false);
       setRequiresSkewer(item?.requires_skewer_choice ?? false);
+      setHasSideDish(item?.has_side_dish ?? false);
     }
   }, [open, item, categories]);
 
