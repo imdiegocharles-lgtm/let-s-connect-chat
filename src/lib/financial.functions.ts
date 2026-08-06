@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
-
-const sb = supabase as any;
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const FilterSchema = z.object({
   startDate: z.string().optional(),
@@ -11,8 +9,10 @@ const FilterSchema = z.object({
 });
 
 export const getFinancialStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => FilterSchema.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
     let start: Date;
     let end = new Date();
     end.setHours(23, 59, 59, 999);
@@ -65,8 +65,8 @@ export const getFinancialStats = createServerFn({ method: "GET" })
     const prevEndISO = prevEnd.toISOString();
 
     const [currentData, previousData] = await Promise.all([
-      fetchPeriodStats(startISO, endISO),
-      fetchPeriodStats(prevStartISO, prevEndISO),
+      fetchPeriodStats(sb, startISO, endISO),
+      fetchPeriodStats(sb, prevStartISO, prevEndISO),
     ]);
 
     // Calcular faturamento por dia para o gráfico
@@ -174,7 +174,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
     };
   });
 
-async function fetchPeriodStats(start: string, end: string) {
+async function fetchPeriodStats(sb: any, start: string, end: string) {
   const { data: orders, error } = await sb
     .from("orders")
     .select("total, delivery_fee, confirmed_payment_method, payment_method")
