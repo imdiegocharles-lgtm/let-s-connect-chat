@@ -623,6 +623,8 @@ function KitchenDashboard() {
         awaitingPayment={awaitingPayment.length}
         agentUrl={agentUrl}
         onClose={() => setCloseShiftModal(false)}
+        sendShiftEmail={sendShiftEmail}
+
         onClosed={() => {
           setCloseShiftModal(false);
           refetchShift();
