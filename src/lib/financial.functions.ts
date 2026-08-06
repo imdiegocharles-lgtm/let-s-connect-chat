@@ -11,7 +11,7 @@ const FilterSchema = z.object({
 });
 
 export const getFinancialStats = createServerFn({ method: "GET" })
-  .input((data: unknown) => FilterSchema.parse(data))
+  .inputValidator((data: unknown) => FilterSchema.parse(data))
   .handler(async ({ data }) => {
     let start: Date;
     let end = new Date();
