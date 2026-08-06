@@ -5,7 +5,6 @@ import {
   MapPin,
   Bike,
   Star,
-  Instagram,
   Phone,
   ShoppingBag,
   Flame,
