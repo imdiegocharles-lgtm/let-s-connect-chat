@@ -24,7 +24,7 @@ const schema = z.object({
 
 /** Cria um pedido de convidado (sem login). Preços e taxas vêm do banco. */
 export const createGuestOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => schema.parse(data))
+  .inputValidator(schema)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
