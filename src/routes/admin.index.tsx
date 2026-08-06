@@ -42,6 +42,7 @@ import {
   deleteKitchenUser,
   updateKitchenPassword,
 } from "@/lib/kitchen-users.functions";
+import { FinancialDashboard } from "@/components/admin/FinancialDashboard";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
