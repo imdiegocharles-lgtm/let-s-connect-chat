@@ -38,6 +38,9 @@ type Item = {
   is_completo_skewer_option: boolean;
   requires_skewer_choice: boolean;
   has_side_dish: boolean;
+  has_extra_question: boolean;
+  extra_question_text: string | null;
+  extra_question_options: string[] | null;
 };
 
 async function fetchMenu() {
@@ -49,7 +52,7 @@ async function fetchMenu() {
     supabase
       .from("menu_items")
       .select(
-        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice, has_side_dish",
+        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice, has_side_dish, has_extra_question, extra_question_text, extra_question_options",
       )
       .eq("is_available", true)
       .order("price", { ascending: true })
@@ -80,6 +83,7 @@ export function MenuBrowser() {
   const { add } = useCart();
   const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
   const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
+  const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
 
   const { data: sides = [] } = useQuery({
     queryKey: ["active-sides"],
@@ -147,6 +151,10 @@ export function MenuBrowser() {
       setPendingSideDish(item);
       return;
     }
+    if (item.has_extra_question && (item.extra_question_options?.length ?? 0) > 0) {
+      setPendingExtra(item);
+      return;
+    }
     add({ id: item.id, menuItemId: item.id, name: item.name, price: Number(item.price) });
   };
 
@@ -172,6 +180,21 @@ export function MenuBrowser() {
       extras: { espeto: skewer.name, espeto_id: skewer.id },
     });
     setPendingCompleto(null);
+  };
+
+  const confirmExtra = (option: string) => {
+    if (!pendingExtra) return;
+    add({
+      id: `${pendingExtra.id}:extra:${option}`,
+      menuItemId: pendingExtra.id,
+      name: `${pendingExtra.name} (${pendingExtra.extra_question_text || "Opção"}: ${option})`,
+      price: Number(pendingExtra.price),
+      extras: { 
+        pergunta: pendingExtra.extra_question_text || "Opção", 
+        escolha: option 
+      },
+    });
+    setPendingExtra(null);
   };
 
   return (
@@ -310,6 +333,29 @@ export function MenuBrowser() {
               >
                 <span className="font-semibold">{s.name}</span>
                 <span className="text-sm text-muted-foreground">Incluso</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pendingExtra} onOpenChange={(v) => !v && setPendingExtra(null)}>
+        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{pendingExtra?.extra_question_text || "Pergunta Extra"}</DialogTitle>
+            <DialogDescription>
+              Selecione uma das opções abaixo para adicionar o item ao seu carrinho.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+            {pendingExtra?.extra_question_options?.map((option) => (
+              <button
+                key={option}
+                onClick={() => confirmExtra(option)}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+              >
+                <span className="font-semibold">{option}</span>
+                <span className="text-sm text-muted-foreground italic">Selecionar</span>
               </button>
             ))}
           </div>
