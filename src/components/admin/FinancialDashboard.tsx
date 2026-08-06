@@ -109,7 +109,30 @@ export function FinancialDashboard() {
 
       {/* Charts Section */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="col-span-2">
+        <Card className="col-span-1 md:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Faturamento por Turno</CardTitle>
+              <CardDescription>Comparativo entre Almoço e Noite</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.charts.shifts}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
+                <XAxis dataKey="name" stroke="#888" tickFormatter={(val) => val.charAt(0).toUpperCase() + val.slice(1)} />
+                <YAxis stroke="#888" tickFormatter={(val) => `R$${val}`} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333' }}
+                  formatter={(val: any) => formatCurrency(Number(val))}
+                />
+                <Bar dataKey="value" fill="#E11D48" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1 md:col-span-2">
           <CardHeader>
             <CardTitle>Evolução do Faturamento</CardTitle>
             <CardDescription>Receita diária no período selecionado</CardDescription>

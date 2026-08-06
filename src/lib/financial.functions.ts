@@ -88,12 +88,14 @@ export const getFinancialStats = createServerFn({ method: "GET" })
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // Faturamento por categoria
-    const { data: categoryData } = await sb
+    const { data: categoryData, error: catErr } = await sb
       .from("order_items")
-      .select("quantity, unit_price, menu_items(menu_categories(name)), order:orders!inner(payment_confirmed_at)")
+      .select("quantity, unit_price, name, menu_items(name, menu_categories(name)), order:orders!inner(payment_confirmed_at)")
       .gte("orders.created_at", startISO)
       .lte("orders.created_at", endISO)
       .not("orders.payment_confirmed_at", "is", null);
+
+    if (catErr) throw catErr;
 
     const categoriesMap: Record<string, number> = {};
     const itemsMap: Record<string, { name: string, qty: number, revenue: number }> = {};
@@ -103,7 +105,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
       const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
       categoriesMap[catName] = (categoriesMap[catName] ?? 0) + total;
       
-      const itemName = item.menu_items?.name || "Item Desconhecido";
+      const itemName = item.menu_items?.name || item.name || "Item Desconhecido";
       if (!itemsMap[itemName]) {
         itemsMap[itemName] = { name: itemName, qty: 0, revenue: 0 };
       }
