@@ -157,8 +157,9 @@ function AdminDashboard() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Tabs defaultValue="items">
-          <TabsList>
+        <Tabs defaultValue="financial">
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="financial">💰 Financeiro</TabsTrigger>
             <TabsTrigger value="items">Itens</TabsTrigger>
             <TabsTrigger value="acompanhamentos">Acompanhamentos</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
@@ -169,6 +170,9 @@ function AdminDashboard() {
             <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
+          <TabsContent value="financial" className="mt-6">
+            <FinancialDashboard />
+          </TabsContent>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
           <TabsContent value="acompanhamentos" className="mt-6"><AcompanhamentosPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
