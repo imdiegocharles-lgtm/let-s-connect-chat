@@ -185,7 +185,15 @@ function AdminDashboard() {
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
+      <footer className="border-t bg-card py-4 mt-8">
+        <div className="mx-auto max-w-6xl px-4 flex justify-center">
+          <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+            Acesso Administrativo
+          </Link>
+        </div>
+      </footer>
     </div>
+
   );
 }
 
