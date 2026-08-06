@@ -817,56 +817,6 @@ function NeighborhoodsPanel() {
   );
 }
 
-function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighborhood; trigger: React.ReactNode }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState(neighborhood?.name ?? "");
-  const [fee, setFee] = useState(neighborhood?.fee?.toString() ?? "");
-
-  useEffect(() => {
-    if (open) {
-      setName(neighborhood?.name ?? "");
-      setFee(neighborhood?.fee?.toString() ?? "");
-    }
-  }, [open, neighborhood]);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const payload = { name, fee: Number(fee.replace(",", ".")) };
-      if (neighborhood) {
-        const { error } = await supabase.from("neighborhoods").update(payload).eq("id", neighborhood.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("neighborhoods").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast.success("Salvo");
-      qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] });
-      setOpen(false);
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{neighborhood ? "Editar bairro" : "Novo bairro"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" /></div>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !name || !fee}>
-            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 /* --------------------------- ACOMPANHAMENTOS --------------------------- */
 
