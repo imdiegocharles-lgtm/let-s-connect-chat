@@ -63,11 +63,12 @@ function Home() {
               }
             />
             <a
-              href="#pedido"
+              href="#cardapio"
+              onClick={handleOrderClick}
               className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:brightness-110 sm:inline-flex"
             >
               <ShoppingBag className="h-4 w-4" />
-              Fazer Pedido
+              Ver Cardápio
             </a>
           </div>
         </div>
@@ -111,7 +112,7 @@ function Home() {
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-base font-bold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:scale-[1.02] hover:brightness-110"
               >
                 <ShoppingBag className="h-5 w-5" />
-                Fazer Pedido Agora
+                Ver Cardápio
               </a>
               <a
                 href="https://www.instagram.com/churrasquinhofamiliaamaral?igsh=bDM0a3diaDM5eTFo&utm_source=qr"
