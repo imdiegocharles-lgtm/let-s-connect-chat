@@ -159,6 +159,7 @@ function AdminDashboard() {
         <Tabs defaultValue="items">
           <TabsList>
             <TabsTrigger value="items">Itens</TabsTrigger>
+            <TabsTrigger value="acompanhamentos">Acompanhamentos</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
@@ -168,6 +169,7 @@ function AdminDashboard() {
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="items" className="mt-6"><ItemsPanel /></TabsContent>
+          <TabsContent value="acompanhamentos" className="mt-6"><AcompanhamentosPanel /></TabsContent>
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
