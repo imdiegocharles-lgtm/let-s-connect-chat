@@ -795,7 +795,76 @@ function NeighborhoodsPanel() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Bairros e taxas de entrega</h2>
         <NeighborhoodDialog trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo bairro</Button>} />
+      </div>
+      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+        <div className="grid gap-2">
+          {data?.map((n) => (
+            <Card key={n.id} className="p-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{n.name}</div>
+                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")}</div>
+              </div>
+              <div className="flex gap-2">
+                <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
+                <ConfirmDelete onConfirm={() => del.mutate(n.id)} label={`Excluir "${n.name}"?`} />
+              </div>
+            </Card>
+          ))}
+          {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum bairro cadastrado.</p>}
+        </div>
+      )}
     </div>
+  );
+}
+
+function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighborhood; trigger: React.ReactNode }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(neighborhood?.name ?? "");
+  const [fee, setFee] = useState(neighborhood?.fee?.toString() ?? "");
+
+  useEffect(() => {
+    if (open) {
+      setName(neighborhood?.name ?? "");
+      setFee(neighborhood?.fee?.toString() ?? "");
+    }
+  }, [open, neighborhood]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { name, fee: Number(fee.replace(",", ".")) };
+      if (neighborhood) {
+        const { error } = await supabase.from("neighborhoods").update(payload).eq("id", neighborhood.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("neighborhoods").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Salvo");
+      qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] });
+      setOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{neighborhood ? "Editar bairro" : "Novo bairro"}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" /></div>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !name || !fee}>
+            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
