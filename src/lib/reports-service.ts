@@ -17,6 +17,7 @@ export type ComboLine = {
 };
 
 const COMBO_RE = /^(.*?)\s*\(Espeto:\s*(.+?)\)\s*$/;
+const SIDE_RE = /^(.*?)\s*\(Acompanhamento:\s*(.+?)\)\s*$/;
 
 function sortItems(map: Map<string, ItemLine>): ItemLine[] {
   return [...map.values()].sort(
@@ -65,10 +66,15 @@ export async function aggregateShiftItems(
     const qty = Number(it.quantity ?? 0);
     const group = it.menu_items?.menu_categories?.name ?? "Outros";
     const m = COMBO_RE.exec(String(it.name ?? ""));
+    const s = SIDE_RE.exec(String(it.name ?? ""));
     if (m) {
       add(group, m[1], qty);
       // o espeto incluso NÃO entra na contagem de espetos avulsos
       addCombo(m[1], m[2], qty);
+    } else if (s) {
+      add(group, s[1], qty);
+      // Contabiliza o acompanhamento no mesmo padrão visual dos espetos nos relatórios
+      addCombo(s[1], s[2], qty);
     } else {
       add(group, String(it.name ?? "Item"), qty);
     }

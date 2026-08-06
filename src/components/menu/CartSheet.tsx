@@ -102,6 +102,7 @@ export function CartSheet() {
             menuItemId: (i.menuItemId ?? i.id.split(":")[0]) as string,
             name: i.name,
             quantity: i.quantity,
+            extras: i.extras || null,
           })),
         },
       });
