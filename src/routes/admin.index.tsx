@@ -522,7 +522,7 @@ function CategoryDialog({ category, trigger }: { category?: Category; trigger: R
       <DialogContent>
         <DialogHeader><DialogTitle>{category ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
           <div><Label>Ordem</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></div>
           <div className="flex items-center gap-6 pt-1">
             <label className="flex items-center gap-2 text-sm"><Switch checked={availLunch} onCheckedChange={setAvailLunch} /> Disponível no almoço</label>
@@ -706,7 +706,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
           <div><Label>Descrição</Label><Textarea value={description ?? ""} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
           <div>
             <Label>Preço (R$)</Label>
@@ -924,7 +924,7 @@ function AcompanhamentoDialog({ acompanhamento, trigger }: { acompanhamento?: Ac
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Batata Frita" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={active} onCheckedChange={setActive} />
