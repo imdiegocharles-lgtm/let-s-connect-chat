@@ -156,6 +156,14 @@ function AdminDashboard() {
           </div>
         </div>
       </header>
+      <footer className="border-t bg-card py-4 mt-auto">
+        <div className="mx-auto max-w-6xl px-4 flex justify-center">
+          <Link to="/auth" className="text-xs text-muted-foreground hover:text-foreground">
+            Acesso Administrativo
+          </Link>
+        </div>
+      </footer>
+
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Tabs defaultValue="financial">
           <TabsList className="flex flex-wrap h-auto">
