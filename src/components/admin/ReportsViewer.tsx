@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Printer, Mail } from "lucide-react";
 import { toast } from "sonner";
+
 import {
   buildDailyReportBytes,
   buildShiftReportBytes,
@@ -23,6 +25,8 @@ import {
   type MotoboyLine,
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
+import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
+
 
 const hhmm = (v?: string | null) =>
   v ? new Date(v).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -123,12 +127,15 @@ function MotoboysBlock({
 
 export function ReportsViewer() {
   const qc = useQueryClient();
+  const sendShiftEmail = useServerFn(sendShiftReportEmail);
+  const sendDailyEmail = useServerFn(sendDailyReportEmail);
   const [date, setDate] = useState(todayISO());
   const [agentUrl] = useState(
     () =>
       (typeof window !== "undefined" && localStorage.getItem("familia-amaral-printer-url")) ||
       "http://localhost:8080/print",
   );
+
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const { data: shiftReports = [], isLoading } = useQuery({
@@ -164,7 +171,7 @@ export function ReportsViewer() {
   };
 
   const emailDaily = useMutation({
-    mutationFn: async () => (await sendDailyReportEmail({ data: { date } })) as any,
+    mutationFn: async () => (await sendDailyEmail({ data: { date } })) as any,
     onSuccess: (res: any) => {
       if (res?.reason === "no_recipients")
         toast.info("Cadastre e-mails em Admin → Configurações para receber o relatório.");
@@ -172,6 +179,17 @@ export function ReportsViewer() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const emailShift = useMutation({
+    mutationFn: async (shiftId: string) => (await sendShiftEmail({ data: { shiftId } })) as any,
+    onSuccess: (res: any) => {
+      if (res?.reason === "no_recipients")
+        toast.info("Cadastre e-mails em Admin → Configurações para receber o relatório.");
+      else toast.success(`Relatório enviado por e-mail (${res?.sent ?? 0}).`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   return (
     <div className="space-y-6">
@@ -238,7 +256,21 @@ export function ReportsViewer() {
                     <Button size="sm" variant="outline" onClick={() => printShift(r)}>
                       <Printer className="mr-2 h-4 w-4" /> Reimprimir
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={emailShift.isPending}
+                      onClick={() => emailShift.mutate(r.id)}
+                    >
+                      {emailShift.isPending && emailShift.variables === r.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="mr-2 h-4 w-4" />
+                      )}
+                      Reenviar e-mail
+                    </Button>
                   </div>
+
                 </Card>
               ))}
               {shiftReports.length === 0 && (
