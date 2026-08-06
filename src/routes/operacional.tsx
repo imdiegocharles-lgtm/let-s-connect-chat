@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyRoles, hasMyRole } from "@/lib/roles";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,8 @@ import {
   todayISO,
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
+import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
+
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
@@ -47,6 +51,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+
+
 
 type Order = Tables<"orders">;
 type OrderItem = Tables<"order_items">;
@@ -188,7 +195,9 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
-  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+  const sendShiftEmail = useServerFn(sendShiftReportEmail);
+
 
   const { data: perms } = useQuery({
     queryKey: ["my-kitchen-perms"],
@@ -615,6 +624,8 @@ function KitchenDashboard() {
         awaitingPayment={awaitingPayment.length}
         agentUrl={agentUrl}
         onClose={() => setCloseShiftModal(false)}
+        sendShiftEmail={sendShiftEmail}
+
         onClosed={() => {
           setCloseShiftModal(false);
           refetchShift();
@@ -941,6 +952,7 @@ function CloseShiftDialog({
   agentUrl,
   onClose,
   onClosed,
+  sendShiftEmail,
 }: {
   open: boolean;
   shift: Shift | null;
@@ -950,7 +962,9 @@ function CloseShiftDialog({
   agentUrl: string;
   onClose: () => void;
   onClosed: () => void;
+  sendShiftEmail: (input: { data: { shiftId: string } }) => Promise<any>;
 }) {
+
   const [saving, setSaving] = useState(false);
   const submit = async () => {
     if (!shift) return;
@@ -981,7 +995,21 @@ function CloseShiftDialog({
     } catch (e: any) {
       toast.warning(`Turno fechado, mas não foi possível gerar o relatório: ${e.message}`);
     }
+
+    // Envia e-mail automático
+    try {
+      const res: any = await sendShiftEmail({ data: { shiftId: shift.id } });
+      if (res?.reason === "no_recipients") {
+        console.log("Nenhum e-mail configurado para relatórios.");
+      } else if (res?.sent > 0) {
+        toast.success(`Relatório de turno enviado por e-mail (${res.sent}).`);
+      }
+    } catch (e: any) {
+      console.error("Erro ao enviar e-mail de turno:", e);
+    }
+
     setSaving(false);
+
     onClosed();
   };
 

@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { template as dailyReportTemplate } from './daily-report'
+import { template as shiftReportTemplate } from './shift-report'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -20,4 +21,6 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'daily-report': dailyReportTemplate,
+  'shift-report': shiftReportTemplate,
 }
+
