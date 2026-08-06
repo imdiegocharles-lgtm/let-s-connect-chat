@@ -250,6 +250,9 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
+          extra_question_options: string[] | null
+          extra_question_text: string | null
+          has_extra_question: boolean | null
           has_side_dish: boolean
           id: string
           image_url: string | null
@@ -265,6 +268,9 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
+          extra_question_options?: string[] | null
+          extra_question_text?: string | null
+          has_extra_question?: boolean | null
           has_side_dish?: boolean
           id?: string
           image_url?: string | null
@@ -280,6 +286,9 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
+          extra_question_options?: string[] | null
+          extra_question_text?: string | null
+          has_extra_question?: boolean | null
           has_side_dish?: boolean
           id?: string
           image_url?: string | null
