@@ -40,6 +40,7 @@ import {
   createKitchenUser,
   updateKitchenPermissions,
   deleteKitchenUser,
+  updateKitchenPassword,
 } from "@/lib/kitchen-users.functions";
 
 export const Route = createFileRoute("/admin/")({
@@ -241,6 +242,7 @@ function KitchenUsersPanel() {
   const list = useServerFn(listKitchenUsers);
   const create = useServerFn(createKitchenUser);
   const updatePerms = useServerFn(updateKitchenPermissions);
+  const updatePass = useServerFn(updateKitchenPassword);
   const remove = useServerFn(deleteKitchenUser);
 
   const { data: users, isLoading } = useQuery({
@@ -272,6 +274,15 @@ function KitchenUsersPanel() {
     mutationFn: (v: { user_id: string; permissions: Perms }) => updatePerms({ data: v }),
     onSuccess: () => {
       toast.success("Permissões atualizadas");
+      qc.invalidateQueries({ queryKey: ["kitchen-users"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updatePassMut = useMutation({
+    mutationFn: (v: { user_id: string; password: string }) => updatePass({ data: v }),
+    onSuccess: () => {
+      toast.success("Senha atualizada com sucesso");
       qc.invalidateQueries({ queryKey: ["kitchen-users"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -338,7 +349,10 @@ function KitchenUsersPanel() {
                       Criado em {u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : "—"}
                     </div>
                   </div>
-                  <ConfirmDelete onConfirm={() => delMut.mutate(u.id)} label={`Excluir ${u.email}?`} />
+                  <div className="flex gap-2">
+                    <PasswordDialog user={u} onUpdate={(pass) => updatePassMut.mutate({ user_id: u.id, password: pass })} isPending={updatePassMut.isPending && updatePassMut.variables?.user_id === u.id} />
+                    <ConfirmDelete onConfirm={() => delMut.mutate(u.id)} label={`Excluir ${u.email}?`} />
+                  </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {(Object.keys(PERM_LABELS) as (keyof Perms)[]).map((k) => (
@@ -365,6 +379,49 @@ function KitchenUsersPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+function PasswordDialog({ user, onUpdate, isPending }: { user: any; onUpdate: (pass: string) => void; isPending: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost" title="Alterar senha">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Alterar senha: {user.email}</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <Label>Nova senha (mín. 6 caracteres)</Label>
+          <Input 
+            type="text" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            placeholder="Digite a nova senha"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button 
+            disabled={isPending || password.length < 6} 
+            onClick={() => {
+              onUpdate(password);
+              setPassword("");
+              setOpen(false);
+            }}
+          >
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar nova senha
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
