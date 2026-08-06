@@ -65,6 +65,8 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (store.openService === null)
+        throw new Error("Não é possível realizar pedidos com a loja fechada.");
       if (deliveryBlocked)
         throw new Error(`Não fazemos delivery ${store.todayLabel.toLowerCase()}. Atendimento somente presencial hoje.`);
       if (!name.trim()) throw new Error("Preencha seu nome.");
@@ -193,10 +195,10 @@ export function CartSheet() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={items.length === 0 || deliveryBlocked}
+                disabled={items.length === 0 || deliveryBlocked || store.openService === null}
                 onClick={() => setStep("checkout")}
               >
-                {deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
+                {store.openService === null ? "Loja fechada" : deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
               </Button>
             </div>
           </>
