@@ -1118,6 +1118,7 @@ function SettingsPanel() {
         printer_url: form.printer_url,
         report_emails: String(form.report_emails || "")
           .split(",").map((s: string) => s.trim()).filter(Boolean),
+        official_logo_bw_url: form.official_logo_bw_url,
       };
       const { error } = await (supabase as any).from("system_settings").update(payload).eq("id", 1);
       if (error) throw error;
@@ -1140,6 +1141,7 @@ function SettingsPanel() {
       </div>
       <div><Label>URL do agente da impressora</Label><Input value={form.printer_url} onChange={(e) => setForm({ ...form, printer_url: e.target.value })} placeholder="http://localhost:8080/print" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
       <div><Label>E-mails para relatórios (separe por vírgula)</Label><Input value={form.report_emails} onChange={(e) => setForm({ ...form, report_emails: e.target.value })} placeholder="ex: dono@restaurante.com, gerente@restaurante.com" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
+      <div><Label>URL da Logo Oficial (BW)</Label><Input value={form.official_logo_bw_url} onChange={(e) => setForm({ ...form, official_logo_bw_url: e.target.value })} placeholder="/assets/logo-bw.png" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
     </Card>
     <HorariosPanel />

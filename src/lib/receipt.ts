@@ -15,6 +15,8 @@ const COMMANDS = {
   selectCP860: [0x1b, 0x74, 0x03],
   cut: [0x1d, 0x56, 0x42, 0x00],
   beep: [0x1b, 0x42, 0x03, 0x01],
+  reverseOn: [0x1d, 0x42, 0x01],
+  reverseOff: [0x1d, 0x42, 0x00],
 };
 
 const CP860_MAP: Record<string, number> = {
@@ -42,11 +44,13 @@ function encode(str: string): number[] {
   return bytes;
 }
 
-function line(text = "", bold = false, double = false): number[] {
+function line(text = "", bold = false, double = false, reverse = false): number[] {
   const res: number[] = [];
   if (bold) res.push(...COMMANDS.boldOn);
   if (double) res.push(...COMMANDS.doubleWidthOn);
+  if (reverse) res.push(...COMMANDS.reverseOn);
   res.push(...encode(text));
+  if (reverse) res.push(...COMMANDS.reverseOff);
   if (double) res.push(...COMMANDS.doubleWidthOff);
   if (bold) res.push(...COMMANDS.boldOff);
   res.push(...COMMANDS.lf);
@@ -64,7 +68,9 @@ function formatMoney(n: number): string {
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const dateStr = d.toLocaleDateString("pt-BR");
+  const timeStr = d.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+  return `DATA: ${dateStr}   HORA: ${timeStr}`;
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -82,7 +88,7 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
   out.push(...COMMANDS.init);
   out.push(...COMMANDS.selectCP860);
   
-  // Header com Logo (Placeholder texto centralizado)
+  // Header com Logo (Texto Centralizado estilizado)
   out.push(...COMMANDS.center);
   out.push(...line("FAMILIA AMARAL", true, true));
   out.push(...line("CHURRASQUINHO & RESTAURANTE", true));
@@ -90,44 +96,44 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
   
   out.push(...COMMANDS.left);
   out.push(...line(`PEDIDO #${String(order.order_number).padStart(4, "0")}`, true, true));
-  out.push(...line(`DATA: ${formatDate(order.created_at)}`, true));
+  out.push(...line(formatDate(order.created_at), true));
   out.push(...line("------------------------------------------------", true));
 
-  out.push(...line("CLIENTE", true, true));
-  out.push(...line(`NOME: ${order.customer_name.toUpperCase()}`, true));
-  out.push(...line(`FONE: ${order.customer_phone}`, true));
+  out.push(...line(" CLIENTE", true, true));
+  out.push(...line(`  NOME: ${order.customer_name.toUpperCase()}`, true));
+  out.push(...line(`  FONE: ${order.customer_phone}`, true));
   if (order.delivery_type === "delivery") {
-    out.push(...line(`END: ${order.customer_address?.toUpperCase() ?? ""}`, true));
-    out.push(...line(`BAIRRO: ${order.neighborhood?.toUpperCase() ?? ""}`, true));
+    out.push(...line(`  END: ${order.customer_address?.toUpperCase() ?? ""}`, true));
+    out.push(...line(`  BAIRRO: ${order.neighborhood?.toUpperCase() ?? ""}`, true));
   } else {
-    out.push(...line(">>> RETIRADA NO LOCAL <<<", true));
+    out.push(...line("  >>> RETIRADA NO LOCAL <<<", true));
   }
   out.push(...line("------------------------------------------------", true));
 
-  out.push(...line("ITENS DO PEDIDO", true, true));
+  out.push(...line(" ITENS DO PEDIDO", true, true));
   for (const item of items) {
     const qty = `${item.quantity}x `.toUpperCase();
     const name = item.name.toUpperCase();
     const total = formatMoney(item.price * item.quantity);
     out.push(...line(padLine(qty + name, total, 48), true));
     
-    // Informações complementares (espetos, acompanhamentos, perguntas extras)
+    // Informações complementares
     if (item.extras) {
       const extras = item.extras as any;
       
       // Espeto Incluso
       if (extras.espeto) {
-        out.push(...line(`   ESPETO INCLUSO: 1x ${extras.espeto.toUpperCase()}`, true));
+        out.push(...line(`  [ ESPETO INCLUSO: 1x ${extras.espeto.toUpperCase()} ]`, true));
       }
       
       // Acompanhamento
       if (extras.acompanhamento) {
-        out.push(...line(`   ACOMPANHAMENTO: ${extras.acompanhamento.toUpperCase()}`, true));
+        out.push(...line(`  [ ACOMPANHAMENTO: ${extras.acompanhamento.toUpperCase()} ]`, true));
       }
 
       // Pergunta Extra (Romeu e Julieta, etc)
       if (extras.pergunta && extras.escolha) {
-        out.push(...line(`   ${extras.pergunta.toUpperCase()} -> ${extras.escolha.toUpperCase()}`, true));
+        out.push(...line(`  [ ${extras.pergunta.toUpperCase()} -> ${extras.escolha.toUpperCase()} ]`, true));
       }
     }
   }
@@ -140,29 +146,26 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
   out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true, true));
   out.push(...line("------------------------------------------------", true));
 
-  out.push(...line("PAGAMENTO", true, true));
+  out.push(...line(" PAGAMENTO", true, true));
   const method = PAYMENT_LABELS[order.payment_method ?? ""] ?? (order.payment_method ?? "-").toUpperCase();
-  out.push(...line(method, true, true));
+  out.push(...line(method, true, true, true)); // Reverse para destaque
   
   if (order.payment_method === "dinheiro" && order.change_for) {
     const changeAmount = Number(order.change_for) - order.total;
     out.push(...line("------------------------------------------------", true));
-    out.push(...line(padLine("CLIENTE PAGOU:", formatMoney(Number(order.change_for)), 48), true));
-    out.push(...line("================================================", true));
-    out.push(...line(padLine("TROCO:", formatMoney(changeAmount), 32), true, true));
-    out.push(...line("================================================", true));
+    out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true));
+    out.push(...line(padLine("CLIENTE PAGOU", formatMoney(Number(order.change_for)), 48), true));
+    out.push(...line(""));
+    out.push(...line(padLine(" TROCO:", formatMoney(changeAmount), 32), true, true, true));
   }
-  out.push(...line(""));
+  out.push(...line("------------------------------------------------", true));
 
   if (order.notes) {
-    out.push(...line("OBSERVAÇÕES", true, true));
-    out.push(...line("================================================", true));
+    out.push(...line(" OBSERVACOES", true, true));
     out.push(...line(order.notes.toUpperCase(), true));
-    out.push(...line("================================================", true));
-    out.push(...line(""));
+    out.push(...line("------------------------------------------------", true));
   }
 
-  // Final sem texto de agradecimento, apenas espaço
   out.push(...line(""));
   out.push(...line(""));
   out.push(...COMMANDS.cut);
