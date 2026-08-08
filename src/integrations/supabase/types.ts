@@ -781,6 +781,7 @@ export type Database = {
           receipt_footer_bold: boolean | null
           receipt_header_bold: boolean | null
           receipt_items_bold: boolean | null
+          receipt_order_sections: Json | null
           receipt_qty_double_size: boolean | null
           receipt_show_logo: boolean | null
           report_emails: string[]
@@ -801,6 +802,7 @@ export type Database = {
           receipt_footer_bold?: boolean | null
           receipt_header_bold?: boolean | null
           receipt_items_bold?: boolean | null
+          receipt_order_sections?: Json | null
           receipt_qty_double_size?: boolean | null
           receipt_show_logo?: boolean | null
           report_emails?: string[]
@@ -821,6 +823,7 @@ export type Database = {
           receipt_footer_bold?: boolean | null
           receipt_header_bold?: boolean | null
           receipt_items_bold?: boolean | null
+          receipt_order_sections?: Json | null
           receipt_qty_double_size?: boolean | null
           receipt_show_logo?: boolean | null
           report_emails?: string[]
