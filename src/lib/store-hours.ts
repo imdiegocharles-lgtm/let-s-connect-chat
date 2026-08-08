@@ -149,13 +149,15 @@ export type StoreStatus = {
   openService: ServiceType | null;
   /** Se o dia atual aceita delivery */
   deliveryToday: boolean;
-  /** Pode receber pedidos agora */
+  /** Pode receber pedidos agora (horário + turno) */
   canOrder: boolean;
+  /** Se existe um turno aberto manualmente */
+  hasActiveShift: boolean;
   todayLabel: string;
   todayWindows: Horario[];
 };
 
-export function getStoreStatus(horarios: Horario[], date = new Date()): StoreStatus {
+export function getStoreStatus(horarios: Horario[], hasActiveShift = false, date = new Date()): StoreStatus {
   const { dow, minutes } = nowInSaoPaulo(date);
   const todayWindows = horarios.filter((h) => h.dia_semana === dow);
   const open = todayWindows.find(
@@ -165,7 +167,8 @@ export function getStoreStatus(horarios: Horario[], date = new Date()): StoreSta
   return {
     openService: (open?.tipo as ServiceType) ?? null,
     deliveryToday,
-    canOrder: Boolean(open && open.delivery_disponivel),
+    hasActiveShift,
+    canOrder: Boolean(open && open.delivery_disponivel && hasActiveShift),
     todayLabel: DAY_LABELS[dow] ?? "",
     todayWindows,
   };
