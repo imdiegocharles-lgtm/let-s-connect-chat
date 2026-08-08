@@ -120,10 +120,10 @@ export function MenuBrowser() {
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
   const store = getStoreStatus(horarios, !!activeShift);
-  const isActuallyClosed = svcWindow === "closed" || !store.hasActiveShift;
-
   const svcWindow: "lunch" | "dinner" | "closed" =
     store.openService === "almoco" ? "lunch" : store.openService === "churrasquinho" ? "dinner" : "closed";
+  const isActuallyClosed = svcWindow === "closed" || !store.hasActiveShift;
+
 
   // pelos próprios itens ("Completo com Maionese/Salpicão").
   const completosCatId =
