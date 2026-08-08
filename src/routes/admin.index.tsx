@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ReportsViewer } from "@/components/admin/ReportsViewer";
+import { ReceiptPreview } from "@/components/admin/ReceiptPreview";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -1700,7 +1701,9 @@ function ReceiptSettingsPanel() {
         </p>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-4">
           <h4 className="font-semibold text-sm border-b pb-1">Estilo de Texto</h4>
           
@@ -1768,6 +1771,12 @@ function ReceiptSettingsPanel() {
               onCheckedChange={(v) => setForm({ ...form, receipt_footer_bold: v })}
             />
           </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-semibold text-sm border-b pb-1">Visualização em Tempo Real</h4>
+          <ReceiptPreview settings={form} />
         </div>
       </div>
 
