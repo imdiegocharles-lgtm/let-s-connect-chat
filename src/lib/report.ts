@@ -108,9 +108,11 @@ function header(out: number[], title: string) {
   out.push(...ESC.init, ...ESC.selectCP860, ...ESC.center, ...ESC.boldOn, ...ESC.doubleWidth);
   out.push(...line("FAMILIA AMARAL"));
   out.push(...ESC.normal);
+  out.push(...line("CHURRASQUINHO & RESTAURANTE"));
+  out.push(...ESC.boldOn);
   out.push(...line(title));
   out.push(...ESC.boldOff);
-  out.push(...line("------------------------------"));
+  out.push(...line("------------------------------------------------"));
   out.push(...ESC.left);
 }
 
@@ -180,7 +182,7 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   out.push(...ESC.boldOn, ...line(`Turno: ${shiftLabel(r.shift_type)}`), ...ESC.boldOff);
   out.push(...line(`Operador: ${r.operator_name ?? "-"}`));
   out.push(...line(`Abertura: ${hhmm(r.opened_at)}   Fechamento: ${hhmm(r.closed_at)}`));
-  out.push(...line("------------------------------"));
+  out.push(...line("------------------------------------------------"));
   out.push(...line(pad("Caixa inicial", money(r.opening_cash))));
   out.push(...line(pad("Pedidos", String(r.orders_count))));
   out.push(...line(pad("Taxas de entrega", money(r.delivery_fees))));
@@ -202,7 +204,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   header(out, "RELATORIO DO DIA");
   out.push(...ESC.boldOn, ...line(`Data: ${dateBR(r.report_date)}`), ...ESC.boldOff);
   out.push(...line(`Turnos finalizados: ${r.shifts_count}`));
-  out.push(...line("------------------------------"));
+  out.push(...line("------------------------------------------------"));
   for (const s of r.shifts_summary) {
     out.push(...ESC.boldOn, ...line(shiftLabel(s.shift_type)), ...ESC.boldOff);
     out.push(...line(`Operador: ${s.operator_name ?? "-"}`));
@@ -211,7 +213,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
     out.push(...line(pad("Faturado", money(s.total_revenue))));
     out.push(...line(""));
   }
-  out.push(...line("------------------------------"));
+  out.push(...line("------------------------------------------------"));
   out.push(...line(pad("Pedidos no dia", String(r.orders_count))));
   out.push(...line(pad("Taxas de entrega", money(r.delivery_fees))));
   out.push(...ESC.boldOn, ...ESC.doubleWidth);

@@ -39,7 +39,6 @@ export function CartSheet() {
   const [neighborhoodId, setNeighborhoodId] = useState<string>("");
   const [payment, setPayment] = useState<string>("");
   const [changeFor, setChangeFor] = useState<string>("");
-  const [needsChange, setNeedsChange] = useState<"sim" | "nao">("nao");
   const [notes, setNotes] = useState("");
 
   const { data: neighborhoods = [] } = useQuery({
@@ -75,12 +74,14 @@ export function CartSheet() {
       if (!neighborhoodId) throw new Error("Selecione o bairro.");
       if (!payment) throw new Error("Selecione a forma de pagamento.");
       if (!notes.trim()) throw new Error("Preencha as observações e ponto de referência.");
-      if (payment === "dinheiro" && needsChange === "sim" && Number(changeFor) <= total)
-        throw new Error("O troco deve ser maior que o total.");
+      if (payment === "dinheiro") {
+        if (!changeFor) throw new Error("Informe quanto o cliente irá pagar.");
+        if (Number(changeFor) < total) throw new Error("VALOR INSUFICIENTE. O valor deve ser igual ou maior que o total.");
+      }
 
       const paymentNote =
         payment === "dinheiro"
-          ? needsChange === "sim"
+          ? Number(changeFor) > total
             ? `Dinheiro · Troco para ${formatBRL(Number(changeFor))}`
             : "Dinheiro · Sem troco"
           : paymentLabel;
@@ -96,7 +97,7 @@ export function CartSheet() {
           address: address.trim(),
           neighborhoodId,
           paymentMethod: payment as never,
-          changeFor: payment === "dinheiro" && needsChange === "sim" ? Number(changeFor) : null,
+          changeFor: payment === "dinheiro" ? Number(changeFor) : null,
           notes: combinedNotes || null,
           items: items.map((i) => ({
             menuItemId: (i.menuItemId ?? i.id.split(":")[0]) as string,
@@ -270,33 +271,30 @@ export function CartSheet() {
 
               {payment === "dinheiro" && (
                 <div className="grid gap-2 rounded-lg border border-border bg-muted/40 p-3">
-                  <Label>Precisa de troco?</Label>
-                  <RadioGroup
-                    value={needsChange}
-                    onValueChange={(v) => setNeedsChange(v as "sim" | "nao")}
-                    className="flex gap-4"
-                  >
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <RadioGroupItem value="nao" /> Não
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <RadioGroupItem value="sim" /> Sim
-                    </label>
-                  </RadioGroup>
-                  {needsChange === "sim" && (
-                    <div className="grid gap-1">
-                      <Label htmlFor="change">Troco para quanto?</Label>
-                      <Input
-                        id="change"
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        value={changeFor}
-                        onChange={(e) => setChangeFor(e.target.value)}
-                        placeholder="Ex: 100"
-                      />
-                    </div>
-                  )}
+                  <div className="grid gap-1">
+                    <Label htmlFor="change">CLIENTE PAGA COM *</Label>
+                    <Input
+                      id="change"
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={changeFor}
+                      onChange={(e) => setChangeFor(e.target.value)}
+                      placeholder="Ex: 200,00"
+                      className="font-bold text-lg"
+                      required
+                    />
+                    {changeFor && Number(changeFor) > total && (
+                      <p className="text-sm font-bold text-primary mt-1">
+                        TROCO: {formatBRL(Number(changeFor) - total)}
+                      </p>
+                    )}
+                    {changeFor && Number(changeFor) < total && (
+                      <p className="text-sm font-bold text-destructive mt-1">
+                        VALOR INSUFICIENTE
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 

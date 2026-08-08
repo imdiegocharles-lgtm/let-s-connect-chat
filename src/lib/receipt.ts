@@ -10,11 +10,11 @@ const COMMANDS = {
   left: [0x1b, 0x61, 0x00],
   boldOn: [0x1b, 0x45, 0x01],
   boldOff: [0x1b, 0x45, 0x00],
-  doubleWidth: [0x1b, 0x21, 0x20],
-  normal: [0x1b, 0x21, 0x00],
+  doubleWidthOn: [0x1b, 0x21, 0x20],
+  doubleWidthOff: [0x1b, 0x21, 0x00],
+  selectCP860: [0x1b, 0x74, 0x03],
   cut: [0x1d, 0x56, 0x42, 0x00],
   beep: [0x1b, 0x42, 0x03, 0x01],
-  selectCP860: [0x1b, 0x74, 0x03], // Command to select CP860 on most ESC/POS printers
 };
 
 const CP860_MAP: Record<string, number> = {
@@ -36,19 +36,26 @@ function encode(str: string): number[] {
     } else if (CP860_MAP[ch] !== undefined) {
       bytes.push(CP860_MAP[ch]);
     } else {
-      bytes.push(0x3F); // '?' para caracteres não suportados
+      bytes.push(0x3F); // '?'
     }
   }
   return bytes;
 }
 
-function line(text = ""): number[] {
-  return encode(text).concat(COMMANDS.lf);
+function line(text = "", bold = false, double = false): number[] {
+  const res: number[] = [];
+  if (bold) res.push(...COMMANDS.boldOn);
+  if (double) res.push(...COMMANDS.doubleWidthOn);
+  res.push(...encode(text));
+  if (double) res.push(...COMMANDS.doubleWidthOff);
+  if (bold) res.push(...COMMANDS.boldOff);
+  res.push(...COMMANDS.lf);
+  return res;
 }
 
 function padLine(left: string, right: string, width = 48): string {
   const dots = Math.max(0, width - left.length - right.length);
-  return left + ".".repeat(dots) + right;
+  return left + " ".repeat(dots) + right;
 }
 
 function formatMoney(n: number): string {
@@ -61,12 +68,12 @@ function formatDate(iso: string): string {
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
-  dinheiro: "Dinheiro",
-  credito: "Cartão de Crédito",
-  debito: "Cartão de Débito",
-  sodexo: "Vale-refeição Sodexo",
-  alelo: "Vale-refeição Alelo",
-  pix: "Pix (na entrega)",
+  dinheiro: "DINHEIRO",
+  credito: "CARTÃO DE CRÉDITO",
+  debito: "CARTÃO DE DÉBITO",
+  sodexo: "SODEXO",
+  alelo: "ALELO",
+  pix: "PIX (ENTREGA)",
 };
 
 export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array {
@@ -74,76 +81,88 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
 
   out.push(...COMMANDS.init);
   out.push(...COMMANDS.selectCP860);
+  
+  // Header com Logo (Placeholder texto centralizado)
   out.push(...COMMANDS.center);
-  out.push(...COMMANDS.boldOn);
-  out.push(...COMMANDS.doubleWidth);
-  out.push(...line("FAMILIA AMARAL"));
-  out.push(...COMMANDS.normal);
-  out.push(...COMMANDS.boldOff);
-  out.push(...line("Churrasquinho & Restaurante"));
-  out.push(...line("------------------------------"));
+  out.push(...line("FAMILIA AMARAL", true, true));
+  out.push(...line("CHURRASQUINHO & RESTAURANTE", true));
+  out.push(...line("------------------------------------------------", true));
+  
   out.push(...COMMANDS.left);
+  out.push(...line(`PEDIDO #${String(order.order_number).padStart(4, "0")}`, true, true));
+  out.push(...line(`DATA: ${formatDate(order.created_at)}`, true));
+  out.push(...line("------------------------------------------------", true));
 
-  out.push(...COMMANDS.boldOn);
-  out.push(...line(`PEDIDO #${String(order.order_number).padStart(4, "0")}`));
-  out.push(...COMMANDS.boldOff);
-  out.push(...line(`Data: ${formatDate(order.created_at)}`));
-  out.push(...line(""));
-
-  out.push(...COMMANDS.boldOn);
-  out.push(...line("CLIENTE"));
-  out.push(...COMMANDS.boldOff);
-  out.push(...line(order.customer_name));
-  out.push(...line(order.customer_phone));
+  out.push(...line("CLIENTE", true, true));
+  out.push(...line(`NOME: ${order.customer_name.toUpperCase()}`, true));
+  out.push(...line(`FONE: ${order.customer_phone}`, true));
   if (order.delivery_type === "delivery") {
-    out.push(...line(order.customer_address ?? ""));
-    out.push(...line(`Bairro: ${order.neighborhood ?? ""}`));
+    out.push(...line(`END: ${order.customer_address?.toUpperCase() ?? ""}`, true));
+    out.push(...line(`BAIRRO: ${order.neighborhood?.toUpperCase() ?? ""}`, true));
   } else {
-    out.push(...line("RETIRADA NO LOCAL"));
+    out.push(...line(">>> RETIRADA NO LOCAL <<<", true));
   }
-  out.push(...line(""));
+  out.push(...line("------------------------------------------------", true));
 
-  out.push(...COMMANDS.boldOn);
-  out.push(...line("ITENS"));
-  out.push(...COMMANDS.boldOff);
+  out.push(...line("ITENS DO PEDIDO", true, true));
   for (const item of items) {
-    const qty = `${item.quantity}x `;
-    const name = item.name;
+    const qty = `${item.quantity}x `.toUpperCase();
+    const name = item.name.toUpperCase();
     const total = formatMoney(item.price * item.quantity);
-    const left = qty + name;
-    out.push(...line(padLine(left, total, 48)));
-  }
-  out.push(...line("------------------------------"));
+    out.push(...line(padLine(qty + name, total, 48), true));
+    
+    // Informações complementares (espetos, acompanhamentos, perguntas extras)
+    if (item.extras) {
+      const extras = item.extras as any;
+      
+      // Espeto Incluso
+      if (extras.espeto) {
+        out.push(...line(`   ESPETO INCLUSO: 1x ${extras.espeto.toUpperCase()}`, true));
+      }
+      
+      // Acompanhamento
+      if (extras.acompanhamento) {
+        out.push(...line(`   ACOMPANHAMENTO: ${extras.acompanhamento.toUpperCase()}`, true));
+      }
 
-  out.push(...line(padLine("Subtotal", formatMoney(order.subtotal), 48)));
+      // Pergunta Extra (Romeu e Julieta, etc)
+      if (extras.pergunta && extras.escolha) {
+        out.push(...line(`   ${extras.pergunta.toUpperCase()} -> ${extras.escolha.toUpperCase()}`, true));
+      }
+    }
+  }
+  out.push(...line("------------------------------------------------", true));
+
+  out.push(...line(padLine("SUBTOTAL", formatMoney(order.subtotal), 48), true));
   if (order.delivery_type === "delivery") {
-    out.push(...line(padLine("Taxa de entrega", formatMoney(order.delivery_fee), 48)));
+    out.push(...line(padLine("TAXA DE ENTREGA", formatMoney(order.delivery_fee), 48), true));
   }
-  out.push(...COMMANDS.boldOn);
-  out.push(...line(padLine("TOTAL", formatMoney(order.total), 48)));
-  out.push(...COMMANDS.boldOff);
-  out.push(...line(""));
+  out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true, true));
+  out.push(...line("------------------------------------------------", true));
 
-  out.push(...COMMANDS.boldOn);
-  out.push(...line("PAGAMENTO"));
-  out.push(...COMMANDS.boldOff);
-  out.push(...line(PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "-"));
+  out.push(...line("PAGAMENTO", true, true));
+  const method = PAYMENT_LABELS[order.payment_method ?? ""] ?? (order.payment_method ?? "-").toUpperCase();
+  out.push(...line(method, true, true));
+  
   if (order.payment_method === "dinheiro" && order.change_for) {
-    out.push(...line(`Troco para: ${formatMoney(order.change_for)}`));
+    const changeAmount = Number(order.change_for) - order.total;
+    out.push(...line("------------------------------------------------", true));
+    out.push(...line(padLine("CLIENTE PAGOU:", formatMoney(Number(order.change_for)), 48), true));
+    out.push(...line("================================================", true));
+    out.push(...line(padLine("TROCO:", formatMoney(changeAmount), 32), true, true));
+    out.push(...line("================================================", true));
   }
   out.push(...line(""));
 
   if (order.notes) {
-    out.push(...COMMANDS.boldOn);
-    out.push(...line("OBSERVACOES"));
-    out.push(...COMMANDS.boldOff);
-    out.push(...line(order.notes));
+    out.push(...line("OBSERVAÇÕES", true, true));
+    out.push(...line("================================================", true));
+    out.push(...line(order.notes.toUpperCase(), true));
+    out.push(...line("================================================", true));
     out.push(...line(""));
   }
 
-  out.push(...COMMANDS.center);
-  out.push(...line("Obrigado pela preferencia!"));
-  out.push(...line("Familia Amaral"));
+  // Final sem texto de agradecimento, apenas espaço
   out.push(...line(""));
   out.push(...line(""));
   out.push(...COMMANDS.cut);
