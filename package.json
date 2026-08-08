@@ -55,6 +55,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
+    "iconv-lite": "^0.7.3",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.28.0",
     "react": "^19.2.0",
@@ -74,6 +75,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.9.1",
+    "@types/iconv-lite": "^0.0.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
