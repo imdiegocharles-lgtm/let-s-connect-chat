@@ -108,9 +108,11 @@ function header(out: number[], title: string) {
   out.push(...ESC.init, ...ESC.selectCP860, ...ESC.center, ...ESC.boldOn, ...ESC.doubleWidth);
   out.push(...line("FAMILIA AMARAL"));
   out.push(...ESC.normal);
+  out.push(...line("CHURRASQUINHO & RESTAURANTE"));
+  out.push(...ESC.boldOn);
   out.push(...line(title));
   out.push(...ESC.boldOff);
-  out.push(...line("------------------------------"));
+  out.push(...line("------------------------------------------------"));
   out.push(...ESC.left);
 }
 

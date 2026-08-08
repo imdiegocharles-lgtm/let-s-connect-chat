@@ -148,7 +148,9 @@ function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Link to="/operacional">
-              <Button variant="outline" size="sm">Painel Operacional</Button>
+              <Button variant="outline" size="sm" className="bg-primary/10 border-primary/50 text-primary font-bold hover:bg-primary hover:text-primary-foreground">
+                🚀 PAINEL OPERACIONAL
+              </Button>
             </Link>
             <Button variant="outline" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Sair

@@ -804,23 +804,28 @@ function OrderCard({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={onPrint}>
-          <Printer className="h-4 w-4 mr-2" /> Reimprimir
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={onPrint}
+          className="border-primary/50 hover:bg-primary/10 font-bold"
+        >
+          <Printer className="h-4 w-4 mr-2" /> REIMPRIMIR
         </Button>
         {nextStatus && canUpdateStatus && (
           <Button
             size="sm"
             onClick={() => onStatus(nextStatus)}
             disabled={isPending}
-            className={STATUS_COLORS[nextStatus] ?? ""}
+            className={`font-black uppercase tracking-tight ${STATUS_COLORS[nextStatus] ?? ""}`}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Mover para {STATUS_LABELS[nextStatus].toLowerCase()}
+            {STATUS_LABELS[nextStatus]}
           </Button>
         )}
         {needsPayConfirm && canConfirmPayment && (
-          <Button size="sm" onClick={onConfirmPayment} className="bg-amber-500 hover:bg-amber-600">
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Confirmar pagamento
+          <Button size="sm" onClick={onConfirmPayment} className="bg-amber-600 hover:bg-amber-700 font-black uppercase">
+            <CheckCircle2 className="h-4 w-4 mr-2" /> CONFIRMAR PAGAMENTO
           </Button>
         )}
       </div>
