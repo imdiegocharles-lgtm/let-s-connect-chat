@@ -1331,6 +1331,8 @@ function AvisoFechadoPanel() {
           horarios_texto: aviso.horarios_texto,
           home_horario_titulo: aviso.home_horario_titulo,
           home_horario_texto: aviso.home_horario_texto,
+          order_confirmation_message: aviso.order_confirmation_message,
+          order_estimated_time: aviso.order_estimated_time,
         })
         .eq("id", 1);
       if (error) throw error;
@@ -1401,6 +1403,32 @@ function AvisoFechadoPanel() {
         <p className="mt-1 text-xs text-muted-foreground">
           Se ficar em branco, o horário é montado automaticamente pela grade cadastrada.
         </p>
+      </div>
+      <div className="border-t border-border pt-4 space-y-4">
+        <div>
+          <h3 className="font-bold">Confirmação de Pedido</h3>
+          <p className="text-sm text-muted-foreground">
+            Mensagem que o cliente vê após finalizar o pedido.
+          </p>
+        </div>
+        <div>
+          <Label>Mensagem de confirmação</Label>
+          <Input
+            value={aviso.order_confirmation_message}
+            onChange={(e) => setAviso({ ...aviso, order_confirmation_message: e.target.value })}
+            placeholder={DEFAULT_AVISO.order_confirmation_message}
+            autoCapitalize="none" autoCorrect="off" spellCheck="false"
+          />
+        </div>
+        <div>
+          <Label>Tempo estimado</Label>
+          <Input
+            value={aviso.order_estimated_time}
+            onChange={(e) => setAviso({ ...aviso, order_estimated_time: e.target.value })}
+            placeholder={DEFAULT_AVISO.order_estimated_time}
+            autoCapitalize="none" autoCorrect="off" spellCheck="false"
+          />
+        </div>
       </div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>
         {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar textos

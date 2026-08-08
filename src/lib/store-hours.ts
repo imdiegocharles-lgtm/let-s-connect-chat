@@ -24,6 +24,8 @@ export type AvisoLoja = {
   horarios_texto: string;
   home_horario_titulo: string;
   home_horario_texto: string;
+  order_confirmation_message?: string;
+  order_estimated_time?: string;
 };
 
 export const DAY_LABELS = [
@@ -56,6 +58,8 @@ export const DEFAULT_AVISO: AvisoLoja = {
   home_horario_titulo: "Horário do Delivery",
   home_horario_texto:
     "Almoço: SEG - SÁB 11h às 14:30h\nChurrasco: SEG - SÁB 18h às 00h\nDOMINGO não temos delivery, somente presencial com churrasco de 11h às 00h.",
+  order_confirmation_message: "Seu pedido foi recebido com sucesso!",
+  order_estimated_time: "40-80 min, podendo chegar antes",
 };
 
 export async function fetchHorarios(): Promise<Horario[]> {
@@ -88,7 +92,7 @@ export function useConfigEntrega() {
 export async function fetchAvisoLoja(): Promise<AvisoLoja> {
   const { data } = await supabase
     .from("avisos_loja")
-    .select("titulo_fechado, horarios_modo, horarios_texto, home_horario_titulo, home_horario_texto")
+    .select("titulo_fechado, horarios_modo, horarios_texto, home_horario_titulo, home_horario_texto, order_confirmation_message, order_estimated_time")
     .eq("id", 1)
     .maybeSingle();
   return (data as AvisoLoja) ?? DEFAULT_AVISO;

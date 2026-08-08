@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Minus, Plus, Trash2, CheckCircle2, CalendarX2 } from "lucide-react";
 import { getStoreStatus, useHorarios } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
+import { useAvisoLoja, DEFAULT_AVISO } from "@/lib/store-hours";
 
 type Neighborhood = { id: string; name: string; fee: number };
 
@@ -30,12 +31,14 @@ export function CartSheet() {
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const { data: horarios = [] } = useHorarios();
+  const { data: aviso } = useAvisoLoja();
   const store = getStoreStatus(horarios);
   const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState<string>("");
   const [payment, setPayment] = useState<string>("");
   const [changeFor, setChangeFor] = useState<string>("");
@@ -70,7 +73,8 @@ export function CartSheet() {
         throw new Error(`Não fazemos delivery ${store.todayLabel.toLowerCase()}. Atendimento somente presencial hoje.`);
       if (!name.trim()) throw new Error("Preencha seu nome.");
       if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
-      if (!address.trim()) throw new Error("Informe o endereço com número.");
+      if (!street.trim()) throw new Error("Informe o endereço.");
+      if (!number.trim()) throw new Error("Informe o número da residência.");
       if (!neighborhoodId) throw new Error("Selecione o bairro.");
       if (!payment) throw new Error("Selecione a forma de pagamento.");
       if (!notes.trim()) throw new Error("Preencha as observações e ponto de referência.");
@@ -94,7 +98,8 @@ export function CartSheet() {
         data: {
           name: name.trim(),
           phone: phone.trim(),
-          address: address.trim(),
+          street: street.trim(),
+          number: number.trim(),
           neighborhoodId,
           paymentMethod: payment as never,
           changeFor: payment === "dinheiro" ? Number(changeFor) : null,
@@ -225,17 +230,29 @@ export function CartSheet() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="address">Endereço com número (rua, número, complemento) *</Label>
-                <Textarea
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  maxLength={200}
-                  rows={2}
-                  placeholder="Ex: Rua das Flores, 123 - apto 2"
-                  required
-                />
+              <div className="grid grid-cols-[1fr,80px] gap-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="street">Endereço *</Label>
+                  <Input
+                    id="street"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    maxLength={150}
+                    placeholder="Ex: Rua das Flores"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="number">Número *</Label>
+                  <Input
+                    id="number"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    maxLength={20}
+                    placeholder="123"
+                    required
+                  />
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label>Bairro *</Label>
@@ -345,15 +362,10 @@ export function CartSheet() {
         {step === "done" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
             <CheckCircle2 className="h-16 w-16 text-primary" />
-            <h3 className="text-xl font-black">Pedido recebido!</h3>
+            <h3 className="text-xl font-black">{aviso?.order_confirmation_message || DEFAULT_AVISO.order_confirmation_message}</h3>
             <p className="text-sm text-muted-foreground">
-              Seu pedido foi enviado para a cozinha. Tempo estimado: <b>30 a 45 minutos</b>.
+              Tempo estimado: <b>{aviso?.order_estimated_time || DEFAULT_AVISO.order_estimated_time}</b>
             </p>
-            {orderNumber != null && (
-              <p className="text-xs text-muted-foreground">
-                Nº do pedido: <span className="font-mono font-bold">#{orderNumber}</span>
-              </p>
-            )}
             <Button className="mt-2 w-full" onClick={reset}>
               Fechar
             </Button>

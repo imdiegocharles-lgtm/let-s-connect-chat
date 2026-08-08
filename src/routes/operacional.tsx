@@ -346,7 +346,9 @@ function KitchenDashboard() {
       order_number: 0,
       customer_name: "Teste de impressão",
       customer_phone: "(21) 99999-9999",
-      customer_address: "Rua de Teste, 123 - Apto 1",
+      customer_address: "Rua de Teste, 123",
+      customer_street: "Rua de Teste",
+      customer_number: "123",
       delivery_type: "delivery",
       neighborhood: "Centro",
       payment_method: "dinheiro",
@@ -722,7 +724,7 @@ function OrderCard({
         <p><span className="font-semibold">Telefone:</span> {order.customer_phone}</p>
         {order.delivery_type === "delivery" ? (
           <>
-        <p><span className="font-semibold">Endereço:</span> {order.customer_address}</p>
+        <p><span className="font-semibold">Endereço:</span> {order.customer_street ? `${order.customer_street}, ${order.customer_number}` : order.customer_address}</p>
             <p><span className="font-semibold">Bairro:</span> {order.neighborhood}</p>
           </>
         ) : (
