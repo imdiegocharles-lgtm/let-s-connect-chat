@@ -346,7 +346,7 @@ function KitchenDashboard() {
 
   const printOne = async (order: Order & { order_items: OrderItem[] }) => {
     try {
-      await sendToLocalPrinter(agentUrl, order, order.order_items);
+      await sendToLocalPrinter(agentUrl, order, order.order_items, settings);
       toast.success(`Cupom #${order.order_number} enviado para impressora`);
     } catch (e: any) {
       toast.error(`Não foi possível imprimir: ${e.message}`);
@@ -384,7 +384,7 @@ function KitchenDashboard() {
       { id: "2", order_id: "test", menu_item_id: "2", name: "Batata Completa", price: 35, quantity: 1, extras: null, created_at: "" },
     ];
     try {
-      await sendToLocalPrinter(agentUrl, testOrder, testItems);
+      await sendToLocalPrinter(agentUrl, testOrder, testItems, settings);
       toast.success("Teste enviado para a impressora");
     } catch (e: any) {
       toast.error(`Falha no teste: ${e.message}`);
