@@ -279,6 +279,19 @@ function KitchenDashboard() {
     },
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["system_settings"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("system_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Order["status"] }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
