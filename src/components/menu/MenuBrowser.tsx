@@ -89,7 +89,7 @@ export function MenuBrowser() {
   const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
   const [selectedSkewerId, setSelectedSkewerId] = useState<string>("");
 
-  const { data: activeShift } = useQuery({
+  const { data: activeShift, refetch: refetchShift } = useQuery({
     queryKey: ["active-shift-public"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -101,7 +101,9 @@ export function MenuBrowser() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000, // Re-check every 5s for faster updates
+    refetchInterval: 5000,
+    staleTime: 0,
+    gcTime: 0,
   });
 
 
