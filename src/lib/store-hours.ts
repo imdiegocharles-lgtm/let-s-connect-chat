@@ -160,15 +160,21 @@ export type StoreStatus = {
 export function getStoreStatus(horarios: Horario[], hasActiveShift = false, date = new Date()): StoreStatus {
   const { dow, minutes } = nowInSaoPaulo(date);
   const todayWindows = horarios.filter((h) => h.dia_semana === dow);
+  
+  // Se houver um turno ativo, consideramos que o restaurante está aberto 
+  // independentemente de bater exatamente com a janela de horários configurada.
+  // No entanto, ainda precisamos identificar qual é a janela de serviço para exibir preços/itens corretos.
   const open = todayWindows.find(
     (h) => minutes >= toMinutes(h.hora_abertura) && minutes <= closeMinutes(h.hora_fechamento),
   );
+  
   const deliveryToday = todayWindows.some((h) => h.delivery_disponivel);
+  
   return {
-    openService: (open?.tipo as ServiceType) ?? null,
+    openService: (open?.tipo as ServiceType) ?? (hasActiveShift ? (minutes < 960 ? "almoco" : "churrasquinho") : null),
     deliveryToday,
     hasActiveShift,
-    canOrder: Boolean(open && open.delivery_disponivel && hasActiveShift),
+    canOrder: hasActiveShift, // O turno aberto é o soberano agora
     todayLabel: DAY_LABELS[dow] ?? "",
     todayWindows,
   };
