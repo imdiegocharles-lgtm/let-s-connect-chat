@@ -1779,7 +1779,6 @@ function ReceiptSettingsPanel() {
           <ReceiptPreview settings={form} />
         </div>
       </div>
-    </div>
 
       <div className="space-y-4 border-t pt-4">
         <h4 className="font-semibold text-sm">Logo da Comanda</h4>
