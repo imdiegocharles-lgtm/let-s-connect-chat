@@ -85,6 +85,22 @@ export function MenuBrowser() {
   const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
   const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
 
+  const { data: activeShift } = useQuery({
+    queryKey: ["active-shift-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id")
+        .is("closed_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000, // Re-check every 30s
+  });
+
+
   const { data: sides = [] } = useQuery({
     queryKey: ["active-sides"],
     queryFn: async () => {
