@@ -289,7 +289,7 @@ export function CartSheet() {
               {payment === "dinheiro" && (
                 <div className="grid gap-2 rounded-lg border border-border bg-muted/40 p-3">
                   <div className="grid gap-1">
-                    <Label htmlFor="change">CLIENTE PAGA COM *</Label>
+                    <Label htmlFor="change">VALOR EM DINHEIRO *</Label>
                     <Input
                       id="change"
                       type="number"
@@ -297,7 +297,7 @@ export function CartSheet() {
                       min={0}
                       value={changeFor}
                       onChange={(e) => setChangeFor(e.target.value)}
-                      placeholder="Ex: 200,00"
+                      placeholder="Ex: 00,00"
                       className="font-bold text-lg"
                       required
                     />
