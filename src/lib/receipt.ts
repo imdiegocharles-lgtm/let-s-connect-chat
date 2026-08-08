@@ -239,8 +239,9 @@ export async function sendToLocalPrinter(
   agentUrl: string,
   order: Order,
   items: OrderItem[],
+  settings?: ReceiptSettings
 ): Promise<void> {
-  const bytes = buildReceiptBytes(order, items);
+  const bytes = buildReceiptBytes(order, items, settings);
 
   const res = await fetch(agentUrl, {
     method: "POST",
