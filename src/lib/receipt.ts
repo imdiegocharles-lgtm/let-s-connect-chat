@@ -3,6 +3,17 @@ import type { Tables } from "@/integrations/supabase/types";
 type Order = Tables<"orders">;
 type OrderItem = Tables<"order_items">;
 
+export type ReceiptSettings = {
+  receipt_show_logo: boolean;
+  receipt_header_bold: boolean;
+  receipt_items_bold: boolean;
+  receipt_footer_bold: boolean;
+  receipt_extra_spacing: boolean;
+  receipt_qty_double_size: boolean;
+  receipt_font_size: number;
+  official_logo_bw_url?: string | null;
+};
+
 const COMMANDS = {
   init: [0x1b, 0x40],
   lf: [0x0a],
