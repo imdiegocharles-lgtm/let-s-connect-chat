@@ -85,6 +85,22 @@ export function MenuBrowser() {
   const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
   const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
 
+  const { data: activeShift } = useQuery({
+    queryKey: ["active-shift-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id")
+        .is("closed_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000, // Re-check every 30s
+  });
+
+
   const { data: sides = [] } = useQuery({
     queryKey: ["active-sides"],
     queryFn: async () => {
@@ -103,10 +119,12 @@ export function MenuBrowser() {
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
-  const store = getStoreStatus(horarios);
+  const store = getStoreStatus(horarios, !!activeShift);
   const svcWindow: "lunch" | "dinner" | "closed" =
     store.openService === "almoco" ? "lunch" : store.openService === "churrasquinho" ? "dinner" : "closed";
-  // Categoria dos "Completos" (O MAIS PEDIDO): busca flexível, com fallback
+  const isActuallyClosed = svcWindow === "closed" || !store.hasActiveShift;
+
+
   // pelos próprios itens ("Completo com Maionese/Salpicão").
   const completosCatId =
     data.cats.find((c) => {
@@ -142,6 +160,11 @@ export function MenuBrowser() {
       toast.error("Estamos fechados no momento. Não é possível adicionar itens ao pedido.");
       return;
     }
+    if (!store.hasActiveShift) {
+      toast.error("Estamos fechados no momento, em breve estaremos online.");
+      return;
+    }
+
     // Vinculado ao PRODUTO: vale em qualquer seção onde ele apareça.
     if (item.requires_skewer_choice && skewerOptions.length > 0) {
       setPendingCompleto(item);
@@ -199,10 +222,12 @@ export function MenuBrowser() {
 
   return (
     <div className="space-y-12">
-      {svcWindow === "closed" && (
+      {isActuallyClosed && (
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">
-            {aviso.titulo_fechado || DEFAULT_AVISO.titulo_fechado}
+            {!store.hasActiveShift && svcWindow !== "closed" 
+              ? "Estamos fechados no momento, em breve estaremos online"
+              : (aviso.titulo_fechado || DEFAULT_AVISO.titulo_fechado)}
           </p>
           <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
             {aviso.horarios_modo === "manual" && aviso.horarios_texto.trim()
@@ -213,6 +238,7 @@ export function MenuBrowser() {
           </p>
         </div>
       )}
+
       {svcWindow !== "closed" && !store.deliveryToday && (
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">Sem delivery hoje ({store.todayLabel})</p>
@@ -279,7 +305,7 @@ export function MenuBrowser() {
                   <button
                     onClick={() => handleAdd(item)}
                     aria-label={`Adicionar ${item.name}`}
-                    disabled={svcWindow === "closed"}
+                    disabled={isActuallyClosed}
                     className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="h-5 w-5" />

@@ -30,6 +30,18 @@ export const createGuestOrder = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
 
+    // Check if there is an open shift
+    const { data: openShift, error: sErr } = await sb
+      .from("shifts")
+      .select("id")
+      .is("closed_at", null)
+      .limit(1)
+      .maybeSingle();
+    
+    if (sErr) throw new Error("Erro ao verificar turno: " + sErr.message);
+    if (!openShift) throw new Error("Estamos fechados no momento. Por favor, tente fazer seu pedido mais tarde, quando estivermos online.");
+
+
     const { data: hood, error: hErr } = await sb
       .from("neighborhoods")
       .select("name, fee")

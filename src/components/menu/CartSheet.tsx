@@ -31,9 +31,24 @@ export function CartSheet() {
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const { data: horarios = [] } = useHorarios();
+  const { data: activeShift } = useQuery({
+    queryKey: ["active-shift-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id")
+        .is("closed_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 30000,
+  });
   const { data: aviso } = useAvisoLoja();
-  const store = getStoreStatus(horarios);
+  const store = getStoreStatus(horarios, !!activeShift);
   const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
+
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -67,8 +82,9 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (store.openService === null)
-        throw new Error("Não é possível realizar pedidos com a loja fechada.");
+      if (store.openService === null || !store.hasActiveShift)
+        throw new Error("Não é possível realizar pedidos com a loja fechada no momento.");
+
       if (deliveryBlocked)
         throw new Error(`Não fazemos delivery ${store.todayLabel.toLowerCase()}. Atendimento somente presencial hoje.`);
       if (!name.trim()) throw new Error("Preencha seu nome.");
@@ -202,11 +218,12 @@ export function CartSheet() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={items.length === 0 || deliveryBlocked || store.openService === null}
+                disabled={items.length === 0 || deliveryBlocked || store.openService === null || !store.hasActiveShift}
                 onClick={() => setStep("checkout")}
               >
-                {store.openService === null ? "Loja fechada" : deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
+                {store.openService === null || !store.hasActiveShift ? "Loja fechada" : deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
               </Button>
+
             </div>
           </>
         )}
