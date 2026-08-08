@@ -9,7 +9,7 @@ import {
   useAvisoLoja,
   DEFAULT_AVISO,
 } from "@/lib/store-hours";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -18,6 +18,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 type Category = {
   id: string;
@@ -84,6 +87,7 @@ export function MenuBrowser() {
   const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
   const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
   const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
+  const [selectedSkewerId, setSelectedSkewerId] = useState<string>("");
 
   const { data: activeShift } = useQuery({
     queryKey: ["active-shift-public"],
@@ -318,7 +322,15 @@ export function MenuBrowser() {
         </section>
       ))}
 
-      <Dialog open={!!pendingCompleto} onOpenChange={(v) => !v && setPendingCompleto(null)}>
+      <Dialog 
+        open={!!pendingCompleto} 
+        onOpenChange={(v) => {
+          if (!v) {
+            setPendingCompleto(null);
+            setSelectedSkewerId("");
+          }
+        }}
+      >
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Escolha seu espeto</DialogTitle>
@@ -327,17 +339,52 @@ export function MenuBrowser() {
               prato. Escolha uma opção para continuar.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+          
+          <RadioGroup 
+            value={selectedSkewerId} 
+            onValueChange={setSelectedSkewerId}
+            className="grid max-h-[60vh] gap-3 overflow-y-auto pr-1 py-2"
+          >
             {skewerOptions.map((s) => (
-              <button
+              <Label
                 key={s.id}
-                onClick={() => confirmCompleto(s)}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+                htmlFor={s.id}
+                className={`flex items-center justify-between rounded-lg border px-4 py-4 cursor-pointer transition-all ${
+                  selectedSkewerId === s.id 
+                    ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                    : "border-border bg-card hover:border-primary/50"
+                }`}
               >
-                <span className="font-semibold">{s.name}</span>
-                <span className="text-sm text-muted-foreground">Incluso</span>
-              </button>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value={s.id} id={s.id} />
+                  <span className="font-bold text-base">{s.name}</span>
+                </div>
+              </Label>
             ))}
+          </RadioGroup>
+
+          <div className="mt-4 flex flex-col gap-2">
+            <Button 
+              className="w-full font-bold h-12 text-lg" 
+              disabled={!selectedSkewerId}
+              onClick={() => {
+                const skewer = skewerOptions.find(s => s.id === selectedSkewerId);
+                if (skewer) confirmCompleto(skewer);
+                setSelectedSkewerId("");
+              }}
+            >
+              Confirmar Escolha
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground"
+              onClick={() => {
+                setPendingCompleto(null);
+                setSelectedSkewerId("");
+              }}
+            >
+              Cancelar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
