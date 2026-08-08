@@ -1693,7 +1693,7 @@ function ReceiptSettingsPanel() {
   if (isLoading || !form) return <Loader2 className="h-6 w-6 animate-spin" />;
 
   return (
-    <Card className="p-6 max-w-3xl space-y-6">
+    <Card className="p-6 max-w-5xl space-y-6">
       <div>
         <h3 className="text-lg font-bold">Personalização da Comanda</h3>
         <p className="text-sm text-muted-foreground">
@@ -1704,105 +1704,106 @@ function ReceiptSettingsPanel() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <div className="grid gap-6 sm:grid-cols-2">
-        <div className="space-y-4">
-          <h4 className="font-semibold text-sm border-b pb-1">Estilo de Texto</h4>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="qty-big" className="cursor-pointer">Quantidade em destaque (Grande)</Label>
-            <Switch 
-              id="qty-big"
-              checked={form.receipt_qty_double_size}
-              onCheckedChange={(v) => setForm({ ...form, receipt_qty_double_size: v })}
-            />
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm border-b pb-1">Estilo de Texto</h4>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="qty-big" className="cursor-pointer">Quantidade em destaque (Grande)</Label>
+                <Switch 
+                  id="qty-big"
+                  checked={form.receipt_qty_double_size}
+                  onCheckedChange={(v) => setForm({ ...form, receipt_qty_double_size: v })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="extra-spacing" className="cursor-pointer">Espaçamento extra entre itens</Label>
+                <Switch 
+                  id="extra-spacing"
+                  checked={form.receipt_extra_spacing}
+                  onCheckedChange={(v) => setForm({ ...form, receipt_extra_spacing: v })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tamanho da fonte do cabeçalho</Label>
+                <Select 
+                  value={String(form.receipt_font_size)} 
+                  onValueChange={(v) => setForm({ ...form, receipt_font_size: Number(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Normal</SelectItem>
+                    <SelectItem value="2">Grande (Dobro)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm border-b pb-1">Negrito (Destaque)</h4>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bold-header" className="cursor-pointer">Cabeçalho em Negrito</Label>
+                <Switch 
+                  id="bold-header"
+                  checked={form.receipt_header_bold}
+                  onCheckedChange={(v) => setForm({ ...form, receipt_header_bold: v })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bold-items" className="cursor-pointer">Itens em Negrito</Label>
+                <Switch 
+                  id="bold-items"
+                  checked={form.receipt_items_bold}
+                  onCheckedChange={(v) => setForm({ ...form, receipt_items_bold: v })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bold-footer" className="cursor-pointer">Rodapé em Negrito</Label>
+                <Switch 
+                  id="bold-footer"
+                  checked={form.receipt_footer_bold}
+                  onCheckedChange={(v) => setForm({ ...form, receipt_footer_bold: v })}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="extra-spacing" className="cursor-pointer">Espaçamento extra entre itens</Label>
-            <Switch 
-              id="extra-spacing"
-              checked={form.receipt_extra_spacing}
-              onCheckedChange={(v) => setForm({ ...form, receipt_extra_spacing: v })}
-            />
-          </div>
+          <div className="space-y-4 border-t pt-4">
+            <h4 className="font-semibold text-sm">Logo da Comanda</h4>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-logo" className="cursor-pointer">Exibir nome/logo no topo</Label>
+              <Switch 
+                id="show-logo"
+                checked={form.receipt_show_logo}
+                onCheckedChange={(v) => setForm({ ...form, receipt_show_logo: v })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Tamanho da fonte do cabeçalho</Label>
-            <Select 
-              value={String(form.receipt_font_size)} 
-              onValueChange={(v) => setForm({ ...form, receipt_font_size: Number(v) })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Normal</SelectItem>
-                <SelectItem value="2">Grande (Dobro)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="font-semibold text-sm border-b pb-1">Negrito (Destaque)</h4>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="bold-header" className="cursor-pointer">Cabeçalho em Negrito</Label>
-            <Switch 
-              id="bold-header"
-              checked={form.receipt_header_bold}
-              onCheckedChange={(v) => setForm({ ...form, receipt_header_bold: v })}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="bold-items" className="cursor-pointer">Itens em Negrito</Label>
-            <Switch 
-              id="bold-items"
-              checked={form.receipt_items_bold}
-              onCheckedChange={(v) => setForm({ ...form, receipt_items_bold: v })}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="bold-footer" className="cursor-pointer">Rodapé em Negrito</Label>
-            <Switch 
-              id="bold-footer"
-              checked={form.receipt_footer_bold}
-              onCheckedChange={(v) => setForm({ ...form, receipt_footer_bold: v })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>URL da Logo P&B (Formato BMP/PNG monocromático recomendado)</Label>
+              <Input 
+                value={form.official_logo_bw_url} 
+                onChange={(e) => setForm({ ...form, official_logo_bw_url: e.target.value })}
+                placeholder="Link da imagem..."
+                autoCapitalize="none" autoCorrect="off" spellCheck="false"
+              />
+              <p className="text-[10px] text-muted-foreground italic">
+                Nota: A maioria das impressoras térmicas requer que a logo seja configurada diretamente no driver da impressora ou no agente local. O formato recomendado é 200x200px em preto e branco absoluto (1-bit).
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="space-y-4">
           <h4 className="font-semibold text-sm border-b pb-1">Visualização em Tempo Real</h4>
           <ReceiptPreview settings={form} />
-        </div>
-      </div>
-
-      <div className="space-y-4 border-t pt-4">
-        <h4 className="font-semibold text-sm">Logo da Comanda</h4>
-        
-        <div className="flex items-center justify-between">
-          <Label htmlFor="show-logo" className="cursor-pointer">Exibir nome/logo no topo</Label>
-          <Switch 
-            id="show-logo"
-            checked={form.receipt_show_logo}
-            onCheckedChange={(v) => setForm({ ...form, receipt_show_logo: v })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>URL da Logo P&B (Formato BMP/PNG monocromático recomendado)</Label>
-          <Input 
-            value={form.official_logo_bw_url} 
-            onChange={(e) => setForm({ ...form, official_logo_bw_url: e.target.value })}
-            placeholder="Link da imagem..."
-            autoCapitalize="none" autoCorrect="off" spellCheck="false"
-          />
-          <p className="text-[10px] text-muted-foreground italic">
-            Nota: A maioria das impressoras térmicas requer que a logo seja configurada diretamente no driver da impressora ou no agente local. O formato recomendado é 200x200px em preto e branco absoluto (1-bit).
-          </p>
         </div>
       </div>
 
