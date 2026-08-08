@@ -1,0 +1,12 @@
+alter table public.avisos_loja add column if not exists order_confirmation_message text;
+alter table public.avisos_loja add column if not exists order_estimated_time text;
+update public.avisos_loja set order_confirmation_message = 'Seu pedido foi recebido com sucesso!', order_estimated_time = '40-80 min, podendo chegar antes' where id = 1 and order_confirmation_message is null;
+alter table public.orders add column if not exists customer_street text;
+alter table public.orders add column if not exists customer_number text;
+update public.orders set customer_street = customer_address where customer_street is null;
+grant select, update on public.avisos_loja to authenticated;
+grant select, update, insert on public.orders to authenticated;
+grant all on public.avisos_loja to service_role;
+grant all on public.orders to service_role;
+grant select on public.avisos_loja to anon;
+grant insert, select on public.orders to anon;

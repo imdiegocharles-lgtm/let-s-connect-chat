@@ -46,6 +46,8 @@ export type Database = {
           horarios_modo: string
           horarios_texto: string
           id: number
+          order_confirmation_message: string | null
+          order_estimated_time: string | null
           titulo_fechado: string
           updated_at: string
         }
@@ -56,6 +58,8 @@ export type Database = {
           horarios_modo?: string
           horarios_texto?: string
           id?: number
+          order_confirmation_message?: string | null
+          order_estimated_time?: string | null
           titulo_fechado?: string
           updated_at?: string
         }
@@ -66,6 +70,8 @@ export type Database = {
           horarios_modo?: string
           horarios_texto?: string
           id?: number
+          order_confirmation_message?: string | null
+          order_estimated_time?: string | null
           titulo_fechado?: string
           updated_at?: string
         }
@@ -413,7 +419,9 @@ export type Database = {
           created_at: string
           customer_address: string | null
           customer_name: string
+          customer_number: string | null
           customer_phone: string
+          customer_street: string | null
           delivery_fee: number
           delivery_type: string
           id: string
@@ -436,7 +444,9 @@ export type Database = {
           created_at?: string
           customer_address?: string | null
           customer_name: string
+          customer_number?: string | null
           customer_phone: string
+          customer_street?: string | null
           delivery_fee?: number
           delivery_type: string
           id?: string
@@ -459,7 +469,9 @@ export type Database = {
           created_at?: string
           customer_address?: string | null
           customer_name?: string
+          customer_number?: string | null
           customer_phone?: string
+          customer_street?: string | null
           delivery_fee?: number
           delivery_type?: string
           id?: string
