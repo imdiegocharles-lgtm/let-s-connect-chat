@@ -279,6 +279,19 @@ function KitchenDashboard() {
     },
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["system_settings"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("system_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Order["status"] }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -333,7 +346,7 @@ function KitchenDashboard() {
 
   const printOne = async (order: Order & { order_items: OrderItem[] }) => {
     try {
-      await sendToLocalPrinter(agentUrl, order, order.order_items);
+      await sendToLocalPrinter(agentUrl, order, order.order_items, settings);
       toast.success(`Cupom #${order.order_number} enviado para impressora`);
     } catch (e: any) {
       toast.error(`Não foi possível imprimir: ${e.message}`);
@@ -371,7 +384,7 @@ function KitchenDashboard() {
       { id: "2", order_id: "test", menu_item_id: "2", name: "Batata Completa", price: 35, quantity: 1, extras: null, created_at: "" },
     ];
     try {
-      await sendToLocalPrinter(agentUrl, testOrder, testItems);
+      await sendToLocalPrinter(agentUrl, testOrder, testItems, settings);
       toast.success("Teste enviado para a impressora");
     } catch (e: any) {
       toast.error(`Falha no teste: ${e.message}`);

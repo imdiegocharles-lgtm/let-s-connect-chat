@@ -172,6 +172,7 @@ function AdminDashboard() {
             <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
             <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsTrigger value="receipt">🖨️ Impressão</TabsTrigger>
           </TabsList>
           <TabsContent value="financial" className="mt-6">
             <FinancialDashboard />
@@ -185,6 +186,7 @@ function AdminDashboard() {
           <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
           <TabsContent value="reports" className="mt-6"><ReportsViewer /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
+          <TabsContent value="receipt" className="mt-6"><ReceiptSettingsPanel /></TabsContent>
         </Tabs>
       </main>
       <footer className="border-t bg-card py-4 mt-8">
@@ -1629,5 +1631,169 @@ function ReviewsPanel() {
         ))
       )}
     </div>
+  );
+}
+
+/* --------------------------- RECEIPT SETTINGS --------------------------- */
+
+function ReceiptSettingsPanel() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["system_settings"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("system_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [form, setForm] = useState<any>(null);
+  useEffect(() => {
+    if (data) {
+      setForm({
+        receipt_show_logo: data.receipt_show_logo ?? true,
+        receipt_header_bold: data.receipt_header_bold ?? true,
+        receipt_items_bold: data.receipt_items_bold ?? true,
+        receipt_footer_bold: data.receipt_footer_bold ?? true,
+        receipt_extra_spacing: data.receipt_extra_spacing ?? true,
+        receipt_qty_double_size: data.receipt_qty_double_size ?? true,
+        receipt_font_size: data.receipt_font_size ?? 1,
+        official_logo_bw_url: data.official_logo_bw_url ?? "",
+      });
+    }
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("system_settings")
+        .update(form)
+        .eq("id", 1);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Configurações de impressão salvas");
+      qc.invalidateQueries({ queryKey: ["system_settings"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading || !form) return <Loader2 className="h-6 w-6 animate-spin" />;
+
+  return (
+    <Card className="p-6 max-w-3xl space-y-6">
+      <div>
+        <h3 className="text-lg font-bold">Personalização da Comanda</h3>
+        <p className="text-sm text-muted-foreground">
+          Ajuste como os pedidos são impressos na sua impressora térmica.
+        </p>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div className="space-y-4">
+          <h4 className="font-semibold text-sm border-b pb-1">Estilo de Texto</h4>
+          
+          <div className="flex items-center justify-between">
+            <Label htmlFor="qty-big" className="cursor-pointer">Quantidade em destaque (Grande)</Label>
+            <Switch 
+              id="qty-big"
+              checked={form.receipt_qty_double_size}
+              onCheckedChange={(v) => setForm({ ...form, receipt_qty_double_size: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="extra-spacing" className="cursor-pointer">Espaçamento extra entre itens</Label>
+            <Switch 
+              id="extra-spacing"
+              checked={form.receipt_extra_spacing}
+              onCheckedChange={(v) => setForm({ ...form, receipt_extra_spacing: v })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tamanho da fonte do cabeçalho</Label>
+            <Select 
+              value={String(form.receipt_font_size)} 
+              onValueChange={(v) => setForm({ ...form, receipt_font_size: Number(v) })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Normal</SelectItem>
+                <SelectItem value="2">Grande (Dobro)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-semibold text-sm border-b pb-1">Negrito (Destaque)</h4>
+          
+          <div className="flex items-center justify-between">
+            <Label htmlFor="bold-header" className="cursor-pointer">Cabeçalho em Negrito</Label>
+            <Switch 
+              id="bold-header"
+              checked={form.receipt_header_bold}
+              onCheckedChange={(v) => setForm({ ...form, receipt_header_bold: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="bold-items" className="cursor-pointer">Itens em Negrito</Label>
+            <Switch 
+              id="bold-items"
+              checked={form.receipt_items_bold}
+              onCheckedChange={(v) => setForm({ ...form, receipt_items_bold: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="bold-footer" className="cursor-pointer">Rodapé em Negrito</Label>
+            <Switch 
+              id="bold-footer"
+              checked={form.receipt_footer_bold}
+              onCheckedChange={(v) => setForm({ ...form, receipt_footer_bold: v })}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 border-t pt-4">
+        <h4 className="font-semibold text-sm">Logo da Comanda</h4>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="show-logo" className="cursor-pointer">Exibir nome/logo no topo</Label>
+          <Switch 
+            id="show-logo"
+            checked={form.receipt_show_logo}
+            onCheckedChange={(v) => setForm({ ...form, receipt_show_logo: v })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>URL da Logo P&B (Formato BMP/PNG monocromático recomendado)</Label>
+          <Input 
+            value={form.official_logo_bw_url} 
+            onChange={(e) => setForm({ ...form, official_logo_bw_url: e.target.value })}
+            placeholder="Link da imagem..."
+            autoCapitalize="none" autoCorrect="off" spellCheck="false"
+          />
+          <p className="text-[10px] text-muted-foreground italic">
+            Nota: A maioria das impressoras térmicas requer que a logo seja configurada diretamente no driver da impressora ou no agente local. O formato recomendado é 200x200px em preto e branco absoluto (1-bit).
+          </p>
+        </div>
+      </div>
+
+      <Button className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>
+        {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        Salvar Configurações de Impressão
+      </Button>
+    </Card>
   );
 }

@@ -3,6 +3,17 @@ import type { Tables } from "@/integrations/supabase/types";
 type Order = Tables<"orders">;
 type OrderItem = Tables<"order_items">;
 
+export type ReceiptSettings = {
+  receipt_show_logo: boolean;
+  receipt_header_bold: boolean;
+  receipt_items_bold: boolean;
+  receipt_footer_bold: boolean;
+  receipt_extra_spacing: boolean;
+  receipt_qty_double_size: boolean;
+  receipt_font_size: number;
+  official_logo_bw_url?: string | null;
+};
+
 const COMMANDS = {
   init: [0x1b, 0x40],
   lf: [0x0a],
@@ -12,6 +23,10 @@ const COMMANDS = {
   boldOff: [0x1b, 0x45, 0x00],
   doubleWidthOn: [0x1b, 0x21, 0x20],
   doubleWidthOff: [0x1b, 0x21, 0x00],
+  doubleHeightOn: [0x1b, 0x21, 0x10],
+  doubleHeightOff: [0x1b, 0x21, 0x00],
+  doubleSizeOn: [0x1b, 0x21, 0x30], // Double width + double height
+  doubleSizeOff: [0x1b, 0x21, 0x00],
   selectCP860: [0x1b, 0x74, 0x03],
   cut: [0x1d, 0x56, 0x42, 0x00],
   beep: [0x1b, 0x42, 0x03, 0x01],
@@ -82,83 +97,121 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "PIX (ENTREGA)",
 };
 
-export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array {
+export function buildReceiptBytes(
+  order: Order, 
+  items: OrderItem[], 
+  settings?: ReceiptSettings
+): Uint8Array {
   const out: number[] = [];
+  const s = settings || {
+    receipt_show_logo: true,
+    receipt_header_bold: true,
+    receipt_items_bold: true,
+    receipt_footer_bold: true,
+    receipt_extra_spacing: true,
+    receipt_qty_double_size: true,
+    receipt_font_size: 1,
+  };
 
   out.push(...COMMANDS.init);
   out.push(...COMMANDS.selectCP860);
   
   // Header com Logo (Texto Centralizado estilizado)
   out.push(...COMMANDS.center);
-  out.push(...line("FAMILIA AMARAL", true, true));
-  out.push(...line("CHURRASQUINHO & RESTAURANTE", true));
-  out.push(...line("------------------------------------------------", true));
+  if (s.receipt_show_logo) {
+    out.push(...line("FAMILIA AMARAL", true, s.receipt_font_size > 1));
+    out.push(...line("CHURRASQUINHO & RESTAURANTE", true));
+  }
+  out.push(...line("------------------------------------------------", s.receipt_header_bold));
   
   out.push(...COMMANDS.left);
   out.push(...line(`PEDIDO #${String(order.order_number).padStart(4, "0")}`, true, true));
-  out.push(...line(formatDate(order.created_at), true));
-  out.push(...line("------------------------------------------------", true));
+  out.push(...line(formatDate(order.created_at), s.receipt_header_bold));
+  out.push(...line("------------------------------------------------", s.receipt_header_bold));
 
   out.push(...line(" CLIENTE", true, true));
-  out.push(...line(`  NOME: ${order.customer_name.toUpperCase()}`, true));
-  out.push(...line(`  FONE: ${order.customer_phone}`, true));
+  out.push(...line(`  NOME: ${order.customer_name.toUpperCase()}`, s.receipt_header_bold));
+  out.push(...line(`  FONE: ${order.customer_phone}`, s.receipt_header_bold));
   if (order.delivery_type === "delivery") {
-    out.push(...line(`  END: ${order.customer_address?.toUpperCase() ?? ""}`, true));
-    out.push(...line(`  BAIRRO: ${order.neighborhood?.toUpperCase() ?? ""}`, true));
+    out.push(...line(`  END: ${order.customer_address?.toUpperCase() ?? ""}`, s.receipt_header_bold));
+    out.push(...line(`  BAIRRO: ${order.neighborhood?.toUpperCase() ?? ""}`, s.receipt_header_bold));
   } else {
     out.push(...line("  >>> RETIRADA NO LOCAL <<<", true));
   }
-  out.push(...line("------------------------------------------------", true));
+  out.push(...line("------------------------------------------------", s.receipt_header_bold));
 
   out.push(...line(" ITENS DO PEDIDO", true, true));
+  out.push(...line("")); // Espaçamento antes dos itens
+
   for (const item of items) {
-    const qty = `${item.quantity}x `.toUpperCase();
     const name = item.name.toUpperCase();
     const total = formatMoney(item.price * item.quantity);
-    out.push(...line(padLine(qty + name, total, 48), true));
+    
+    // Linha do Item com Quantidade Grande
+    if (s.receipt_qty_double_size) {
+      out.push(...COMMANDS.left);
+      out.push(...COMMANDS.doubleSizeOn);
+      out.push(...encode(`${item.quantity}X `));
+      out.push(...COMMANDS.doubleSizeOff);
+      
+      out.push(...COMMANDS.boldOn);
+      out.push(...encode(name));
+      out.push(...COMMANDS.boldOff);
+      out.push(...COMMANDS.lf);
+      
+      // Preço na linha de baixo alinhado à direita
+      out.push(...line(padLine("", total, 48), s.receipt_items_bold));
+    } else {
+      const qty = `${item.quantity}X `.toUpperCase();
+      out.push(...line(padLine(qty + name, total, 48), s.receipt_items_bold));
+    }
     
     // Informações complementares
     if (item.extras) {
       const extras = item.extras as any;
       
-      // Espeto Incluso
+      // Espeto Incluso (com quantidade 1x conforme solicitado)
       if (extras.espeto) {
-        out.push(...line(`  [ ESPETO INCLUSO: 1x ${extras.espeto.toUpperCase()} ]`, true));
+        out.push(...line(`   [ 1X ESPETO: ${extras.espeto.toUpperCase()} ]`, s.receipt_items_bold));
       }
       
       // Acompanhamento
       if (extras.acompanhamento) {
-        out.push(...line(`  [ ACOMPANHAMENTO: ${extras.acompanhamento.toUpperCase()} ]`, true));
+        out.push(...line(`   [ ACOMPANHAMENTO: ${extras.acompanhamento.toUpperCase()} ]`, s.receipt_items_bold));
       }
 
-      // Pergunta Extra (Romeu e Julieta, etc)
+      // Pergunta Extra
       if (extras.pergunta && extras.escolha) {
-        out.push(...line(`  [ ${extras.pergunta.toUpperCase()} -> ${extras.escolha.toUpperCase()} ]`, true));
+        out.push(...line(`   [ ${extras.pergunta.toUpperCase()}: ${extras.escolha.toUpperCase()} ]`, s.receipt_items_bold));
       }
     }
-  }
-  out.push(...line("------------------------------------------------", true));
 
-  out.push(...line(padLine("SUBTOTAL", formatMoney(order.subtotal), 48), true));
+    if (s.receipt_extra_spacing) {
+      out.push(...line("")); // Espaço entre itens para facilitar a leitura
+    }
+  }
+  
+  out.push(...line("------------------------------------------------", s.receipt_footer_bold));
+
+  out.push(...line(padLine("SUBTOTAL", formatMoney(order.subtotal), 48), s.receipt_footer_bold));
   if (order.delivery_type === "delivery") {
-    out.push(...line(padLine("TAXA DE ENTREGA", formatMoney(order.delivery_fee), 48), true));
+    out.push(...line(padLine("TAXA DE ENTREGA", formatMoney(order.delivery_fee), 48), s.receipt_footer_bold));
   }
   out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true, true));
-  out.push(...line("------------------------------------------------", true));
+  out.push(...line("------------------------------------------------", s.receipt_footer_bold));
 
   out.push(...line(" PAGAMENTO", true, true));
   const method = PAYMENT_LABELS[order.payment_method ?? ""] ?? (order.payment_method ?? "-").toUpperCase();
-  out.push(...line(method, true, true, true)); // Reverse para destaque
+  out.push(...line(method, true, true, true));
   
   if (order.payment_method === "dinheiro" && order.change_for) {
     const changeAmount = Number(order.change_for) - order.total;
-    out.push(...line("------------------------------------------------", true));
-    out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true));
-    out.push(...line(padLine("CLIENTE PAGOU", formatMoney(Number(order.change_for)), 48), true));
+    out.push(...line("------------------------------------------------", s.receipt_footer_bold));
+    out.push(...line(padLine("VALOR EM DINHEIRO", formatMoney(Number(order.change_for)), 48), s.receipt_footer_bold));
     out.push(...line(""));
     out.push(...line(padLine(" TROCO:", formatMoney(changeAmount), 32), true, true, true));
   }
-  out.push(...line("------------------------------------------------", true));
+  out.push(...line("------------------------------------------------", s.receipt_footer_bold));
 
   if (order.notes) {
     out.push(...line(" OBSERVACOES", true, true));
@@ -173,8 +226,8 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
   return new Uint8Array(out);
 }
 
-export function receiptToBase64(order: Order, items: OrderItem[]): string {
-  const bytes = buildReceiptBytes(order, items);
+export function receiptToBase64(order: Order, items: OrderItem[], settings?: ReceiptSettings): string {
+  const bytes = buildReceiptBytes(order, items, settings);
   let binary = "";
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -186,8 +239,9 @@ export async function sendToLocalPrinter(
   agentUrl: string,
   order: Order,
   items: OrderItem[],
+  settings?: ReceiptSettings
 ): Promise<void> {
-  const bytes = buildReceiptBytes(order, items);
+  const bytes = buildReceiptBytes(order, items, settings);
 
   const res = await fetch(agentUrl, {
     method: "POST",

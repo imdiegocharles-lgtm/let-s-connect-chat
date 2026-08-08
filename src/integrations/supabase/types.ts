@@ -776,6 +776,13 @@ export type Database = {
           min_order_value: number
           official_logo_bw_url: string | null
           printer_url: string
+          receipt_extra_spacing: boolean | null
+          receipt_font_size: number | null
+          receipt_footer_bold: boolean | null
+          receipt_header_bold: boolean | null
+          receipt_items_bold: boolean | null
+          receipt_qty_double_size: boolean | null
+          receipt_show_logo: boolean | null
           report_emails: string[]
           updated_at: string
         }
@@ -789,6 +796,13 @@ export type Database = {
           min_order_value?: number
           official_logo_bw_url?: string | null
           printer_url?: string
+          receipt_extra_spacing?: boolean | null
+          receipt_font_size?: number | null
+          receipt_footer_bold?: boolean | null
+          receipt_header_bold?: boolean | null
+          receipt_items_bold?: boolean | null
+          receipt_qty_double_size?: boolean | null
+          receipt_show_logo?: boolean | null
           report_emails?: string[]
           updated_at?: string
         }
@@ -802,6 +816,13 @@ export type Database = {
           min_order_value?: number
           official_logo_bw_url?: string | null
           printer_url?: string
+          receipt_extra_spacing?: boolean | null
+          receipt_font_size?: number | null
+          receipt_footer_bold?: boolean | null
+          receipt_header_bold?: boolean | null
+          receipt_items_bold?: boolean | null
+          receipt_qty_double_size?: boolean | null
+          receipt_show_logo?: boolean | null
           report_emails?: string[]
           updated_at?: string
         }
