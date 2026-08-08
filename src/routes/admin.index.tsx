@@ -1121,6 +1121,13 @@ function SettingsPanel() {
         report_emails: String(form.report_emails || "")
           .split(",").map((s: string) => s.trim()).filter(Boolean),
         official_logo_bw_url: form.official_logo_bw_url,
+        receipt_show_logo: form.receipt_show_logo,
+        receipt_header_bold: form.receipt_header_bold,
+        receipt_items_bold: form.receipt_items_bold,
+        receipt_footer_bold: form.receipt_footer_bold,
+        receipt_extra_spacing: form.receipt_extra_spacing,
+        receipt_qty_double_size: form.receipt_qty_double_size,
+        receipt_font_size: Number(form.receipt_font_size),
       };
       const { error } = await (supabase as any).from("system_settings").update(payload).eq("id", 1);
       if (error) throw error;
