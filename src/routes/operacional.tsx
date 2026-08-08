@@ -346,7 +346,7 @@ function KitchenDashboard() {
       order_number: 0,
       customer_name: "Teste de impressão",
       customer_phone: "(21) 99999-9999",
-      customer_address: "Rua de Teste, 123 - Apto 1",
+      customer_address: "Rua de Teste, 123",
       customer_street: "Rua de Teste",
       customer_number: "123",
       delivery_type: "delivery",
