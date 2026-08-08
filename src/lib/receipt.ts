@@ -12,6 +12,7 @@ export type ReceiptSettings = {
   receipt_qty_double_size: boolean;
   receipt_font_size: number;
   official_logo_bw_url?: string | null;
+  receipt_order_sections?: string[] | null;
 };
 
 const COMMANDS = {
