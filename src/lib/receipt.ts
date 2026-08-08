@@ -1,3 +1,4 @@
+import iconv from 'iconv-lite';
 import type { Tables } from "@/integrations/supabase/types";
 
 type Order = Tables<"orders">;
@@ -14,24 +15,11 @@ const COMMANDS = {
   normal: [0x1b, 0x21, 0x00],
   cut: [0x1d, 0x56, 0x42, 0x00],
   beep: [0x1b, 0x42, 0x03, 0x01],
+  selectCP860: [0x1b, 0x74, 0x03], // Command to select CP860 on most ESC/POS printers
 };
 
 function encode(str: string): number[] {
-  const bytes: number[] = [];
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    if (code < 128) {
-      bytes.push(code);
-    } else {
-      // UTF-8 encode
-      const utf8 = encodeURIComponent(str[i]);
-      const parts = utf8.slice(1).split("%");
-      for (const p of parts) {
-        if (p) bytes.push(parseInt(p, 16));
-      }
-    }
-  }
-  return bytes;
+  return Array.from(iconv.encode(str, 'cp860'));
 }
 
 function line(text = ""): number[] {
@@ -65,6 +53,7 @@ export function buildReceiptBytes(order: Order, items: OrderItem[]): Uint8Array 
   const out: number[] = [];
 
   out.push(...COMMANDS.init);
+  out.push(...COMMANDS.selectCP860);
   out.push(...COMMANDS.center);
   out.push(...COMMANDS.boldOn);
   out.push(...COMMANDS.doubleWidth);

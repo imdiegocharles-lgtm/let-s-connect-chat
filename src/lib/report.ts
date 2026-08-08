@@ -1,3 +1,5 @@
+import iconv from 'iconv-lite';
+
 const ESC = {
   init: [0x1b, 0x40],
   lf: [0x0a],
@@ -8,19 +10,11 @@ const ESC = {
   doubleWidth: [0x1b, 0x21, 0x20],
   normal: [0x1b, 0x21, 0x00],
   cut: [0x1d, 0x56, 0x42, 0x00],
+  selectCP860: [0x1b, 0x74, 0x03],
 };
 
 function encode(str: string): number[] {
-  const bytes: number[] = [];
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    if (code < 128) bytes.push(code);
-    else {
-      const utf8 = encodeURIComponent(str[i]);
-      for (const p of utf8.slice(1).split("%")) if (p) bytes.push(parseInt(p, 16));
-    }
-  }
-  return bytes;
+  return Array.from(iconv.encode(str, 'cp860'));
 }
 const line = (text = "") => encode(text).concat(ESC.lf);
 const pad = (l: string, r: string, w = 48) =>
@@ -91,7 +85,7 @@ const dateBR = (d: string) => {
 };
 
 function header(out: number[], title: string) {
-  out.push(...ESC.init, ...ESC.center, ...ESC.boldOn, ...ESC.doubleWidth);
+  out.push(...ESC.init, ...ESC.selectCP860, ...ESC.center, ...ESC.boldOn, ...ESC.doubleWidth);
   out.push(...line("FAMILIA AMARAL"));
   out.push(...ESC.normal);
   out.push(...line(title));

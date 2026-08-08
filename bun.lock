@@ -48,6 +48,7 @@
         "cmdk": "^1.1.1",
         "date-fns": "^4.4.0",
         "embla-carousel-react": "^8.6.0",
+        "iconv-lite": "^0.7.3",
         "input-otp": "^1.4.2",
         "lucide-react": "^1.28.0",
         "react": "^19.2.0",
@@ -67,6 +68,7 @@
       "devDependencies": {
         "@eslint/js": "^9.32.0",
         "@lovable.dev/vite-tanstack-config": "2.9.1",
+        "@types/iconv-lite": "^0.0.1",
         "@types/node": "^22.16.5",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
@@ -665,6 +667,8 @@
     "@types/d3-timer": ["@types/d3-timer@3.0.2", "", {}, "sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw=="],
 
     "@types/estree": ["@types/estree@1.0.8", "", {}, "sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w=="],
+
+    "@types/iconv-lite": ["@types/iconv-lite@0.0.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@types/iconv-lite/-/iconv-lite-0.0.1.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-SsRBQxGw7/2/NxYJfBdiUx5a7Ms/voaUhOO9u2y9FTeTNBO1PXohzE4i3JfD8q2Te42HLTn5pyZtDf8j1bPKgQ=="],
 
     "@types/json-schema": ["@types/json-schema@7.0.15", "", {}, "sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA=="],
 
