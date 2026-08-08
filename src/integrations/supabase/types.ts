@@ -762,6 +762,7 @@ export type Database = {
           lunch_end: string
           lunch_start: string
           min_order_value: number
+          official_logo_bw_url: string | null
           printer_url: string
           report_emails: string[]
           updated_at: string
@@ -774,6 +775,7 @@ export type Database = {
           lunch_end?: string
           lunch_start?: string
           min_order_value?: number
+          official_logo_bw_url?: string | null
           printer_url?: string
           report_emails?: string[]
           updated_at?: string
@@ -786,6 +788,7 @@ export type Database = {
           lunch_end?: string
           lunch_start?: string
           min_order_value?: number
+          official_logo_bw_url?: string | null
           printer_url?: string
           report_emails?: string[]
           updated_at?: string
