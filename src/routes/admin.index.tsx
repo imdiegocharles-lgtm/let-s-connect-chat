@@ -172,6 +172,7 @@ function AdminDashboard() {
             <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
             <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsTrigger value="receipt">🖨️ Impressão</TabsTrigger>
           </TabsList>
           <TabsContent value="financial" className="mt-6">
             <FinancialDashboard />
@@ -185,6 +186,7 @@ function AdminDashboard() {
           <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
           <TabsContent value="reports" className="mt-6"><ReportsViewer /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>
+          <TabsContent value="receipt" className="mt-6"><ReceiptSettingsPanel /></TabsContent>
         </Tabs>
       </main>
       <footer className="border-t bg-card py-4 mt-8">
