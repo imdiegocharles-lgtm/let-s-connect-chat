@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
+
 import {
   Clock,
   MapPin,
