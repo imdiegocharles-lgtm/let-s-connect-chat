@@ -1671,6 +1671,7 @@ function ReceiptSettingsPanel() {
         receipt_qty_double_size: data.receipt_qty_double_size ?? true,
         receipt_font_size: data.receipt_font_size ?? 1,
         official_logo_bw_url: data.official_logo_bw_url ?? "",
+        receipt_order_sections: data.receipt_order_sections ?? ["header", "order_info", "customer", "items", "totals", "payment", "notes"],
       });
     }
   }, [data]);
@@ -1775,6 +1776,61 @@ function ReceiptSettingsPanel() {
           </div>
 
           <div className="space-y-4 border-t pt-4">
+            <h4 className="font-semibold text-sm">Organização da Comanda</h4>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground mb-2 block">
+                Arraste ou use as setas para mudar a ordem das seções na comanda.
+              </Label>
+              <div className="space-y-2">
+                {form.receipt_order_sections.map((section: string, index: number) => {
+                  const labels: Record<string, string> = {
+                    header: "Logotipo / Cabeçalho",
+                    order_info: "Informações do Pedido (# Número)",
+                    customer: "Dados do Cliente",
+                    items: "Itens do Pedido",
+                    totals: "Totais e Taxas",
+                    payment: "Forma de Pagamento / Troco",
+                    notes: "Observações"
+                  };
+                  return (
+                    <div key={section} className="flex items-center justify-between p-2 bg-muted/50 border rounded-md group">
+                      <span className="text-sm font-medium">{index + 1}. {labels[section] || section}</span>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-7 w-7"
+                          disabled={index === 0}
+                          onClick={() => {
+                            const newSections = [...form.receipt_order_sections];
+                            [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+                            setForm({ ...form, receipt_order_sections: newSections });
+                          }}
+                        >
+                          ↑
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-7 w-7"
+                          disabled={index === form.receipt_order_sections.length - 1}
+                          onClick={() => {
+                            const newSections = [...form.receipt_order_sections];
+                            [newSections[index + 1], newSections[index]] = [newSections[index], newSections[index + 1]];
+                            setForm({ ...form, receipt_order_sections: newSections });
+                          }}
+                        >
+                          ↓
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 border-t pt-4">
             <h4 className="font-semibold text-sm">Logo da Comanda</h4>
             
             <div className="flex items-center justify-between">
@@ -1795,7 +1851,7 @@ function ReceiptSettingsPanel() {
                 autoCapitalize="none" autoCorrect="off" spellCheck="false"
               />
               <p className="text-[10px] text-muted-foreground italic">
-                Nota: A maioria das impressoras térmicas requer que a logo seja configurada diretamente no driver da impressora ou no agente local. O formato recomendado é 200x200px em preto e branco absoluto (1-bit).
+                Nota: A nova logo 1-bit foi configurada automaticamente. O preview à direita simula a impressão térmica.
               </p>
             </div>
           </div>
@@ -1805,6 +1861,7 @@ function ReceiptSettingsPanel() {
           <h4 className="font-semibold text-sm border-b pb-1">Visualização em Tempo Real</h4>
           <ReceiptPreview settings={form} />
         </div>
+
       </div>
 
       <Button className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>
