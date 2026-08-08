@@ -126,7 +126,7 @@ export function MenuBrowser() {
   const store = getStoreStatus(horarios, !!activeShift);
   const svcWindow: "lunch" | "dinner" | "closed" =
     store.openService === "almoco" ? "lunch" : store.openService === "churrasquinho" ? "dinner" : "closed";
-  const isActuallyClosed = svcWindow === "closed" || !store.hasActiveShift;
+  const isActuallyClosed = !store.hasActiveShift;
 
 
   // pelos próprios itens ("Completo com Maionese/Salpicão").
