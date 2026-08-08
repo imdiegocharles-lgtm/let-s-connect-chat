@@ -45,6 +45,7 @@ function Home() {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 5000,
   });
   const { data: entrega } = useConfigEntrega();
   const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
