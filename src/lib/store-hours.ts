@@ -102,6 +102,23 @@ export function useAvisoLoja() {
   return useQuery({ queryKey: ["avisos_loja"], queryFn: fetchAvisoLoja });
 }
 
+export async function fetchIsShiftOpen(): Promise<boolean> {
+  const { data, error } = await supabase.rpc("is_shift_open");
+  if (error) throw error;
+  return data === true;
+}
+
+export function useIsShiftOpen() {
+  return useQuery({
+    queryKey: ["is-shift-open-public"],
+    queryFn: fetchIsShiftOpen,
+    refetchInterval: 5000,
+    staleTime: 0,
+    gcTime: 0,
+    retry: 2,
+  });
+}
+
 /** Momento atual no fuso America/Sao_Paulo. */
 export function nowInSaoPaulo(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {

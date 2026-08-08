@@ -10,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2, CheckCircle2, CalendarX2 } from "lucide-react";
-import { getStoreStatus, useHorarios } from "@/lib/store-hours";
+import { Minus, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
 import { useAvisoLoja, DEFAULT_AVISO } from "@/lib/store-hours";
 
@@ -31,23 +31,9 @@ export function CartSheet() {
   const [step, setStep] = useState<"cart" | "checkout" | "done">("cart");
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const { data: horarios = [] } = useHorarios();
-  const { data: activeShift } = useQuery({
-    queryKey: ["active-shift-public"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("id")
-        .is("closed_at", null)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    refetchInterval: 30000,
-  });
+  const { data: isShiftOpen, error: shiftError } = useIsShiftOpen();
   const { data: aviso } = useAvisoLoja();
-  const store = getStoreStatus(horarios, !!activeShift);
-  const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
+  const store = getStoreStatus(horarios, isShiftOpen === true);
 
 
   const [name, setName] = useState("");
@@ -82,11 +68,8 @@ export function CartSheet() {
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (store.openService === null || !store.hasActiveShift)
+      if (!store.hasActiveShift)
         throw new Error("Não é possível realizar pedidos com a loja fechada no momento.");
-
-      if (deliveryBlocked)
-        throw new Error(`Não fazemos delivery ${store.todayLabel.toLowerCase()}. Atendimento somente presencial hoje.`);
       if (!name.trim()) throw new Error("Preencha seu nome.");
       if (!phone.trim()) throw new Error("Informe seu telefone/WhatsApp.");
       if (!street.trim()) throw new Error("Informe o endereço.");
@@ -165,13 +148,9 @@ export function CartSheet() {
         {step === "cart" && (
           <>
             <div className="flex-1 overflow-y-auto p-4">
-              {deliveryBlocked && (
-                <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-                  <CalendarX2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <p>
-                    <b>Sem delivery {store.todayLabel.toLowerCase()}.</b> Hoje o atendimento é somente
-                    presencial na loja. Te esperamos lá! 🍢
-                  </p>
+              {shiftError && (
+                <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  Não foi possível verificar se a loja está aberta. Tente novamente em instantes.
                 </div>
               )}
               {items.length === 0 ? (
@@ -218,10 +197,10 @@ export function CartSheet() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={items.length === 0 || deliveryBlocked || store.openService === null || !store.hasActiveShift}
+                disabled={items.length === 0 || !!shiftError || !store.hasActiveShift}
                 onClick={() => setStep("checkout")}
               >
-                {store.openService === null || !store.hasActiveShift ? "Loja fechada" : deliveryBlocked ? "Delivery indisponível hoje" : "Continuar"}
+                {shiftError ? "Status indisponível" : !store.hasActiveShift ? "Loja fechada" : "Continuar"}
               </Button>
 
             </div>

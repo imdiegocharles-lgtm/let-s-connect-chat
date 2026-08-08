@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
 
 import {
@@ -20,10 +18,10 @@ import { ReservationDialog } from "@/components/reservations/ReservationDialog";
 import { ReviewDialog } from "@/components/reviews/ReviewDialog";
 import {
   formatSchedule,
-  getStoreStatus,
   useConfigEntrega,
   useHorarios,
   useAvisoLoja,
+  useIsShiftOpen,
   DEFAULT_AVISO,
 } from "@/lib/store-hours";
 
@@ -33,26 +31,9 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { data: horarios = [] } = useHorarios();
-  const { data: activeShift } = useQuery({
-    queryKey: ["active-shift-public"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("id")
-        .is("closed_at", null)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    refetchInterval: 5000,
-    staleTime: 0,
-    gcTime: 0,
-  });
+  useIsShiftOpen();
   const { data: entrega } = useConfigEntrega();
   const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
-  const store = getStoreStatus(horarios, !!activeShift);
-  const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
 
 
   const handleOrderClick = (e: React.MouseEvent) => {
@@ -153,11 +134,6 @@ function Home() {
                 Como Chegar
               </a>
             </div>
-            {deliveryBlocked && (
-              <p className="mt-4 inline-flex rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/90">
-                Hoje ({store.todayLabel}) não temos delivery — atendimento somente presencial na loja.
-              </p>
-            )}
           </div>
 
           <div className="relative mx-auto flex items-center justify-center">

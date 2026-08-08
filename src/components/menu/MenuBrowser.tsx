@@ -7,6 +7,7 @@ import {
   getStoreStatus,
   useHorarios,
   useAvisoLoja,
+  useIsShiftOpen,
   DEFAULT_AVISO,
 } from "@/lib/store-hours";
 import { Plus, Check } from "lucide-react";
@@ -89,22 +90,11 @@ export function MenuBrowser() {
   const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
   const [selectedSkewerId, setSelectedSkewerId] = useState<string>("");
 
-  const { data: activeShift, refetch: refetchShift } = useQuery({
-    queryKey: ["active-shift-public"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("id")
-        .is("closed_at", null)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    refetchInterval: 5000,
-    staleTime: 0,
-    gcTime: 0,
-  });
+  const {
+    data: isShiftOpen,
+    isLoading: shiftLoading,
+    error: shiftError,
+  } = useIsShiftOpen();
 
 
   const { data: sides = [] } = useQuery({
@@ -120,12 +110,12 @@ export function MenuBrowser() {
     },
   });
 
-  if (isLoading || hoursLoading)
+  if (isLoading || hoursLoading || shiftLoading)
     return <p className="py-10 text-center text-sm text-muted-foreground">Carregando cardápio…</p>;
   if (error || !data)
     return <p className="py-10 text-center text-sm text-destructive">Não foi possível carregar o cardápio.</p>;
 
-  const store = getStoreStatus(horarios, !!activeShift);
+  const store = getStoreStatus(horarios, isShiftOpen === true);
   const svcWindow: "lunch" | "dinner" | "closed" =
     store.openService === "almoco" ? "lunch" : store.openService === "churrasquinho" ? "dinner" : "closed";
   const isActuallyClosed = !store.hasActiveShift;
@@ -162,10 +152,6 @@ export function MenuBrowser() {
     .sort((a, b) => Number(a.price) - Number(b.price) || a.name.localeCompare(b.name, "pt-BR"));
 
   const handleAdd = (item: Item) => {
-    if (svcWindow === "closed") {
-      toast.error("Estamos fechados no momento. Não é possível adicionar itens ao pedido.");
-      return;
-    }
     if (!store.hasActiveShift) {
       toast.error("Estamos fechados no momento, em breve estaremos online.");
       return;
@@ -228,6 +214,12 @@ export function MenuBrowser() {
 
   return (
     <div className="space-y-12">
+      {shiftError && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 text-center">
+          <p className="text-lg font-black text-destructive">Não foi possível verificar se a loja está aberta</p>
+          <p className="mt-1 text-sm text-muted-foreground">Atualize a página ou tente novamente em instantes.</p>
+        </div>
+      )}
       {isActuallyClosed && (
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">
@@ -245,15 +237,6 @@ export function MenuBrowser() {
         </div>
       )}
 
-      {svcWindow !== "closed" && !store.deliveryToday && (
-        <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
-          <p className="text-lg font-black text-primary">Sem delivery hoje ({store.todayLabel})</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            O atendimento hoje é somente presencial na loja. Você pode ver o cardápio, mas não é
-            possível finalizar pedidos para entrega.
-          </p>
-        </div>
-      )}
       {/* Category nav */}
       <nav className="sticky top-[64px] z-30 -mx-4 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 backdrop-blur">
         <ul className="flex gap-2">
