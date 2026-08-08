@@ -1,4 +1,3 @@
-import iconv from 'iconv-lite';
 import type { Tables } from "@/integrations/supabase/types";
 
 type Order = Tables<"orders">;
@@ -18,8 +17,29 @@ const COMMANDS = {
   selectCP860: [0x1b, 0x74, 0x03], // Command to select CP860 on most ESC/POS printers
 };
 
+const CP860_MAP: Record<string, number> = {
+  'Ç': 0x80, 'ü': 0x81, 'é': 0x82, 'â': 0x83, 'ã': 0x84, 'à': 0x85,
+  'Á': 0x86, 'ç': 0x87, 'ê': 0x88, 'Ê': 0x89, 'è': 0x8A, 'Í': 0x8B,
+  'Ô': 0x8C, 'ì': 0x8D, 'Ã': 0x8E, 'Â': 0x8F, 'É': 0x90, 'À': 0x91,
+  'È': 0x92, 'ô': 0x93, 'õ': 0x94, 'ò': 0x95, 'Ú': 0x96, 'ù': 0x97,
+  'Ì': 0x98, 'Õ': 0x99, 'Ü': 0x9A, 'Ù': 0x9D, 'Ó': 0x9F,
+  'á': 0xA0, 'í': 0xA1, 'ó': 0xA2, 'ú': 0xA3, 'ñ': 0xA4, 'Ñ': 0xA5,
+  'ª': 0xA6, 'º': 0xA7, '¿': 0xA8, 'Ò': 0xA9,
+};
+
 function encode(str: string): number[] {
-  return Array.from(iconv.encode(str, 'cp860'));
+  const bytes: number[] = [];
+  for (const ch of str) {
+    const code = ch.charCodeAt(0);
+    if (code < 128) {
+      bytes.push(code);
+    } else if (CP860_MAP[ch] !== undefined) {
+      bytes.push(CP860_MAP[ch]);
+    } else {
+      bytes.push(0x3F); // '?' para caracteres não suportados
+    }
+  }
+  return bytes;
 }
 
 function line(text = ""): number[] {
@@ -32,7 +52,7 @@ function padLine(left: string, right: string, width = 48): string {
 }
 
 function formatMoney(n: number): string {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return `R$ ${n.toFixed(2).replace('.', ',')}`;
 }
 
 function formatDate(iso: string): string {
