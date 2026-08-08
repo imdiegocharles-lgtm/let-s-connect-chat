@@ -101,7 +101,7 @@ export function MenuBrowser() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 30000, // Re-check every 30s
+    refetchInterval: 5000, // Re-check every 5s for faster updates
   });
 
 
