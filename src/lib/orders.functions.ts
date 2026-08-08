@@ -4,7 +4,8 @@ import { z } from "zod";
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(8).max(30),
-  address: z.string().trim().min(1).max(300),
+  street: z.string().trim().min(1).max(300),
+  number: z.string().trim().min(1).max(50),
   neighborhoodId: z.string().uuid(),
   paymentMethod: z.enum(["dinheiro", "credito", "debito", "sodexo", "alelo", "pix"]),
   changeFor: z.number().nullable().optional(),
