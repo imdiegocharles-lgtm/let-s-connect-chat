@@ -9,7 +9,7 @@ import {
   useAvisoLoja,
   DEFAULT_AVISO,
 } from "@/lib/store-hours";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
