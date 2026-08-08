@@ -863,6 +863,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_shift_open: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "operator"
