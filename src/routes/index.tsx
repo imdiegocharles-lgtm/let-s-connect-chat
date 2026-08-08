@@ -30,10 +30,24 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { data: horarios = [] } = useHorarios();
+  const { data: activeShift } = useQuery({
+    queryKey: ["active-shift-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id")
+        .is("closed_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
   const { data: entrega } = useConfigEntrega();
   const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
-  const store = getStoreStatus(horarios);
+  const store = getStoreStatus(horarios, !!activeShift);
   const deliveryBlocked = horarios.length > 0 && !store.deliveryToday;
+
 
   const handleOrderClick = (e: React.MouseEvent) => {
     e.preventDefault();
