@@ -259,11 +259,14 @@ export function CartSheet() {
                     <SelectValue placeholder="Selecione o bairro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {neighborhoods.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
-                        {n.name} — {formatBRL(n.fee)}
-                      </SelectItem>
-                    ))}
+                    {neighborhoods.map((n) => {
+                      const fee = store.openService === "almoco" ? n.fee_almoco : n.fee_noite;
+                      return (
+                        <SelectItem key={n.id} value={n.id}>
+                          {n.name} — {formatBRL(fee)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
