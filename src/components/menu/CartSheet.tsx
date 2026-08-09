@@ -50,7 +50,7 @@ export function CartSheet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("neighborhoods")
-        .select("id, name, fee")
+        .select("id, name, fee_almoco, fee_noite")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Neighborhood[];
@@ -58,7 +58,9 @@ export function CartSheet() {
   });
 
   const neighborhood = neighborhoods.find((n) => n.id === neighborhoodId);
-  const deliveryFee = Number(neighborhood?.fee ?? 0);
+  const deliveryFee = neighborhood 
+    ? (store.openService === "almoco" ? Number(neighborhood.fee_almoco) : Number(neighborhood.fee_noite)) 
+    : 0;
   const total = subtotal + deliveryFee;
 
   const paymentLabel = useMemo(
