@@ -845,7 +845,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
 
 /* --------------------------- NEIGHBORHOODS --------------------------- */
 
-type Neighborhood = { id: string; name: string; fee: number };
+type Neighborhood = { id: string; name: string; fee: number; fee_almoco: number; fee_noite: number };
 
 function NeighborhoodsPanel() {
   const qc = useQueryClient();
@@ -879,7 +879,10 @@ function NeighborhoodsPanel() {
             <Card key={n.id} className="p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{n.name}</div>
-                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")}</div>
+                <div className="text-xs space-x-2">
+                  <span className="text-muted-foreground">Almoço: <b className="text-primary">R$ {Number(n.fee_almoco).toFixed(2).replace(".", ",")}</b></span>
+                  <span className="text-muted-foreground">Churrasco: <b className="text-primary">R$ {Number(n.fee_noite).toFixed(2).replace(".", ",")}</b></span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
@@ -1023,18 +1026,24 @@ function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighbor
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(neighborhood?.name ?? "");
-  const [fee, setFee] = useState(neighborhood?.fee?.toString() ?? "");
+  const [feeAlmoco, setFeeAlmoco] = useState(neighborhood?.fee_almoco?.toString() ?? "");
+  const [feeNoite, setFeeNoite] = useState(neighborhood?.fee_noite?.toString() ?? "");
 
   useEffect(() => {
     if (open) {
       setName(neighborhood?.name ?? "");
-      setFee(neighborhood?.fee?.toString() ?? "");
+      setFeeAlmoco(neighborhood?.fee_almoco?.toString() ?? "");
+      setFeeNoite(neighborhood?.fee_noite?.toString() ?? "");
     }
   }, [open, neighborhood]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { name, fee: Number(fee.replace(",", ".")) };
+      const payload = { 
+        name, 
+        fee_almoco: Number(feeAlmoco.replace(",", ".")), 
+        fee_noite: Number(feeNoite.replace(",", ".")) 
+      };
       if (neighborhood) {
         const { error } = await supabase.from("neighborhoods").update(payload).eq("id", neighborhood.id);
         if (error) throw error;
@@ -1056,12 +1065,24 @@ function NeighborhoodDialog({ neighborhood, trigger }: { neighborhood?: Neighbor
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>{neighborhood ? "Editar bairro" : "Novo bairro"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
-          <div><Label>Taxa de entrega (R$)</Label><Input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0,00" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
+        <div className="space-y-4">
+          <div>
+            <Label>Nome do Bairro</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Taxa Almoço (R$)</Label>
+              <Input value={feeAlmoco} onChange={(e) => setFeeAlmoco(e.target.value)} placeholder="0,00" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
+            </div>
+            <div>
+              <Label>Taxa Churrasco (R$)</Label>
+              <Input value={feeNoite} onChange={(e) => setFeeNoite(e.target.value)} placeholder="0,00" autoCapitalize="none" autoCorrect="off" spellCheck="false" />
+            </div>
+          </div>
         </div>
         <DialogFooter>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !name || !fee}>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !name || feeAlmoco === "" || feeNoite === ""}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
           </Button>
         </DialogFooter>

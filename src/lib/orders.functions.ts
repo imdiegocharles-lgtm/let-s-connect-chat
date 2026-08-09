@@ -33,7 +33,7 @@ export const createGuestOrder = createServerFn({ method: "POST" })
     // Check if there is an open shift
     const { data: openShift, error: sErr } = await sb
       .from("shifts")
-      .select("id")
+      .select("id, shift_type")
       .is("closed_at", null)
       .limit(1)
       .maybeSingle();
@@ -44,7 +44,7 @@ export const createGuestOrder = createServerFn({ method: "POST" })
 
     const { data: hood, error: hErr } = await sb
       .from("neighborhoods")
-      .select("name, fee")
+      .select("name, fee_almoco, fee_noite")
       .eq("id", data.neighborhoodId)
       .maybeSingle();
     if (hErr) throw new Error(hErr.message);
@@ -76,7 +76,9 @@ export const createGuestOrder = createServerFn({ method: "POST" })
       };
     });
 
-    const deliveryFee = Number(hood.fee ?? 0);
+    const deliveryFee = openShift.shift_type === "almoco" 
+      ? Number(hood.fee_almoco ?? 0) 
+      : Number(hood.fee_noite ?? 0);
     const total = subtotal + deliveryFee;
 
     const { data: order, error: oErr } = await sb

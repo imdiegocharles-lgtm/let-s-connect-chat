@@ -15,7 +15,7 @@ import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
 import { useAvisoLoja, DEFAULT_AVISO } from "@/lib/store-hours";
 
-type Neighborhood = { id: string; name: string; fee: number };
+type Neighborhood = { id: string; name: string; fee_almoco: number; fee_noite: number };
 
 const PAYMENT_METHODS = [
   { value: "dinheiro", label: "Dinheiro" },
@@ -50,7 +50,7 @@ export function CartSheet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("neighborhoods")
-        .select("id, name, fee")
+        .select("id, name, fee_almoco, fee_noite")
         .order("name");
       if (error) throw error;
       return (data ?? []) as Neighborhood[];
@@ -58,7 +58,9 @@ export function CartSheet() {
   });
 
   const neighborhood = neighborhoods.find((n) => n.id === neighborhoodId);
-  const deliveryFee = Number(neighborhood?.fee ?? 0);
+  const deliveryFee = neighborhood 
+    ? (store.openService === "almoco" ? Number(neighborhood.fee_almoco) : Number(neighborhood.fee_noite)) 
+    : 0;
   const total = subtotal + deliveryFee;
 
   const paymentLabel = useMemo(
@@ -257,11 +259,14 @@ export function CartSheet() {
                     <SelectValue placeholder="Selecione o bairro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {neighborhoods.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
-                        {n.name} — {formatBRL(n.fee)}
-                      </SelectItem>
-                    ))}
+                    {neighborhoods.map((n) => {
+                      const fee = store.openService === "almoco" ? n.fee_almoco : n.fee_noite;
+                      return (
+                        <SelectItem key={n.id} value={n.id}>
+                          {n.name} — {formatBRL(fee)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
