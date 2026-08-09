@@ -1504,6 +1504,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           )}
         </Card>
       </section>
+      </div>
     </div>
   );
 }
