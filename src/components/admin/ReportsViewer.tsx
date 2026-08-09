@@ -16,6 +16,7 @@ import {
   PAYMENT_LABELS,
 } from "@/lib/report";
 import {
+  createDailyReport,
   getDailyReport,
   getShiftReports,
   markPrinted,
