@@ -76,7 +76,9 @@ export const createGuestOrder = createServerFn({ method: "POST" })
       };
     });
 
-    const deliveryFee = Number(hood.fee ?? 0);
+    const deliveryFee = openShift.shift_type === "almoco" 
+      ? Number(hood.fee_almoco ?? 0) 
+      : Number(hood.fee_noite ?? 0);
     const total = subtotal + deliveryFee;
 
     const { data: order, error: oErr } = await sb
