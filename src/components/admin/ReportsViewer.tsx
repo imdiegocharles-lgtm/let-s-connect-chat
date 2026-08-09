@@ -170,6 +170,34 @@ export function ReportsViewer() {
     }
   };
 
+  const generateDaily = useMutation({
+    mutationFn: async () => {
+      const report: any = await createDailyReport(date);
+      try {
+        await sendBytesToPrinter(agentUrl, buildDailyReportBytes(report));
+        await markPrinted("daily_reports", report.id);
+      } catch (e: any) {
+        toast.warning(`Relatório do dia gerado, mas a impressão falhou: ${e.message}`);
+      }
+      try {
+        const res: any = await sendDailyReportEmail({ data: { date } });
+        if (res?.reason === "no_recipients") {
+          toast.info("Cadastre e-mails em Admin → Configurações para receber o relatório.");
+        } else if (res?.sent > 0) {
+          toast.success(`Relatório enviado por e-mail (${res.sent}).`);
+        }
+      } catch (e: any) {
+        toast.warning(`Relatório gerado, mas o envio por e-mail falhou: ${e.message}`);
+      }
+      return report;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily-report", date] });
+      toast.success("Relatório do dia gerado e impresso");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const emailDaily = useMutation({
     mutationFn: async () => (await sendDailyEmail({ data: { date } })) as any,
     onSuccess: (res: any) => {
@@ -352,10 +380,23 @@ export function ReportsViewer() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  Nenhum relatório do dia gerado nesta data. Ele é gerado no Painel Operacional após os
-                  dois turnos serem finalizados.
-                </p>
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Nenhum relatório do dia gerado nesta data. Ele é gerado após os
+                    dois turnos (Almoço e Churrasco) serem finalizados.
+                  </p>
+                  {shiftReports.length >= 2 && (
+                    <Button
+                      onClick={() => generateDaily.mutate()}
+                      disabled={generateDaily.isPending}
+                    >
+                      {generateDaily.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Gerar Relatório do Dia Agora
+                    </Button>
+                  )}
+                </div>
               )}
             </Card>
           </section>

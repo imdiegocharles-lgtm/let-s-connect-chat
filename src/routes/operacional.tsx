@@ -1302,7 +1302,16 @@ function MenuAvailabilityPanel() {
 
 function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   const qc = useQueryClient();
-  const date = todayISO();
+  // Se for logo após a meia-noite (até as 06:00), padrão é ver o dia anterior
+  const [date, setDate] = useState(() => {
+    const now = new Date();
+    if (now.getHours() < 6) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return yesterday.toISOString().split("T")[0];
+    }
+    return todayISO();
+  });
 
   const { data: shiftReports = [], isLoading } = useQuery({
     queryKey: ["shift-reports", date],
