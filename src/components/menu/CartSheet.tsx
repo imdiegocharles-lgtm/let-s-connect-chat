@@ -15,7 +15,7 @@ import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
 import { useAvisoLoja, DEFAULT_AVISO } from "@/lib/store-hours";
 
-type Neighborhood = { id: string; name: string; fee: number };
+type Neighborhood = { id: string; name: string; fee_almoco: number; fee_noite: number };
 
 const PAYMENT_METHODS = [
   { value: "dinheiro", label: "Dinheiro" },
