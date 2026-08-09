@@ -1448,7 +1448,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           ))}
           {shiftReports.length === 0 && (
             <Card className="p-8 text-center text-muted-foreground">
-              Nenhum turno finalizado hoje. O relatório é gerado e impresso automaticamente ao fechar o turno.
+              Nenhum turno finalizado nesta data. O relatório é gerado e impresso automaticamente ao fechar o turno.
             </Card>
           )}
         </div>
@@ -1461,7 +1461,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
             <>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-bold">Consolidado de hoje</p>
+                  <p className="font-bold">Consolidado</p>
                   <p className="text-xs text-muted-foreground">
                     {(daily as any).shifts_count} turnos · {(daily as any).orders_count} pedidos
                   </p>
