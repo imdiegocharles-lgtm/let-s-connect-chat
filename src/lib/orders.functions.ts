@@ -33,7 +33,7 @@ export const createGuestOrder = createServerFn({ method: "POST" })
     // Check if there is an open shift
     const { data: openShift, error: sErr } = await sb
       .from("shifts")
-      .select("id")
+      .select("id, shift_type")
       .is("closed_at", null)
       .limit(1)
       .maybeSingle();
