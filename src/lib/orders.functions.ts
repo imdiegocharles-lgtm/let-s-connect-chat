@@ -44,7 +44,7 @@ export const createGuestOrder = createServerFn({ method: "POST" })
 
     const { data: hood, error: hErr } = await sb
       .from("neighborhoods")
-      .select("name, fee")
+      .select("name, fee_almoco, fee_noite")
       .eq("id", data.neighborhoodId)
       .maybeSingle();
     if (hErr) throw new Error(hErr.message);
