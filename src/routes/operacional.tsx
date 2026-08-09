@@ -1385,9 +1385,30 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section>
-        <h2 className="text-lg font-bold mb-3">Relatórios de turno — hoje</h2>
+    <div className="space-y-6">
+      <Card className="p-4 bg-muted/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold">Relatórios do Dia</h3>
+            <p className="text-sm text-muted-foreground">Visualize e feche o dia consolidado.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="rep-date" className="sr-only">Data</Label>
+            <Input
+              id="rep-date"
+              type="date"
+              value={date}
+              max={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-40"
+            />
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section>
+          <h2 className="text-lg font-bold mb-3">Relatórios de turno</h2>
         <div className="space-y-4">
           {shiftReports.map((r: any) => (
             <Card key={r.id} className="p-4">
