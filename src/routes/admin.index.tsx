@@ -845,7 +845,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
 
 /* --------------------------- NEIGHBORHOODS --------------------------- */
 
-type Neighborhood = { id: string; name: string; fee: number };
+type Neighborhood = { id: string; name: string; fee: number; fee_almoco: number; fee_noite: number };
 
 function NeighborhoodsPanel() {
   const qc = useQueryClient();
