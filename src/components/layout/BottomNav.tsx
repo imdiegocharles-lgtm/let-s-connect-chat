@@ -56,7 +56,14 @@ export function BottomNav() {
   const isHome = pathname === "/" && hash !== "cardapio";
   const isMenu = pathname === "/" && hash === "cardapio";
 
-  const goHome = () => navigate({ to: "/", hash: "" });
+  const goHome = () => {
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      navigate({ to: "/", hash: "", replace: true });
+    } else {
+      navigate({ to: "/", hash: "" });
+    }
+  };
   const goMenu = () => {
     if (pathname === "/") {
       document.getElementById("cardapio")?.scrollIntoView({ behavior: "smooth" });

@@ -224,15 +224,15 @@ export function MenuBrowser() {
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 text-center">
           <p className="text-lg font-black text-primary">
             {!store.hasActiveShift && svcWindow !== "closed" 
-              ? "Estamos fechados no momento, em breve estaremos online"
+              ? (aviso.titulo_fechado || "Estamos fechados no momento, em breve estaremos online")
               : (aviso.titulo_fechado || DEFAULT_AVISO.titulo_fechado)}
           </p>
           <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
             {aviso.horarios_modo === "manual" && aviso.horarios_texto.trim()
               ? aviso.horarios_texto
-              : `Almoço: ${formatSchedule(horarios, "almoco") || "—"} · Churrasquinho: ${
+              : (aviso.home_horario_texto || `Almoço: ${formatSchedule(horarios, "almoco") || "—"} · Churrasquinho: ${
                   formatSchedule(horarios, "churrasquinho") || "—"
-                }`}
+                }`)}
           </p>
         </div>
       )}
