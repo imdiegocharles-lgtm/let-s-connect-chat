@@ -879,7 +879,10 @@ function NeighborhoodsPanel() {
             <Card key={n.id} className="p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{n.name}</div>
-                <div className="text-xs text-muted-foreground">Taxa: R$ {Number(n.fee).toFixed(2).replace(".", ",")}</div>
+                <div className="text-xs space-x-2">
+                  <span className="text-muted-foreground">Almoço: <b className="text-primary">R$ {Number(n.fee_almoco).toFixed(2).replace(".", ",")}</b></span>
+                  <span className="text-muted-foreground">Churrasco: <b className="text-primary">R$ {Number(n.fee_noite).toFixed(2).replace(".", ",")}</b></span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
