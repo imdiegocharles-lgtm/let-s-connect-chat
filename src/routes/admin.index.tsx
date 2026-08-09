@@ -1399,11 +1399,11 @@ function AvisoFechadoPanel() {
           checked={aviso.horarios_modo === "manual"}
           onCheckedChange={(v) => setAviso({ ...aviso, horarios_modo: v ? "manual" : "auto" })}
         />
-        Escrever os horários manualmente (desligado = gerado automaticamente pelos horários acima)
+        Escrever os horários manualmente no aviso de fechado (desligado = usa o texto do cartão abaixo)
       </label>
       {aviso.horarios_modo === "manual" && (
         <div>
-          <Label>Texto dos horários no aviso</Label>
+          <Label>Texto dos horários no aviso (Manual)</Label>
           <Textarea
             rows={3}
             value={aviso.horarios_texto}
