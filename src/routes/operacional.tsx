@@ -1302,7 +1302,16 @@ function MenuAvailabilityPanel() {
 
 function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   const qc = useQueryClient();
-  const date = todayISO();
+  // Se for logo após a meia-noite (até as 06:00), padrão é ver o dia anterior
+  const [date, setDate] = useState(() => {
+    const now = new Date();
+    if (now.getHours() < 6) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return yesterday.toISOString().split("T")[0];
+    }
+    return todayISO();
+  });
 
   const { data: shiftReports = [], isLoading } = useQuery({
     queryKey: ["shift-reports", date],
@@ -1376,9 +1385,30 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section>
-        <h2 className="text-lg font-bold mb-3">Relatórios de turno — hoje</h2>
+    <div className="space-y-6">
+      <Card className="p-4 bg-muted/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold">Relatórios do Dia</h3>
+            <p className="text-sm text-muted-foreground">Visualize e feche o dia consolidado.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="rep-date" className="sr-only">Data</Label>
+            <Input
+              id="rep-date"
+              type="date"
+              value={date}
+              max={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-40"
+            />
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section>
+          <h2 className="text-lg font-bold mb-3">Relatórios de turno</h2>
         <div className="space-y-4">
           {shiftReports.map((r: any) => (
             <Card key={r.id} className="p-4">
@@ -1418,7 +1448,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           ))}
           {shiftReports.length === 0 && (
             <Card className="p-8 text-center text-muted-foreground">
-              Nenhum turno finalizado hoje. O relatório é gerado e impresso automaticamente ao fechar o turno.
+              Nenhum turno finalizado nesta data. O relatório é gerado e impresso automaticamente ao fechar o turno.
             </Card>
           )}
         </div>
@@ -1431,7 +1461,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
             <>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-bold">Consolidado de hoje</p>
+                  <p className="font-bold">Consolidado</p>
                   <p className="text-xs text-muted-foreground">
                     {(daily as any).shifts_count} turnos · {(daily as any).orders_count} pedidos
                   </p>
@@ -1474,6 +1504,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           )}
         </Card>
       </section>
+      </div>
     </div>
   );
 }

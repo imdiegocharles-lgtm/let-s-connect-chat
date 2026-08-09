@@ -225,6 +225,9 @@ export async function getTodayShifts(date = todayISO()) {
   const { data, error } = await sb
     .from("shifts")
     .select("*")
+    // Consideramos o dia baseado na data de ABERTURA.
+    // Assim, se abrir às 23:50 do dia 10 e fechar às 01:00 do dia 11,
+    // ele pertence ao dia 10.
     .gte("opened_at", `${date}T00:00:00`)
     .lte("opened_at", `${date}T23:59:59`)
     .order("opened_at");
