@@ -9,7 +9,13 @@ export const todayISO = () => {
 };
 
 export type ItemLine = { group: string; name: string; quantity: number };
-export type MotoboyLine = { name: string; daily_rate: number; deliveries: number };
+export type MotoboyLine = { 
+  name: string; 
+  daily_rate: number; 
+  deliveries: number;
+  delivery_fees_total: number;
+  gas_help: number;
+};
 export type ComboLine = {
   combo: string;
   total: number;
