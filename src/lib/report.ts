@@ -55,7 +55,7 @@ export const PAYMENT_LABELS: Record<string, string> = {
 };
 
 export type ItemLine = { group: string; name: string; quantity: number };
-export type MotoboyLine = { name: string; daily_rate: number; deliveries: number };
+export type MotoboyLine = { name: string; daily_rate: number; deliveries: number; delivery_fees_total: number; gas_help: number };
 export type ComboLine = {
   combo: string;
   total: number;
@@ -171,10 +171,17 @@ function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
   out.push(...ESC.boldOn, ...line("MOTOBOYS"), ...ESC.boldOff);
   let total = 0;
   for (const m of list) {
-    total += Number(m.daily_rate ?? 0);
-    out.push(...line(pad(`${m.name} (${m.deliveries} entregas)`, money(Number(m.daily_rate ?? 0)))));
+    const entregas = Number(m.delivery_fees_total ?? 0);
+    const ajuda = Number(m.gas_help ?? m.daily_rate ?? 0);
+    const mTotal = entregas + ajuda;
+    total += mTotal;
+    out.push(...line(`${m.name} (${m.deliveries} ent.)`));
+    out.push(...line(pad("  Entregas", money(entregas))));
+    out.push(...line(pad("  Ajuda Gasolina", money(ajuda))));
+    out.push(...ESC.boldOn, ...line(pad("  TOTAL A RECEBER", money(mTotal))), ...ESC.boldOff);
   }
-  out.push(...ESC.boldOn, ...line(pad("TOTAL DIARIAS", money(total))), ...ESC.boldOff);
+  out.push(...line("------------------------------------------------"));
+  out.push(...ESC.boldOn, ...line(pad("TOTAL MOTOBOYS", money(total))), ...ESC.boldOff);
 }
 
 export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
