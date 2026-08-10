@@ -347,6 +347,8 @@ export type Database = {
           fee_almoco: number | null
           fee_noite: number | null
           id: string
+          motoboy_fee_almoco: number | null
+          motoboy_fee_noite: number | null
           name: string
           updated_at: string
         }
@@ -356,6 +358,8 @@ export type Database = {
           fee_almoco?: number | null
           fee_noite?: number | null
           id?: string
+          motoboy_fee_almoco?: number | null
+          motoboy_fee_noite?: number | null
           name: string
           updated_at?: string
         }
@@ -365,6 +369,8 @@ export type Database = {
           fee_almoco?: number | null
           fee_noite?: number | null
           id?: string
+          motoboy_fee_almoco?: number | null
+          motoboy_fee_noite?: number | null
           name?: string
           updated_at?: string
         }
