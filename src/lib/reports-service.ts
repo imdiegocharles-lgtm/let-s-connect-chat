@@ -119,8 +119,15 @@ export function mergeItemLines(lists: ItemLine[][]): ItemLine[] {
   return sortItems(map);
 }
 
-/** Motoboys escalados no turno, com número de entregas realizadas. */
+/** Motoboys escalados no turno, com número de entregas realizadas e valores calculados. */
 export async function aggregateShiftMotoboys(shiftId: string): Promise<MotoboyLine[]> {
+  const { data: shift, error: shiftErr } = await sb
+    .from("shifts")
+    .select("shift_type")
+    .eq("id", shiftId)
+    .single();
+  if (shiftErr) throw shiftErr;
+
   const { data: scale, error } = await sb
     .from("shift_motoboys")
     .select("motoboy_id, motoboys(name, daily_rate)")
@@ -130,20 +137,35 @@ export async function aggregateShiftMotoboys(shiftId: string): Promise<MotoboyLi
 
   const { data: orders } = await sb
     .from("orders")
-    .select("motoboy_id")
+    .select("motoboy_id, neighborhood")
     .eq("shift_id", shiftId)
     .not("motoboy_id", "is", null);
 
-  const counts = new Map<string, number>();
+  const { data: neighborhoods } = await sb
+    .from("neighborhoods")
+    .select("name, motoboy_fee_almoco, motoboy_fee_noite");
+
+  const counts = new Map<string, { count: number; fees: number }>();
   for (const o of orders ?? []) {
-    counts.set(o.motoboy_id, (counts.get(o.motoboy_id) ?? 0) + 1);
+    const hood = neighborhoods?.find(n => n.name === o.neighborhood);
+    const fee = shift.shift_type === "almoco" 
+      ? Number(hood?.motoboy_fee_almoco ?? 0) 
+      : Number(hood?.motoboy_fee_noite ?? 0);
+    
+    const cur = counts.get(o.motoboy_id) ?? { count: 0, fees: 0 };
+    counts.set(o.motoboy_id, { count: cur.count + 1, fees: cur.fees + fee });
   }
 
-  return scale.map((s: any) => ({
-    name: s.motoboys?.name ?? "Motoboy",
-    daily_rate: Number(s.motoboys?.daily_rate ?? 0),
-    deliveries: counts.get(s.motoboy_id) ?? 0,
-  }));
+  return scale.map((s: any) => {
+    const stats = counts.get(s.motoboy_id) ?? { count: 0, fees: 0 };
+    return {
+      name: s.motoboys?.name ?? "Motoboy",
+      daily_rate: Number(s.motoboys?.daily_rate ?? 0),
+      gas_help: Number(s.motoboys?.daily_rate ?? 0),
+      deliveries: stats.count,
+      delivery_fees_total: stats.fees,
+    };
+  });
 }
 
 /** Soma diárias de motoboys de vários turnos (mesmo motoboy em 2 turnos = 2 diárias). */
