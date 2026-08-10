@@ -81,6 +81,7 @@ export function MotoboysPanel({ activeShiftId }: { activeShiftId?: string | null
   const totalDiarias = (motoboys ?? [])
     .filter((m) => scaled.has(m.id))
     .reduce((s, m) => s + Number(m.daily_rate ?? 0), 0);
+  const totalGas = totalDiarias; // Mantém o valor para exibição se necessário
 
   return (
     <div>
@@ -91,7 +92,7 @@ export function MotoboysPanel({ activeShiftId }: { activeShiftId?: string | null
           </h2>
           <p className="text-xs text-muted-foreground">
             {activeShiftId
-              ? `Escalados no turno: diárias de R$ ${totalDiarias.toFixed(2).replace(".", ",")}`
+              ? `Escalados no turno: ajuda de gasolina de R$ ${totalDiarias.toFixed(2).replace(".", ",")}`
               : "Abra um turno para escalar os motoboys do dia."}
           </p>
         </div>
@@ -113,7 +114,7 @@ export function MotoboysPanel({ activeShiftId }: { activeShiftId?: string | null
                   {!m.is_active && <Badge variant="outline">inativo</Badge>}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Diária: R$ {Number(m.daily_rate).toFixed(2).replace(".", ",")}
+                  Ajuda Gasolina: R$ {Number(m.daily_rate).toFixed(2).replace(".", ",")}
                   {activeShiftId ? ` • ${deliveries?.[m.id] ?? 0} entregas neste turno` : ""}
                 </div>
               </div>
@@ -190,7 +191,7 @@ function MotoboyDialog({ motoboy, trigger }: { motoboy?: Motoboy; trigger: React
         <div className="space-y-3">
           <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div>
-            <Label>Diária (R$)</Label>
+            <Label>Ajuda de custo da gasolina (R$)</Label>
             <Input inputMode="decimal" placeholder="0,00" value={rate} onChange={(e) => setRate(e.target.value)} />
           </div>
           <div className="flex items-center gap-2">

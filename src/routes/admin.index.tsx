@@ -845,7 +845,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
 
 /* --------------------------- NEIGHBORHOODS --------------------------- */
 
-type Neighborhood = { id: string; name: string; fee: number; fee_almoco: number; fee_noite: number };
+type Neighborhood = { 
+  id: string; 
+  name: string; 
+  fee: number; 
+  fee_almoco: number; 
+  fee_noite: number;
+  motoboy_fee_almoco: number;
+  motoboy_fee_noite: number;
+};
 
 function NeighborhoodsPanel() {
   const qc = useQueryClient();
@@ -858,12 +866,44 @@ function NeighborhoodsPanel() {
     },
   });
 
+  const updateMut = useMutation({
+    mutationFn: async (n: Partial<Neighborhood> & { id: string }) => {
+      const { error } = await supabase.from("neighborhoods").update(n).eq("id", n.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("neighborhoods").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Bairro excluído"); qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] }); },
+    onSuccess: () => { 
+      toast.success("Bairro excluído"); 
+      qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] }); 
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const createMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("neighborhoods").insert({ 
+        name: "Novo Bairro", 
+        fee_almoco: 0, 
+        fee_noite: 0,
+        motoboy_fee_almoco: 0,
+        motoboy_fee_noite: 0
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Bairro criado. Edite os valores na lista.");
+      qc.invalidateQueries({ queryKey: ["admin-neighborhoods"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -871,26 +911,78 @@ function NeighborhoodsPanel() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Bairros e taxas de entrega</h2>
-        <NeighborhoodDialog trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo bairro</Button>} />
+        <Button size="sm" onClick={() => createMut.mutate()} disabled={createMut.isPending}>
+          <Plus className="h-4 w-4 mr-1" /> Novo bairro
+        </Button>
       </div>
       {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-        <div className="grid gap-2">
-          {data?.map((n) => (
-            <Card key={n.id} className="p-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium">{n.name}</div>
-                <div className="text-xs space-x-2">
-                  <span className="text-muted-foreground">Almoço: <b className="text-primary">R$ {Number(n.fee_almoco).toFixed(2).replace(".", ",")}</b></span>
-                  <span className="text-muted-foreground">Churrasco: <b className="text-primary">R$ {Number(n.fee_noite).toFixed(2).replace(".", ",")}</b></span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <NeighborhoodDialog neighborhood={n} trigger={<Button size="icon" variant="ghost"><Pencil className="h-4 w-4" /></Button>} />
-                <ConfirmDelete onConfirm={() => del.mutate(n.id)} label={`Excluir "${n.name}"?`} />
-              </div>
-            </Card>
-          ))}
-          {data?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum bairro cadastrado.</p>}
+        <div className="border rounded-md overflow-hidden">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted text-muted-foreground uppercase text-xs font-bold">
+              <tr>
+                <th className="px-4 py-3">Bairro</th>
+                <th className="px-4 py-3 text-center">Taxa Almoço</th>
+                <th className="px-4 py-3 text-center">Taxa Churrasco</th>
+                <th className="px-4 py-3 text-center">Motoboy Almoço</th>
+                <th className="px-4 py-3 text-center">Motoboy Churrasco</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {data?.map((n) => (
+                <tr key={n.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-4 py-2">
+                    <Input
+                      defaultValue={n.name}
+                      onBlur={(e) => updateMut.mutate({ id: n.id, name: e.target.value })}
+                      className="h-8 border-transparent hover:border-input focus:border-primary bg-transparent"
+                      autoCorrect="off" spellCheck="false"
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <Input
+                      defaultValue={n.fee_almoco}
+                      onBlur={(e) => updateMut.mutate({ id: n.id, fee_almoco: Number(e.target.value.replace(",", ".")) })}
+                      className="h-8 w-24 mx-auto text-center border-transparent hover:border-input focus:border-primary bg-transparent"
+                      placeholder="0,00"
+                      autoCorrect="off" spellCheck="false"
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <Input
+                      defaultValue={n.fee_noite}
+                      onBlur={(e) => updateMut.mutate({ id: n.id, fee_noite: Number(e.target.value.replace(",", ".")) })}
+                      className="h-8 w-24 mx-auto text-center border-transparent hover:border-input focus:border-primary bg-transparent"
+                      placeholder="0,00"
+                      autoCorrect="off" spellCheck="false"
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <Input
+                      defaultValue={n.motoboy_fee_almoco}
+                      onBlur={(e) => updateMut.mutate({ id: n.id, motoboy_fee_almoco: Number(e.target.value.replace(",", ".")) })}
+                      className="h-8 w-24 mx-auto text-center border-transparent hover:border-input focus:border-primary bg-transparent"
+                      placeholder="0,00"
+                      autoCorrect="off" spellCheck="false"
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <Input
+                      defaultValue={n.motoboy_fee_noite}
+                      onBlur={(e) => updateMut.mutate({ id: n.id, motoboy_fee_noite: Number(e.target.value.replace(",", ".")) })}
+                      className="h-8 w-24 mx-auto text-center border-transparent hover:border-input focus:border-primary bg-transparent"
+                      placeholder="0,00"
+                      autoCorrect="off" spellCheck="false"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <ConfirmDelete onConfirm={() => del.mutate(n.id)} label={`Excluir "${n.name}"?`} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {data?.length === 0 && <p className="p-8 text-center text-muted-foreground">Nenhum bairro cadastrado.</p>}
         </div>
       )}
     </div>

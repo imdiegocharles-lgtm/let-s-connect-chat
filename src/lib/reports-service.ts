@@ -147,7 +147,7 @@ export async function aggregateShiftMotoboys(shiftId: string): Promise<MotoboyLi
 
   const counts = new Map<string, { count: number; fees: number }>();
   for (const o of orders ?? []) {
-    const hood = neighborhoods?.find(n => n.name === o.neighborhood);
+    const hood = neighborhoods?.find((n: any) => n.name === o.neighborhood);
     const fee = shift.shift_type === "almoco" 
       ? Number(hood?.motoboy_fee_almoco ?? 0) 
       : Number(hood?.motoboy_fee_noite ?? 0);
@@ -177,8 +177,10 @@ export function mergeMotoboyLines(lists: MotoboyLine[][]): MotoboyLine[] {
       if (cur) {
         cur.deliveries += Number(m.deliveries ?? 0);
         cur.daily_rate += Number(m.daily_rate ?? 0);
+        cur.gas_help += Number(m.gas_help ?? 0);
+        cur.delivery_fees_total += Number(m.delivery_fees_total ?? 0);
       } else {
-        map.set(m.name, { ...m, daily_rate: Number(m.daily_rate ?? 0), deliveries: Number(m.deliveries ?? 0) });
+        map.set(m.name, { ...m });
       }
     }
   }
