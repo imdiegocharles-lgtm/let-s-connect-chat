@@ -186,7 +186,13 @@ export function mergeMotoboyLines(lists: MotoboyLine[][]): MotoboyLine[] {
         cur.gas_help += Number(m.gas_help ?? 0);
         cur.delivery_fees_total += Number(m.delivery_fees_total ?? 0);
       } else {
-        map.set(m.name, { ...m });
+        map.set(m.name, { 
+          name: m.name,
+          deliveries: Number(m.deliveries ?? 0),
+          daily_rate: Number(m.daily_rate ?? 0),
+          gas_help: Number(m.gas_help ?? 0),
+          delivery_fees_total: Number(m.delivery_fees_total ?? 0)
+        });
       }
     }
   }
