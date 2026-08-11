@@ -76,6 +76,7 @@ export type ShiftReport = {
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
   combos_summary?: ComboLine[];
+  deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
 };
 
 export type DailyReport = {
@@ -88,6 +89,7 @@ export type DailyReport = {
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
   combos_summary?: ComboLine[];
+  deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
   shifts_summary: {
     shift_type: string;
     operator_name: string | null;
@@ -214,7 +216,7 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   out.push(...line(""));
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
-  motoboys_block(out, r.motoboys_summary);
+  motoboysBlock(out, r.motoboys_summary);
   deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
