@@ -427,6 +427,38 @@ export type Database = {
           },
         ]
       }
+      order_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          order_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          order_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           change_for: number | null
@@ -795,6 +827,7 @@ export type Database = {
       system_settings: {
         Row: {
           avg_prep_minutes: number
+          deletion_password_hash: string | null
           dinner_end: string
           dinner_start: string
           id: number
@@ -816,6 +849,7 @@ export type Database = {
         }
         Insert: {
           avg_prep_minutes?: number
+          deletion_password_hash?: string | null
           dinner_end?: string
           dinner_start?: string
           id?: number
@@ -837,6 +871,7 @@ export type Database = {
         }
         Update: {
           avg_prep_minutes?: number
+          deletion_password_hash?: string | null
           dinner_end?: string
           dinner_start?: string
           id?: number
