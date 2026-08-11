@@ -358,6 +358,24 @@ function KitchenDashboard() {
     }
   };
 
+  const handleDeleteOrder = async () => {
+    if (!deletingOrder) return;
+    if (deletionReason.trim().length < 5) {
+      toast.error("O motivo deve ter pelo menos 5 caracteres.");
+      return;
+    }
+
+    try {
+      await deleteOrderFn({ orderId: deletingOrder.id, reason: deletionReason });
+      qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      setDeletingOrder(null);
+      setDeletionReason("");
+      toast.success("Pedido excluído com sucesso.");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   const testPrinter = async () => {
     const testOrder: Order = {
       id: "test",
