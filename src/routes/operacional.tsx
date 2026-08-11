@@ -714,6 +714,39 @@ function KitchenDashboard() {
         }}
         isPending={confirmPayment.isPending}
       />
+
+      <Dialog open={!!deletingOrder} onOpenChange={(open) => !open && setDeletingOrder(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir pedido #{deletingOrder?.order_number.toString().padStart(4, '0')}</DialogTitle>
+            <DialogDescription>
+              Para excluir este pedido, você deve informar o motivo. Este registro aparecerá no relatório de fechamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="deletionReason">Motivo da exclusão (obrigatório)</Label>
+            <Input
+              id="deletionReason"
+              placeholder="Ex: Pedido duplicado, cliente cancelou, etc."
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+            <p className="mt-1 text-xs text-muted-foreground">Mínimo 5 caracteres.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingOrder(null)}>Cancelar</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteOrder}
+              disabled={deletionReason.trim().length < 5}
+            >
+              Confirmar exclusão
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
