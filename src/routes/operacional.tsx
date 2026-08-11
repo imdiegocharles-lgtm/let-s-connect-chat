@@ -1123,6 +1123,17 @@ function CloseShiftDialog({
       console.error("Erro ao enviar e-mail de turno:", e);
     }
 
+    // Se for turno da noite, tenta gerar o relatório diário automaticamente
+    if (shift.shift_type === "noite") {
+      try {
+        const reportDate = shift.opened_at.slice(0, 10);
+        await createDailyReport(reportDate);
+        toast.success("Movimento do dia consolidado e relatório diário gerado.");
+      } catch (e: any) {
+        console.log("Aviso: Relatório diário não gerado automaticamente (provavelmente turno de almoço pendente).");
+      }
+    }
+
     setSaving(false);
 
     onClosed();
