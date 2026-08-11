@@ -101,7 +101,7 @@ export async function aggregateShiftItems(
   const comboList = [...combos.values()]
     .map((c) => ({ ...c, skewers: c.skewers.sort((a, b) => b.quantity - a.quantity) }))
     .sort((a, b) => b.total - a.total);
-  return { items: sortItems(map), combos: comboList };
+  return { items: sortItems(map), combos: comboList, deletedOrders };
 }
 
 /** Soma as escolhas de espeto dos Completos de vários turnos. */
