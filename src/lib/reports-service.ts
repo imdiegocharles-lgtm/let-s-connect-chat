@@ -237,12 +237,12 @@ export async function createShiftReport(shift: {
 }): Promise<ShiftReport> {
   const { data: orders, error } = await sb
     .from("orders")
-    .select("total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at")
+    .select("total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
     .eq("shift_id", shift.id);
   if (error) throw error;
 
   const closed_at = shift.closed_at ?? new Date().toISOString();
-  const agg = aggregate(orders ?? []);
+  const agg = aggregate(orders?.filter((o: any) => !o.deleted_at) ?? []);
   const [itemsAgg, motoboys_summary] = await Promise.all([
     aggregateShiftItems(shift.id),
     aggregateShiftMotoboys(shift.id),
