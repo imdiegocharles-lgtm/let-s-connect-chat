@@ -681,6 +681,7 @@ export type Database = {
           closed_at: string
           combos_summary: Json
           created_at: string
+          deleted_orders: Json | null
           delivery_fees: number
           id: string
           items_summary: Json
@@ -701,6 +702,7 @@ export type Database = {
           closed_at: string
           combos_summary?: Json
           created_at?: string
+          deleted_orders?: Json | null
           delivery_fees?: number
           id?: string
           items_summary?: Json
@@ -721,6 +723,7 @@ export type Database = {
           closed_at?: string
           combos_summary?: Json
           created_at?: string
+          deleted_orders?: Json | null
           delivery_fees?: number
           id?: string
           items_summary?: Json
