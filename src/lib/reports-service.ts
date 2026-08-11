@@ -220,14 +220,21 @@ export function mergeMotoboyLines(lists: MotoboyLine[][]): MotoboyLine[] {
   return [...map.values()];
 }
 
-function aggregate(orders: any[]) {
+function aggregate(orders: any[], paymentsByOrder?: Map<string, { method: string; amount: number }[]>) {
   const paid = orders.filter((o) => o.payment_confirmed_at);
   const totals_by_payment: Record<string, number> = {};
   let total_revenue = 0;
   let delivery_fees = 0;
   for (const o of paid) {
-    const m = o.confirmed_payment_method ?? o.payment_method ?? "outros";
-    totals_by_payment[m] = (totals_by_payment[m] ?? 0) + Number(o.total ?? 0);
+    const split = paymentsByOrder?.get(o.id);
+    if (split && split.length > 0) {
+      for (const p of split) {
+        totals_by_payment[p.method] = (totals_by_payment[p.method] ?? 0) + Number(p.amount ?? 0);
+      }
+    } else {
+      const m = o.confirmed_payment_method ?? o.payment_method ?? "outros";
+      totals_by_payment[m] = (totals_by_payment[m] ?? 0) + Number(o.total ?? 0);
+    }
     total_revenue += Number(o.total ?? 0);
     delivery_fees += Number(o.delivery_fee ?? 0);
   }
@@ -245,12 +252,26 @@ export async function createShiftReport(shift: {
 }): Promise<ShiftReport> {
   const { data: orders, error } = await sb
     .from("orders")
-    .select("total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
+    .select("id, total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
     .eq("shift_id", shift.id);
   if (error) throw error;
 
   const closed_at = shift.closed_at ?? new Date().toISOString();
-  const agg = aggregate(orders?.filter((o: any) => !o.deleted_at) ?? []);
+  const validOrders = orders?.filter((o: any) => !o.deleted_at) ?? [];
+  const paidIds = validOrders.filter((o: any) => o.payment_confirmed_at).map((o: any) => o.id);
+  const paymentsByOrder = new Map<string, { method: string; amount: number }[]>();
+  if (paidIds.length > 0) {
+    const { data: payRows } = await sb
+      .from("order_payments")
+      .select("order_id, method, amount")
+      .in("order_id", paidIds);
+    for (const p of payRows ?? []) {
+      const list = paymentsByOrder.get(p.order_id) ?? [];
+      list.push({ method: p.method, amount: Number(p.amount ?? 0) });
+      paymentsByOrder.set(p.order_id, list);
+    }
+  }
+  const agg = aggregate(validOrders, paymentsByOrder);
   const [itemsAgg, motoboys_summary] = await Promise.all([
     aggregateShiftItems(shift.id),
     aggregateShiftMotoboys(shift.id),
