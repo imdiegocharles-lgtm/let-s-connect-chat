@@ -203,6 +203,10 @@ function KitchenDashboard() {
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
   const deleteOrderFn = useServerFn(deleteOrder);
 
+  useEffect(() => {
+    (window as any).extSetDeletingOrder = setDeletingOrder;
+  }, []);
+
 
   const { data: perms } = useQuery({
     queryKey: ["my-kitchen-perms"],
