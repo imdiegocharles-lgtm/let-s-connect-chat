@@ -863,6 +863,14 @@ function OrderCard({
             {STATUS_LABELS[nextStatus]}
           </Button>
         )}
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          onClick={() => (window as any).setDeletingOrder(order)}
+          className="font-bold"
+        >
+          <Trash2 className="h-4 w-4 mr-2" /> EXCLUIR
+        </Button>
         {needsPayConfirm && canConfirmPayment && (
           <Button size="sm" onClick={onConfirmPayment} className="bg-amber-600 hover:bg-amber-700 font-black uppercase">
             <CheckCircle2 className="h-4 w-4 mr-2" /> CONFIRMAR PAGAMENTO
