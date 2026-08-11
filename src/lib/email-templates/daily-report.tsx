@@ -29,6 +29,15 @@ interface MotoboyLine {
   name?: string
   daily_rate?: number
   deliveries?: number
+  delivery_fees_total?: number
+  gas_help?: number
+}
+
+interface DeletedOrderLine {
+  order_number?: number
+  total?: number
+  customer_name?: string
+  reason?: string
 }
 
 interface ComboLine {
@@ -47,6 +56,7 @@ interface Props {
   items?: ItemLine[]
   motoboys?: MotoboyLine[]
   combos?: ComboLine[]
+  deletedOrders?: DeletedOrderLine[]
 }
 
 const money = (n: number) =>
@@ -86,20 +96,53 @@ export const ItemsSection = ({ items = [] }: { items?: ItemLine[] }) => {
 
 export const MotoboysSection = ({ motoboys = [] }: { motoboys?: MotoboyLine[] }) => {
   if (motoboys.length === 0) return null
-  const total = motoboys.reduce((s, m) => s + Number(m.daily_rate ?? 0), 0)
+  const rowTotal = (m: MotoboyLine) =>
+    Number(m.delivery_fees_total ?? 0) + Number(m.gas_help ?? m.daily_rate ?? 0)
+  const total = motoboys.reduce((s, m) => s + rowTotal(m), 0)
   return (
     <>
       <Hr style={hr} />
       <Text style={h2}>Motoboys</Text>
       {motoboys.map((m, i) => (
-        <Text key={i} style={line}>
-          {m.name} — {Number(m.deliveries ?? 0)} entregas — diária{' '}
-          <b>{money(Number(m.daily_rate ?? 0))}</b>
-        </Text>
+        <Section key={i} style={{ marginBottom: '8px' }}>
+          <Text style={group}>
+            {m.name} ({Number(m.deliveries ?? 0)} entregas)
+          </Text>
+          <Text style={line}>Entregas: {money(Number(m.delivery_fees_total ?? 0))}</Text>
+          <Text style={line}>
+            Ajuda de custo da gasolina: {money(Number(m.gas_help ?? m.daily_rate ?? 0))}
+          </Text>
+          <Text style={line}>
+            <b>Total a receber: {money(rowTotal(m))}</b>
+          </Text>
+        </Section>
       ))}
       <Text style={line}>
-        Total de diárias: <b>{money(total)}</b>
+        Total motoboys: <b>{money(total)}</b>
       </Text>
+    </>
+  )
+}
+
+export const DeletedOrdersSection = ({
+  deletedOrders = [],
+}: {
+  deletedOrders?: DeletedOrderLine[]
+}) => {
+  if (deletedOrders.length === 0) return null
+  return (
+    <>
+      <Hr style={hr} />
+      <Text style={h2}>Pedidos excluídos</Text>
+      {deletedOrders.map((o, i) => (
+        <Section key={i} style={{ marginBottom: '8px' }}>
+          <Text style={group}>
+            #{String(o.order_number ?? '').padStart(4, '0')} — {money(Number(o.total ?? 0))}
+          </Text>
+          <Text style={line}>Cliente: {o.customer_name ?? '-'}</Text>
+          <Text style={line}>Motivo: {o.reason ?? '-'}</Text>
+        </Section>
+      ))}
     </>
   )
 }
@@ -139,6 +182,7 @@ const Email = ({
   items = [],
   motoboys = [],
   combos = [],
+  deletedOrders = [],
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -186,6 +230,8 @@ const Email = ({
         <CombosSection combos={combos} />
 
         <MotoboysSection motoboys={motoboys} />
+
+        <DeletedOrdersSection deletedOrders={deletedOrders} />
 
         <Hr style={hr} />
         <Text style={footer}>Relatório consolidado automático — Família Amaral</Text>

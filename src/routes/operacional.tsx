@@ -199,6 +199,7 @@ function KitchenDashboard() {
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
   const [deletionReason, setDeletionReason] = useState("");
+  const [deletionPassword, setDeletionPassword] = useState("");
   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
   const sendDailyEmail = useServerFn(sendDailyReportEmail);
@@ -278,12 +279,14 @@ function KitchenDashboard() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["kitchen-orders"],
     queryFn: async () => {
+      if (!activeShift?.id) return [] as (Order & { order_items: OrderItem[] })[];
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
         .is("deleted_at", null)
+        .eq("shift_id", activeShift.id)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
       return (data ?? []) as (Order & { order_items: OrderItem[] })[];
     },
@@ -334,11 +337,26 @@ function KitchenDashboard() {
   });
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, method, motoboyId }: { id: string; method: string; motoboyId?: string | null }) => {
+    mutationFn: async ({
+      id,
+      payments,
+      motoboyId,
+    }: {
+      id: string;
+      payments: { method: string; amount: number }[];
+      motoboyId?: string | null;
+    }) => {
+      await (supabase as any).from("order_payments").delete().eq("order_id", id);
+      const { error: pErr } = await (supabase as any).from("order_payments").insert(
+        payments.map((p) => ({ order_id: id, method: p.method, amount: p.amount })),
+      );
+      if (pErr) throw pErr;
+
+      const summaryMethod = payments.length === 1 ? payments[0].method : "misto";
       const { error } = await (supabase as any)
         .from("orders")
         .update({
-          confirmed_payment_method: method,
+          confirmed_payment_method: summaryMethod,
           payment_confirmed_at: new Date().toISOString(),
           motoboy_id: motoboyId ?? null,
         })
@@ -369,12 +387,19 @@ function KitchenDashboard() {
       toast.error("O motivo deve ter pelo menos 5 caracteres.");
       return;
     }
+    if (!deletionPassword.trim()) {
+      toast.error("Informe a senha administrativa de exclusão.");
+      return;
+    }
 
     try {
-      await deleteOrderFn({ data: { orderId: deletingOrder.id, reason: deletionReason } });
+      await deleteOrderFn({
+        data: { orderId: deletingOrder.id, reason: deletionReason, password: deletionPassword },
+      });
       qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
       setDeletingOrder(null);
       setDeletionReason("");
+      setDeletionPassword("");
       toast.success("Pedido excluído com sucesso.");
     } catch (e: any) {
       toast.error(e.message);
@@ -429,6 +454,7 @@ function KitchenDashboard() {
         { event: "INSERT", schema: "public", table: "orders" },
         async (payload) => {
           const newOrder = payload.new as Order;
+          if (!activeShift?.id || (newOrder as any).shift_id !== activeShift.id) return;
           const { data: items } = await supabase.from("order_items").select("*").eq("order_id", newOrder.id);
           const fullOrder = { ...newOrder, order_items: items ?? [] } as Order & { order_items: OrderItem[] };
 
@@ -463,7 +489,12 @@ function KitchenDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [qc, autoPrint, soundOn, agentUrl]);
+  }, [qc, autoPrint, soundOn, agentUrl, activeShift?.id]);
+
+  // Ao trocar de turno, a lista de pedidos recomeça do zero.
+  useEffect(() => {
+    qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+  }, [qc, activeShift?.id]);
 
   const activeOrders = useMemo(() => orders.filter((o) => o.status !== "delivered"), [orders]);
   const doneOrders = useMemo(() => orders.filter((o) => o.status === "delivered"), [orders]);
@@ -709,10 +740,10 @@ function KitchenDashboard() {
         shiftId={activeShift?.id ?? null}
         lastMotoboyId={lastMotoboyId}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(method, motoboyId) => {
+        onConfirm={(payments, motoboyId) => {
           if (!confirmPayFor) return;
           setLastMotoboyId(motoboyId);
-          confirmPayment.mutate({ id: confirmPayFor.id, method, motoboyId });
+          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId });
         }}
         isPending={confirmPayment.isPending}
       />
@@ -736,13 +767,27 @@ function KitchenDashboard() {
               autoFocus
             />
             <p className="mt-1 text-xs text-muted-foreground">Mínimo 5 caracteres.</p>
+            <div className="mt-4">
+              <Label htmlFor="deletionPassword">Senha administrativa de exclusão</Label>
+              <Input
+                id="deletionPassword"
+                type="password"
+                placeholder="Senha exclusiva para exclusões"
+                value={deletionPassword}
+                onChange={(e) => setDeletionPassword(e.target.value)}
+                className="mt-2"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Definida no painel administrativo — diferente da senha de login.
+              </p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingOrder(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setDeletingOrder(null); setDeletionPassword(""); }}>Cancelar</Button>
             <Button 
               variant="destructive" 
               onClick={handleDeleteOrder}
-              disabled={deletionReason.trim().length < 5}
+              disabled={deletionReason.trim().length < 5 || !deletionPassword.trim()}
             >
               Confirmar exclusão
             </Button>
@@ -1199,16 +1244,36 @@ function ConfirmPaymentDialog({
   shiftId: string | null;
   lastMotoboyId?: string | null;
   onClose: () => void;
-  onConfirm: (method: string, motoboyId: string | null) => void;
+  onConfirm: (payments: { method: string; amount: number }[], motoboyId: string | null) => void;
   isPending: boolean;
 }) {
-  const [method, setMethod] = useState<string>("dinheiro");
+  const [lines, setLines] = useState<{ method: string; amount: string }[]>([
+    { method: "dinheiro", amount: "" },
+  ]);
   const [motoboyId, setMotoboyId] = useState<string>("none");
   useEffect(() => {
-    if (order) setMethod(order.payment_method ?? "dinheiro");
+    if (order)
+      setLines([
+        { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+      ]);
     if (order)
       setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "none");
   }, [order, lastMotoboyId]);
+
+  const orderTotal = Number(order?.total ?? 0);
+  const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
+  const diff = Number((orderTotal - sum).toFixed(2));
+  const money = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const setLine = (i: number, patch: Partial<{ method: string; amount: string }>) =>
+    setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  const addLine = () =>
+    setLines((prev) => [
+      ...prev,
+      { method: "dinheiro", amount: diff > 0 ? diff.toFixed(2) : "" },
+    ]);
+  const removeLine = (i: number) => setLines((prev) => prev.filter((_, idx) => idx !== i));
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
@@ -1233,20 +1298,39 @@ function ConfirmPaymentDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label>Forma de pagamento recebida</Label>
-            <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_LABELS).map(([k, label]) => (
-                  <SelectItem key={k} value={k}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-2">
+            <Label>Formas de pagamento recebidas</Label>
+            {lines.map((l, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Select value={l.method} onValueChange={(v) => setLine(i, { method: v })}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_LABELS).map(([k, label]) => (
+                      <SelectItem key={k} value={k}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  inputMode="decimal"
+                  className="w-28"
+                  placeholder="0,00"
+                  value={l.amount}
+                  onChange={(e) => setLine(i, { amount: e.target.value })}
+                />
+                {lines.length > 1 && (
+                  <Button size="icon" variant="ghost" onClick={() => removeLine(i)}>
+                    ×
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={addLine} className="w-fit">
+              + Adicionar forma de pagamento
+            </Button>
           </div>
           <div className="grid gap-1.5">
             <Label>Motoboy da entrega</Label>
@@ -1277,14 +1361,31 @@ function ConfirmPaymentDialog({
               </strong>
             </p>
           )}
+          {order && (
+            <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-muted-foreground" : "text-destructive"}`}>
+              Somado: <strong>{money(sum)}</strong>
+              {Math.abs(diff) >= 0.005 &&
+                (diff > 0 ? ` — faltam ${money(diff)}` : ` — excede em ${money(-diff)}`)}
+            </p>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button
-            onClick={() => onConfirm(method, motoboyId === "none" ? null : motoboyId)}
-            disabled={isPending}
+            onClick={() =>
+              onConfirm(
+                lines
+                  .map((l) => ({
+                    method: l.method,
+                    amount: Number(String(l.amount).replace(",", ".")) || 0,
+                  }))
+                  .filter((l) => l.amount > 0),
+                motoboyId === "none" ? null : motoboyId,
+              )
+            }
+            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar recebimento
