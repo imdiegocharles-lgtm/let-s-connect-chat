@@ -201,6 +201,7 @@ function KitchenDashboard() {
   const [deletionReason, setDeletionReason] = useState("");
   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
+  const sendDailyEmail = useServerFn(sendDailyReportEmail);
   const deleteOrderFn = useServerFn(deleteOrder);
 
   useEffect(() => {
@@ -693,6 +694,7 @@ function KitchenDashboard() {
         agentUrl={agentUrl}
         onClose={() => setCloseShiftModal(false)}
         sendShiftEmail={sendShiftEmail}
+        sendDailyEmail={sendDailyEmail}
 
         onClosed={() => {
           setCloseShiftModal(false);
@@ -1068,6 +1070,7 @@ function CloseShiftDialog({
   onClose,
   onClosed,
   sendShiftEmail,
+  sendDailyEmail,
 }: {
   open: boolean;
   shift: Shift | null;
@@ -1078,6 +1081,7 @@ function CloseShiftDialog({
   onClose: () => void;
   onClosed: () => void;
   sendShiftEmail: (input: { data: { shiftId: string } }) => Promise<any>;
+  sendDailyEmail: (input: { data: { date: string } }) => Promise<any>;
 }) {
 
   const [saving, setSaving] = useState(false);
@@ -1126,11 +1130,20 @@ function CloseShiftDialog({
     // Se for turno da noite, tenta gerar o relatório diário automaticamente
     if (shift.shift_type === "noite") {
       try {
-        const reportDate = shift.opened_at.slice(0, 10);
+        const reportDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(shift.opened_at));
         await createDailyReport(reportDate);
+        const dailyEmailResult: any = await sendDailyEmail({ data: { date: reportDate } });
+        if (dailyEmailResult?.sent > 0) {
+          toast.success(`Relatório diário enviado por e-mail (${dailyEmailResult.sent}).`);
+        }
         toast.success("Movimento do dia consolidado e relatório diário gerado.");
       } catch (e: any) {
-        console.log("Aviso: Relatório diário não gerado automaticamente (provavelmente turno de almoço pendente).");
+        toast.warning(`Turno salvo, mas o consolidado diário falhou: ${e.message}`);
       }
     }
 
@@ -1384,6 +1397,8 @@ function MenuAvailabilityPanel() {
 
 function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   const qc = useQueryClient();
+  const resendShiftEmail = useServerFn(sendShiftReportEmail);
+  const resendDailyEmail = useServerFn(sendDailyReportEmail);
   // Se for logo após a meia-noite (até as 06:00), padrão é ver o dia anterior
   const [date, setDate] = useState(() => {
     const now = new Date();
@@ -1405,7 +1420,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   });
 
   const types = new Set(shiftReports.map((r: any) => r.shift_type));
-  const bothClosed = types.has("almoco") && types.has("noite");
+  const hasClosedShift = shiftReports.length > 0;
 
   const printShift = async (r: any) => {
     try {
@@ -1415,6 +1430,38 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
       toast.success("Relatório de turno enviado para a impressora");
     } catch (e: any) {
       toast.error(`Falha ao imprimir: ${e.message}`);
+    }
+  };
+
+  const emailShift = async (r: any) => {
+    try {
+      const result: any = await resendShiftEmail({ data: { shiftId: r.shift_id } });
+      if (result?.reason === "no_recipients") {
+        toast.error("Nenhum e-mail está cadastrado nas configurações.");
+      } else if (result?.sent > 0) {
+        toast.success(`Relatório de turno enviado por e-mail (${result.sent}).`);
+      } else {
+        toast.error("O e-mail não foi entregue. Verifique os destinatários configurados.");
+      }
+      qc.invalidateQueries({ queryKey: ["shift-reports", date] });
+    } catch (e: any) {
+      toast.error(`Falha ao enviar e-mail: ${e.message}`);
+    }
+  };
+
+  const emailDaily = async () => {
+    try {
+      const result: any = await resendDailyEmail({ data: { date } });
+      if (result?.reason === "no_recipients") {
+        toast.error("Nenhum e-mail está cadastrado nas configurações.");
+      } else if (result?.sent > 0) {
+        toast.success(`Relatório diário enviado por e-mail (${result.sent}).`);
+      } else {
+        toast.error("O e-mail não foi entregue. Verifique os destinatários configurados.");
+      }
+      qc.invalidateQueries({ queryKey: ["daily-report", date] });
+    } catch (e: any) {
+      toast.error(`Falha ao enviar e-mail: ${e.message}`);
     }
   };
 
@@ -1523,9 +1570,14 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
                   </div>
                 ))}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => printShift(r)}>
-                <Printer className="h-4 w-4 mr-2" /> Reimprimir turno
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => printShift(r)}>
+                  <Printer className="h-4 w-4 mr-2" /> Reimprimir turno
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => emailShift(r)}>
+                  Reenviar e-mail
+                </Button>
+              </div>
             </Card>
           ))}
           {shiftReports.length === 0 && (
@@ -1560,15 +1612,19 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
                   </div>
                 ))}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={printDaily}>
-                <Printer className="h-4 w-4 mr-2" /> Reimprimir relatório do dia
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={printDaily}>
+                  <Printer className="h-4 w-4 mr-2" /> Reimprimir relatório do dia
+                </Button>
+                <Button size="sm" variant="outline" onClick={emailDaily}>
+                  Reenviar e-mail
+                </Button>
+              </div>
             </>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                O relatório do dia só pode ser gerado depois que os dois turnos (almoço e noite) forem
-                finalizados.
+                Gere o consolidado dos turnos finalizados nesta data. Não é necessário ter os dois turnos.
               </p>
               <ul className="mt-3 space-y-1 text-sm">
                 <li>{types.has("almoco") ? "✅" : "⬜"} Turno almoço / dia finalizado</li>
@@ -1576,7 +1632,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
               </ul>
               <Button
                 className="mt-4"
-                disabled={!bothClosed || generateDaily.isPending}
+                disabled={!hasClosedShift || generateDaily.isPending}
                 onClick={() => generateDaily.mutate()}
               >
                 {generateDaily.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
