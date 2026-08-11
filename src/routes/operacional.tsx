@@ -736,6 +736,7 @@ function OrderCard({
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
   const anyOrder = order as any;
+  (window as any).extSetDeletingOrder = (window as any).extSetDeletingOrder || (() => {});
   const needsPayConfirm =
     order.status === "delivered" && !anyOrder.payment_confirmed_at;
   const payConfirmed = !!anyOrder.payment_confirmed_at;
