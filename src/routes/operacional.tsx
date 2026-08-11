@@ -867,7 +867,7 @@ function OrderCard({
         <Button 
           size="sm" 
           variant="destructive" 
-          onClick={() => (window as any).setDeletingOrder(order)}
+          onClick={() => (window as any).extSetDeletingOrder(order)}
           className="font-bold"
         >
           <Trash2 className="h-4 w-4 mr-2" /> EXCLUIR
