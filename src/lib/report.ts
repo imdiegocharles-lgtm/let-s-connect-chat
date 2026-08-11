@@ -214,7 +214,8 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   out.push(...line(""));
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
-  motoboysBlock(out, r.motoboys_summary);
+  motoboys_block(out, r.motoboys_summary);
+  deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
   out.push(...line(""), ...line(""), ...ESC.cut);
