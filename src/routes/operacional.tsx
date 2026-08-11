@@ -1397,6 +1397,8 @@ function MenuAvailabilityPanel() {
 
 function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   const qc = useQueryClient();
+  const resendShiftEmail = useServerFn(sendShiftReportEmail);
+  const resendDailyEmail = useServerFn(sendDailyReportEmail);
   // Se for logo após a meia-noite (até as 06:00), padrão é ver o dia anterior
   const [date, setDate] = useState(() => {
     const now = new Date();
@@ -1428,6 +1430,38 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
       toast.success("Relatório de turno enviado para a impressora");
     } catch (e: any) {
       toast.error(`Falha ao imprimir: ${e.message}`);
+    }
+  };
+
+  const emailShift = async (r: any) => {
+    try {
+      const result: any = await resendShiftEmail({ data: { shiftId: r.shift_id } });
+      if (result?.reason === "no_recipients") {
+        toast.error("Nenhum e-mail está cadastrado nas configurações.");
+      } else if (result?.sent > 0) {
+        toast.success(`Relatório de turno enviado por e-mail (${result.sent}).`);
+      } else {
+        toast.error("O e-mail não foi entregue. Verifique os destinatários configurados.");
+      }
+      qc.invalidateQueries({ queryKey: ["shift-reports", date] });
+    } catch (e: any) {
+      toast.error(`Falha ao enviar e-mail: ${e.message}`);
+    }
+  };
+
+  const emailDaily = async () => {
+    try {
+      const result: any = await resendDailyEmail({ data: { date } });
+      if (result?.reason === "no_recipients") {
+        toast.error("Nenhum e-mail está cadastrado nas configurações.");
+      } else if (result?.sent > 0) {
+        toast.success(`Relatório diário enviado por e-mail (${result.sent}).`);
+      } else {
+        toast.error("O e-mail não foi entregue. Verifique os destinatários configurados.");
+      }
+      qc.invalidateQueries({ queryKey: ["daily-report", date] });
+    } catch (e: any) {
+      toast.error(`Falha ao enviar e-mail: ${e.message}`);
     }
   };
 
@@ -1536,9 +1570,14 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
                   </div>
                 ))}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => printShift(r)}>
-                <Printer className="h-4 w-4 mr-2" /> Reimprimir turno
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => printShift(r)}>
+                  <Printer className="h-4 w-4 mr-2" /> Reimprimir turno
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => emailShift(r)}>
+                  Reenviar e-mail
+                </Button>
+              </div>
             </Card>
           ))}
           {shiftReports.length === 0 && (
@@ -1573,9 +1612,14 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
                   </div>
                 ))}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={printDaily}>
-                <Printer className="h-4 w-4 mr-2" /> Reimprimir relatório do dia
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={printDaily}>
+                  <Printer className="h-4 w-4 mr-2" /> Reimprimir relatório do dia
+                </Button>
+                <Button size="sm" variant="outline" onClick={emailDaily}>
+                  Reenviar e-mail
+                </Button>
+              </div>
             </>
           ) : (
             <>
