@@ -1,30 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { hasMyRole } from "./roles";
-
-const deleteOrderSchema = z.object({
-  orderId: z.string().uuid(),
-  reason: z.string().trim().min(5, "O motivo deve ter pelo menos 5 caracteres"),
-});
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const deleteOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
     orderId: z.string().uuid(),
-    reason: z.string().trim().min(5),
+    reason: z.string().trim().min(5, "O motivo deve ter pelo menos 5 caracteres"),
   }))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const sb = supabaseAdmin as any;
+  .handler(async ({ data, context }) => {
+    const { data: role, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .in("role", ["admin", "operator"])
+      .limit(1)
+      .maybeSingle();
 
-    // Check permissions
-    const isAdmin = await hasMyRole("admin");
-    const isOperator = await hasMyRole("operator");
-    
-    if (!isAdmin && !isOperator) {
+    if (roleError) throw new Error(`Não foi possível verificar seu acesso: ${roleError.message}`);
+    if (!role) {
       throw new Error("Acesso negado. Apenas administradores ou operadores podem excluir pedidos.");
     }
 
-    const { error } = await sb
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("orders")
       .update({
         deleted_at: new Date().toISOString(),
