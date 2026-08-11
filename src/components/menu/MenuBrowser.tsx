@@ -238,7 +238,7 @@ export function MenuBrowser() {
       )}
 
       {/* Category nav */}
-      <nav className="sticky top-[64px] z-30 -mx-4 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 backdrop-blur">
+      <nav className="sticky top-[69px] z-30 -mx-4 overflow-x-auto overscroll-x-contain border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:top-[64px]">
         <ul className="flex gap-2">
           {grouped.map((c) => (
             <li key={c.id}>
@@ -254,7 +254,7 @@ export function MenuBrowser() {
       </nav>
 
       {grouped.map((cat) => (
-        <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-32">
+        <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-[136px] sm:scroll-mt-32">
           <h2 className="text-2xl font-black md:text-3xl">{displayName(cat.name)}</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cat.items.map((item) => {

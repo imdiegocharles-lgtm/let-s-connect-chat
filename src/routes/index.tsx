@@ -73,20 +73,22 @@ function Home() {
             </a>
           </div>
         </div>
-        <div className="sm:hidden mx-auto max-w-6xl px-4 pb-3 flex flex-col items-stretch gap-1">
-          <ReservationDialog
-            trigger={
-              <button className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
-                <CalendarDays className="h-4 w-4" />
-                Faça sua Reserva
-              </button>
-            }
-          />
-          <p className="text-[11px] text-center text-muted-foreground">
-            Reservas disponíveis apenas para grupos a partir de 10 pessoas.
-          </p>
-        </div>
       </header>
+
+      {/* Reserva (mobile) — rola junto com a página */}
+      <div className="sm:hidden mx-auto max-w-6xl px-4 py-3 flex flex-col items-stretch gap-1 border-b border-border/60">
+        <ReservationDialog
+          trigger={
+            <button className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+              <CalendarDays className="h-4 w-4" />
+              Faça sua Reserva
+            </button>
+          }
+        />
+        <p className="text-[11px] text-center text-muted-foreground">
+          Reservas disponíveis apenas para grupos a partir de 10 pessoas.
+        </p>
+      </div>
 
       {/* Hero */}
       <section
