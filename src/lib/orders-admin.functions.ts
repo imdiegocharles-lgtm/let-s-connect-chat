@@ -8,7 +8,10 @@ const deleteOrderSchema = z.object({
 });
 
 export const deleteOrder = createServerFn({ method: "POST" })
-  .inputValidator(deleteOrderSchema)
+  .inputValidator(z.object({
+    orderId: z.string().uuid(),
+    reason: z.string().trim().min(5),
+  }))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
