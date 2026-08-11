@@ -276,6 +276,7 @@ function KitchenDashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
