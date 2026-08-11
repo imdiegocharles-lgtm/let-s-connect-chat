@@ -454,6 +454,7 @@ function KitchenDashboard() {
         { event: "INSERT", schema: "public", table: "orders" },
         async (payload) => {
           const newOrder = payload.new as Order;
+          if (!activeShift?.id || (newOrder as any).shift_id !== activeShift.id) return;
           const { data: items } = await supabase.from("order_items").select("*").eq("order_id", newOrder.id);
           const fullOrder = { ...newOrder, order_items: items ?? [] } as Order & { order_items: OrderItem[] };
 
@@ -488,7 +489,12 @@ function KitchenDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [qc, autoPrint, soundOn, agentUrl]);
+  }, [qc, autoPrint, soundOn, agentUrl, activeShift?.id]);
+
+  // Ao trocar de turno, a lista de pedidos recomeça do zero.
+  useEffect(() => {
+    qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+  }, [qc, activeShift?.id]);
 
   const activeOrders = useMemo(() => orders.filter((o) => o.status !== "delivered"), [orders]);
   const doneOrders = useMemo(() => orders.filter((o) => o.status === "delivered"), [orders]);
