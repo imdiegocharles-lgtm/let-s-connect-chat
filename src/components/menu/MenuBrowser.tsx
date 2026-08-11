@@ -238,7 +238,7 @@ export function MenuBrowser() {
       )}
 
       {/* Category nav */}
-      <nav className="sticky top-[68px] z-30 -mx-4 overflow-x-auto overscroll-x-contain border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:top-[64px]">
+      <nav className="sticky top-[69px] z-30 -mx-4 overflow-x-auto overscroll-x-contain border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:top-[64px]">
         <ul className="flex gap-2">
           {grouped.map((c) => (
             <li key={c.id}>
