@@ -337,6 +337,7 @@ export async function createDailyReport(date = todayISO()) {
     total_revenue,
     delivery_fees,
     totals_by_payment,
+    deleted_orders,
     items_summary: mergeItemLines(reports.map((r: any) => r.items_summary ?? [])),
     combos_summary: mergeComboLines(reports.map((r: any) => r.combos_summary ?? [])),
     motoboys_summary: mergeMotoboyLines(reports.map((r: any) => r.motoboys_summary ?? [])),
