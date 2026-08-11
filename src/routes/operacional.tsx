@@ -1238,16 +1238,36 @@ function ConfirmPaymentDialog({
   shiftId: string | null;
   lastMotoboyId?: string | null;
   onClose: () => void;
-  onConfirm: (method: string, motoboyId: string | null) => void;
+  onConfirm: (payments: { method: string; amount: number }[], motoboyId: string | null) => void;
   isPending: boolean;
 }) {
-  const [method, setMethod] = useState<string>("dinheiro");
+  const [lines, setLines] = useState<{ method: string; amount: string }[]>([
+    { method: "dinheiro", amount: "" },
+  ]);
   const [motoboyId, setMotoboyId] = useState<string>("none");
   useEffect(() => {
-    if (order) setMethod(order.payment_method ?? "dinheiro");
+    if (order)
+      setLines([
+        { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+      ]);
     if (order)
       setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "none");
   }, [order, lastMotoboyId]);
+
+  const orderTotal = Number(order?.total ?? 0);
+  const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
+  const diff = Number((orderTotal - sum).toFixed(2));
+  const money = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const setLine = (i: number, patch: Partial<{ method: string; amount: string }>) =>
+    setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  const addLine = () =>
+    setLines((prev) => [
+      ...prev,
+      { method: "dinheiro", amount: diff > 0 ? diff.toFixed(2) : "" },
+    ]);
+  const removeLine = (i: number) => setLines((prev) => prev.filter((_, idx) => idx !== i));
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
@@ -1272,20 +1292,39 @@ function ConfirmPaymentDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label>Forma de pagamento recebida</Label>
-            <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_LABELS).map(([k, label]) => (
-                  <SelectItem key={k} value={k}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-2">
+            <Label>Formas de pagamento recebidas</Label>
+            {lines.map((l, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Select value={l.method} onValueChange={(v) => setLine(i, { method: v })}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_LABELS).map(([k, label]) => (
+                      <SelectItem key={k} value={k}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  inputMode="decimal"
+                  className="w-28"
+                  placeholder="0,00"
+                  value={l.amount}
+                  onChange={(e) => setLine(i, { amount: e.target.value })}
+                />
+                {lines.length > 1 && (
+                  <Button size="icon" variant="ghost" onClick={() => removeLine(i)}>
+                    ×
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={addLine} className="w-fit">
+              + Adicionar forma de pagamento
+            </Button>
           </div>
           <div className="grid gap-1.5">
             <Label>Motoboy da entrega</Label>
