@@ -337,11 +337,26 @@ function KitchenDashboard() {
   });
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, method, motoboyId }: { id: string; method: string; motoboyId?: string | null }) => {
+    mutationFn: async ({
+      id,
+      payments,
+      motoboyId,
+    }: {
+      id: string;
+      payments: { method: string; amount: number }[];
+      motoboyId?: string | null;
+    }) => {
+      await (supabase as any).from("order_payments").delete().eq("order_id", id);
+      const { error: pErr } = await (supabase as any).from("order_payments").insert(
+        payments.map((p) => ({ order_id: id, method: p.method, amount: p.amount })),
+      );
+      if (pErr) throw pErr;
+
+      const summaryMethod = payments.length === 1 ? payments[0].method : "misto";
       const { error } = await (supabase as any)
         .from("orders")
         .update({
-          confirmed_payment_method: method,
+          confirmed_payment_method: summaryMethod,
           payment_confirmed_at: new Date().toISOString(),
           motoboy_id: motoboyId ?? null,
         })
@@ -372,12 +387,19 @@ function KitchenDashboard() {
       toast.error("O motivo deve ter pelo menos 5 caracteres.");
       return;
     }
+    if (!deletionPassword.trim()) {
+      toast.error("Informe a senha administrativa de exclusão.");
+      return;
+    }
 
     try {
-      await deleteOrderFn({ data: { orderId: deletingOrder.id, reason: deletionReason } });
+      await deleteOrderFn({
+        data: { orderId: deletingOrder.id, reason: deletionReason, password: deletionPassword },
+      });
       qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
       setDeletingOrder(null);
       setDeletionReason("");
+      setDeletionPassword("");
       toast.success("Pedido excluído com sucesso.");
     } catch (e: any) {
       toast.error(e.message);
