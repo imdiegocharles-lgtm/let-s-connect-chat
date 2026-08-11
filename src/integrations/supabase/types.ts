@@ -108,6 +108,7 @@ export type Database = {
         Row: {
           combos_summary: Json
           created_at: string
+          deleted_orders: Json
           delivery_fees: number
           emailed_at: string | null
           id: string
@@ -125,6 +126,7 @@ export type Database = {
         Insert: {
           combos_summary?: Json
           created_at?: string
+          deleted_orders?: Json
           delivery_fees?: number
           emailed_at?: string | null
           id?: string
@@ -142,6 +144,7 @@ export type Database = {
         Update: {
           combos_summary?: Json
           created_at?: string
+          deleted_orders?: Json
           delivery_fees?: number
           emailed_at?: string | null
           id?: string
@@ -683,6 +686,7 @@ export type Database = {
           created_at: string
           deleted_orders: Json | null
           delivery_fees: number
+          emailed_at: string | null
           id: string
           items_summary: Json
           motoboys_summary: Json
@@ -704,6 +708,7 @@ export type Database = {
           created_at?: string
           deleted_orders?: Json | null
           delivery_fees?: number
+          emailed_at?: string | null
           id?: string
           items_summary?: Json
           motoboys_summary?: Json
@@ -725,6 +730,7 @@ export type Database = {
           created_at?: string
           deleted_orders?: Json | null
           delivery_fees?: number
+          emailed_at?: string | null
           id?: string
           items_summary?: Json
           motoboys_summary?: Json
