@@ -197,8 +197,11 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
-   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
+  const deleteOrderFn = useServerFn(deleteOrder);
 
 
   const { data: perms } = useQuery({
