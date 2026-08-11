@@ -1267,8 +1267,64 @@ function SettingsPanel() {
       <div><Label>URL da Logo Oficial (BW)</Label><Input value={form.official_logo_bw_url} onChange={(e) => setForm({ ...form, official_logo_bw_url: e.target.value })} placeholder="/assets/logo-bw.png" autoCapitalize="none" autoCorrect="off" spellCheck="false" /></div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar configurações</Button>
     </Card>
+    <DeletionPasswordPanel />
     <HorariosPanel />
     </>
+  );
+}
+
+/* ------------------- SENHA DE EXCLUSÃO DE PEDIDOS ------------------- */
+
+function DeletionPasswordPanel() {
+  const setPassword = useServerFn(setDeletionPassword);
+  const [value, setValue] = useState("");
+  const [confirmValue, setConfirmValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (value.length < 4) {
+      toast.error("A senha deve ter pelo menos 4 caracteres.");
+      return;
+    }
+    if (value !== confirmValue) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await setPassword({ data: { password: value } });
+      setValue("");
+      setConfirmValue("");
+      toast.success("Senha de exclusão atualizada.");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="p-6 max-w-2xl space-y-4 mt-6">
+      <div>
+        <h3 className="font-semibold">Senha de exclusão de pedidos</h3>
+        <p className="text-sm text-muted-foreground">
+          Senha exclusiva exigida no painel operacional para excluir pedidos. Não é a senha de login.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label>Nova senha</Label>
+          <Input type="password" value={value} onChange={(e) => setValue(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" />
+        </div>
+        <div>
+          <Label>Confirmar senha</Label>
+          <Input type="password" value={confirmValue} onChange={(e) => setConfirmValue(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck="false" />
+        </div>
+      </div>
+      <Button onClick={submit} disabled={saving}>
+        {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Salvar senha de exclusão
+      </Button>
+    </Card>
   );
 }
 
