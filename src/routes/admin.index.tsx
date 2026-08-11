@@ -36,6 +36,7 @@ import {
 } from "@/lib/store-hours";
 import { PainelError } from "@/components/PainelError";
 import { useServerFn } from "@tanstack/react-start";
+import { setDeletionPassword } from "@/lib/orders-admin.functions";
 import {
   listKitchenUsers,
   createKitchenUser,
