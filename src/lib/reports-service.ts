@@ -258,6 +258,7 @@ export async function createShiftReport(shift: {
     items_summary: itemsAgg.items,
     combos_summary: itemsAgg.combos,
     motoboys_summary,
+    deleted_orders: itemsAgg.deletedOrders,
     ...agg,
   };
 
