@@ -201,6 +201,7 @@ function KitchenDashboard() {
   const [deletionReason, setDeletionReason] = useState("");
   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
+  const sendDailyEmail = useServerFn(sendDailyReportEmail);
   const deleteOrderFn = useServerFn(deleteOrder);
 
   useEffect(() => {
@@ -693,6 +694,7 @@ function KitchenDashboard() {
         agentUrl={agentUrl}
         onClose={() => setCloseShiftModal(false)}
         sendShiftEmail={sendShiftEmail}
+        sendDailyEmail={sendDailyEmail}
 
         onClosed={() => {
           setCloseShiftModal(false);
@@ -1068,6 +1070,7 @@ function CloseShiftDialog({
   onClose,
   onClosed,
   sendShiftEmail,
+  sendDailyEmail,
 }: {
   open: boolean;
   shift: Shift | null;
@@ -1078,6 +1081,7 @@ function CloseShiftDialog({
   onClose: () => void;
   onClosed: () => void;
   sendShiftEmail: (input: { data: { shiftId: string } }) => Promise<any>;
+  sendDailyEmail: (input: { data: { date: string } }) => Promise<any>;
 }) {
 
   const [saving, setSaving] = useState(false);
@@ -1126,11 +1130,20 @@ function CloseShiftDialog({
     // Se for turno da noite, tenta gerar o relatório diário automaticamente
     if (shift.shift_type === "noite") {
       try {
-        const reportDate = shift.opened_at.slice(0, 10);
+        const reportDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(shift.opened_at));
         await createDailyReport(reportDate);
+        const dailyEmailResult: any = await sendDailyEmail({ data: { date: reportDate } });
+        if (dailyEmailResult?.sent > 0) {
+          toast.success(`Relatório diário enviado por e-mail (${dailyEmailResult.sent}).`);
+        }
         toast.success("Movimento do dia consolidado e relatório diário gerado.");
       } catch (e: any) {
-        console.log("Aviso: Relatório diário não gerado automaticamente (provavelmente turno de almoço pendente).");
+        toast.warning(`Turno salvo, mas o consolidado diário falhou: ${e.message}`);
       }
     }
 
@@ -1405,7 +1418,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   });
 
   const types = new Set(shiftReports.map((r: any) => r.shift_type));
-  const bothClosed = types.has("almoco") && types.has("noite");
+  const hasClosedShift = shiftReports.length > 0;
 
   const printShift = async (r: any) => {
     try {
@@ -1567,8 +1580,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                O relatório do dia só pode ser gerado depois que os dois turnos (almoço e noite) forem
-                finalizados.
+                Gere o consolidado dos turnos finalizados nesta data. Não é necessário ter os dois turnos.
               </p>
               <ul className="mt-3 space-y-1 text-sm">
                 <li>{types.has("almoco") ? "✅" : "⬜"} Turno almoço / dia finalizado</li>
@@ -1576,7 +1588,7 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
               </ul>
               <Button
                 className="mt-4"
-                disabled={!bothClosed || generateDaily.isPending}
+                disabled={!hasClosedShift || generateDaily.isPending}
                 onClick={() => generateDaily.mutate()}
               >
                 {generateDaily.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

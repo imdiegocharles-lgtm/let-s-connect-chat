@@ -8,6 +8,14 @@ export const todayISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+const saoPauloDateISO = (iso: string) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+
 export type ItemLine = { group: string; name: string; quantity: number };
 export type MotoboyLine = { 
   name: string; 
@@ -249,7 +257,7 @@ export async function createShiftReport(shift: {
   ]);
   const payload = {
     shift_id: shift.id,
-    report_date: shift.opened_at.slice(0, 10),
+    report_date: saoPauloDateISO(shift.opened_at),
     shift_type: shift.shift_type,
     operator_name: shift.operator_name,
     opened_at: shift.opened_at,
@@ -305,14 +313,11 @@ export async function getDailyReport(date = todayISO()) {
   return (data ?? null) as (DailyReport & { id: string; printed_at: string | null; emailed_at: string | null }) | null;
 }
 
-/** Consolida o dia — exige os dois turnos (almoço e noite) fechados. */
+/** Consolida todos os turnos fechados do movimento, mesmo quando só houve um turno. */
 export async function createDailyReport(date = todayISO()) {
   const reports = await getShiftReports(date);
-  const types = new Set(reports.map((r) => r.shift_type));
-  if (!types.has("almoco") || !types.has("noite")) {
-    throw new Error(
-      "O relatório do dia só pode ser gerado depois que os dois turnos (almoço e noite) forem finalizados.",
-    );
+  if (reports.length === 0) {
+    throw new Error("Nenhum turno finalizado foi encontrado nesta data.");
   }
 
   const totals_by_payment: Record<string, number> = {};
