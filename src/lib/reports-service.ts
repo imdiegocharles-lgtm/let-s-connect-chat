@@ -33,17 +33,30 @@ function sortItems(map: Map<string, ItemLine>): ItemLine[] {
 
 const keyOf = (group: string, name: string) => `${group}||${name}`;
 
-/** Agrega os itens vendidos (somente pedidos com pagamento confirmado) de um turno. */
+/** Agrega os itens vendidos (somente pedidos com pagamento confirmado e NÃO excluídos) de um turno. */
 export async function aggregateShiftItems(
   shiftId: string,
-): Promise<{ items: ItemLine[]; combos: ComboLine[] }> {
+): Promise<{ items: ItemLine[]; combos: ComboLine[]; deletedOrders: any[] }> {
   const { data: orders, error: ordErr } = await sb
     .from("orders")
-    .select("id, payment_confirmed_at")
+    .select("id, payment_confirmed_at, deleted_at, deletion_reason, order_number, total, customer_name")
     .eq("shift_id", shiftId);
   if (ordErr) throw ordErr;
-  const paidIds = (orders ?? []).filter((o: any) => o.payment_confirmed_at).map((o: any) => o.id);
-  if (paidIds.length === 0) return { items: [], combos: [] };
+
+  const paidIds = (orders ?? [])
+    .filter((o: any) => o.payment_confirmed_at && !o.deleted_at)
+    .map((o: any) => o.id);
+
+  const deletedOrders = (orders ?? [])
+    .filter((o: any) => o.deleted_at)
+    .map((o: any) => ({
+      order_number: o.order_number,
+      total: o.total,
+      customer_name: o.customer_name,
+      reason: o.deletion_reason,
+    }));
+
+  if (paidIds.length === 0) return { items: [], combos: [], deletedOrders };
 
   const { data: items, error } = await sb
     .from("order_items")
@@ -88,7 +101,7 @@ export async function aggregateShiftItems(
   const comboList = [...combos.values()]
     .map((c) => ({ ...c, skewers: c.skewers.sort((a, b) => b.quantity - a.quantity) }))
     .sort((a, b) => b.total - a.total);
-  return { items: sortItems(map), combos: comboList };
+  return { items: sortItems(map), combos: comboList, deletedOrders };
 }
 
 /** Soma as escolhas de espeto dos Completos de vários turnos. */
@@ -224,12 +237,12 @@ export async function createShiftReport(shift: {
 }): Promise<ShiftReport> {
   const { data: orders, error } = await sb
     .from("orders")
-    .select("total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at")
+    .select("total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
     .eq("shift_id", shift.id);
   if (error) throw error;
 
   const closed_at = shift.closed_at ?? new Date().toISOString();
-  const agg = aggregate(orders ?? []);
+  const agg = aggregate(orders?.filter((o: any) => !o.deleted_at) ?? []);
   const [itemsAgg, motoboys_summary] = await Promise.all([
     aggregateShiftItems(shift.id),
     aggregateShiftMotoboys(shift.id),
@@ -245,6 +258,7 @@ export async function createShiftReport(shift: {
     items_summary: itemsAgg.items,
     combos_summary: itemsAgg.combos,
     motoboys_summary,
+    deleted_orders: itemsAgg.deletedOrders,
     ...agg,
   };
 
@@ -314,6 +328,8 @@ export async function createDailyReport(date = todayISO()) {
     }
   }
 
+  const deleted_orders = reports.flatMap((r: any) => r.deleted_orders ?? []);
+
   const payload = {
     report_date: date,
     shifts_count: reports.length,
@@ -321,6 +337,7 @@ export async function createDailyReport(date = todayISO()) {
     total_revenue,
     delivery_fees,
     totals_by_payment,
+    deleted_orders,
     items_summary: mergeItemLines(reports.map((r: any) => r.items_summary ?? [])),
     combos_summary: mergeComboLines(reports.map((r: any) => r.combos_summary ?? [])),
     motoboys_summary: mergeMotoboyLines(reports.map((r: any) => r.motoboys_summary ?? [])),

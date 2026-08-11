@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2 } from "lucide-react";
 import { sendToLocalPrinter } from "@/lib/receipt";
 import {
   buildDailyReportBytes,
@@ -31,6 +31,7 @@ import {
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
 import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
+import { deleteOrder } from "@/lib/orders-admin.functions";
 
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
@@ -196,8 +197,15 @@ function KitchenDashboard() {
   const [openShiftModal, setOpenShiftModal] = useState(false);
   const [closeShiftModal, setCloseShiftModal] = useState(false);
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
-   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
+  const deleteOrderFn = useServerFn(deleteOrder);
+
+  useEffect(() => {
+    (window as any).extSetDeletingOrder = setDeletingOrder;
+  }, []);
 
 
   const { data: perms } = useQuery({
@@ -272,6 +280,7 @@ function KitchenDashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -353,6 +362,24 @@ function KitchenDashboard() {
     }
   };
 
+  const handleDeleteOrder = async () => {
+    if (!deletingOrder) return;
+    if (deletionReason.trim().length < 5) {
+      toast.error("O motivo deve ter pelo menos 5 caracteres.");
+      return;
+    }
+
+    try {
+      await deleteOrderFn({ data: { orderId: deletingOrder.id, reason: deletionReason } });
+      qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
+      setDeletingOrder(null);
+      setDeletionReason("");
+      toast.success("Pedido excluído com sucesso.");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   const testPrinter = async () => {
     const testOrder: Order = {
       id: "test",
@@ -378,6 +405,8 @@ function KitchenDashboard() {
       payment_confirmed_at: null,
       motoboy_id: null,
       user_id: null,
+      deleted_at: null,
+      deletion_reason: null,
     };
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
@@ -685,6 +714,39 @@ function KitchenDashboard() {
         }}
         isPending={confirmPayment.isPending}
       />
+
+      <Dialog open={!!deletingOrder} onOpenChange={(open) => !open && setDeletingOrder(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir pedido #{deletingOrder?.order_number.toString().padStart(4, '0')}</DialogTitle>
+            <DialogDescription>
+              Para excluir este pedido, você deve informar o motivo. Este registro aparecerá no relatório de fechamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="deletionReason">Motivo da exclusão (obrigatório)</Label>
+            <Input
+              id="deletionReason"
+              placeholder="Ex: Pedido duplicado, cliente cancelou, etc."
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+            <p className="mt-1 text-xs text-muted-foreground">Mínimo 5 caracteres.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingOrder(null)}>Cancelar</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteOrder}
+              disabled={deletionReason.trim().length < 5}
+            >
+              Confirmar exclusão
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -711,6 +773,7 @@ function OrderCard({
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
   const anyOrder = order as any;
+  (window as any).extSetDeletingOrder = (window as any).extSetDeletingOrder || (() => {});
   const needsPayConfirm =
     order.status === "delivered" && !anyOrder.payment_confirmed_at;
   const payConfirmed = !!anyOrder.payment_confirmed_at;
@@ -838,6 +901,14 @@ function OrderCard({
             {STATUS_LABELS[nextStatus]}
           </Button>
         )}
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          onClick={() => (window as any).extSetDeletingOrder(order)}
+          className="font-bold"
+        >
+          <Trash2 className="h-4 w-4 mr-2" /> EXCLUIR
+        </Button>
         {needsPayConfirm && canConfirmPayment && (
           <Button size="sm" onClick={onConfirmPayment} className="bg-amber-600 hover:bg-amber-700 font-black uppercase">
             <CheckCircle2 className="h-4 w-4 mr-2" /> CONFIRMAR PAGAMENTO

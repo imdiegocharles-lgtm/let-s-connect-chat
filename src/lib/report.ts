@@ -76,6 +76,7 @@ export type ShiftReport = {
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
   combos_summary?: ComboLine[];
+  deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
 };
 
 export type DailyReport = {
@@ -88,6 +89,7 @@ export type DailyReport = {
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
   combos_summary?: ComboLine[];
+  deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
   shifts_summary: {
     shift_type: string;
     operator_name: string | null;
@@ -184,6 +186,19 @@ function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
   out.push(...ESC.boldOn, ...line(pad("TOTAL MOTOBOYS", money(total))), ...ESC.boldOff);
 }
 
+function deletedOrdersBlock(out: number[], deletedOrders?: { order_number: number; total: number; customer_name: string; reason: string }[]) {
+  const list = deletedOrders ?? [];
+  if (list.length === 0) return;
+  out.push(...line(""));
+  out.push(...ESC.reverseOn, ...ESC.boldOn, ...line("PEDIDOS EXCLUIDOS"), ...ESC.boldOff, ...ESC.reverseOff);
+  for (const o of list) {
+    out.push(...line(`#${o.order_number.toString().padStart(4, '0')} - ${money(Number(o.total))}`));
+    out.push(...line(`Cliente: ${o.customer_name}`));
+    out.push(...line(`Motivo: ${o.reason}`));
+    out.push(...line("-".repeat(48)));
+  }
+}
+
 export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   const out: number[] = [];
   header(out, "RELATORIO DE TURNO");
@@ -202,6 +217,7 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
+  deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
   out.push(...line(""), ...line(""), ...ESC.cut);
@@ -234,6 +250,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
+  deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio consolidado do dia"));
   out.push(...line("Familia Amaral"));
