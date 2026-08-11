@@ -328,6 +328,8 @@ export async function createDailyReport(date = todayISO()) {
     }
   }
 
+  const deleted_orders = reports.flatMap((r: any) => r.deleted_orders ?? []);
+
   const payload = {
     report_date: date,
     shifts_count: reports.length,
