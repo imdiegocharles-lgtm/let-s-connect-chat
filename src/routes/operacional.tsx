@@ -1355,14 +1355,31 @@ function ConfirmPaymentDialog({
               </strong>
             </p>
           )}
+          {order && (
+            <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-muted-foreground" : "text-destructive"}`}>
+              Somado: <strong>{money(sum)}</strong>
+              {Math.abs(diff) >= 0.005 &&
+                (diff > 0 ? ` — faltam ${money(diff)}` : ` — excede em ${money(-diff)}`)}
+            </p>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button
-            onClick={() => onConfirm(method, motoboyId === "none" ? null : motoboyId)}
-            disabled={isPending}
+            onClick={() =>
+              onConfirm(
+                lines
+                  .map((l) => ({
+                    method: l.method,
+                    amount: Number(String(l.amount).replace(",", ".")) || 0,
+                  }))
+                  .filter((l) => l.amount > 0),
+                motoboyId === "none" ? null : motoboyId,
+              )
+            }
+            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar recebimento
