@@ -734,10 +734,10 @@ function KitchenDashboard() {
         shiftId={activeShift?.id ?? null}
         lastMotoboyId={lastMotoboyId}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(method, motoboyId) => {
+        onConfirm={(payments, motoboyId) => {
           if (!confirmPayFor) return;
           setLastMotoboyId(motoboyId);
-          confirmPayment.mutate({ id: confirmPayFor.id, method, motoboyId });
+          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId });
         }}
         isPending={confirmPayment.isPending}
       />
@@ -761,13 +761,27 @@ function KitchenDashboard() {
               autoFocus
             />
             <p className="mt-1 text-xs text-muted-foreground">Mínimo 5 caracteres.</p>
+            <div className="mt-4">
+              <Label htmlFor="deletionPassword">Senha administrativa de exclusão</Label>
+              <Input
+                id="deletionPassword"
+                type="password"
+                placeholder="Senha exclusiva para exclusões"
+                value={deletionPassword}
+                onChange={(e) => setDeletionPassword(e.target.value)}
+                className="mt-2"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Definida no painel administrativo — diferente da senha de login.
+              </p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingOrder(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setDeletingOrder(null); setDeletionPassword(""); }}>Cancelar</Button>
             <Button 
               variant="destructive" 
               onClick={handleDeleteOrder}
-              disabled={deletionReason.trim().length < 5}
+              disabled={deletionReason.trim().length < 5 || !deletionPassword.trim()}
             >
               Confirmar exclusão
             </Button>
