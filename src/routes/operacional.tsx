@@ -199,6 +199,7 @@ function KitchenDashboard() {
   const [confirmPayFor, setConfirmPayFor] = useState<Order | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
   const [deletionReason, setDeletionReason] = useState("");
+  const [deletionPassword, setDeletionPassword] = useState("");
   const [lastMotoboyId, setLastMotoboyId] = useState<string | null>(null);
   const sendShiftEmail = useServerFn(sendShiftReportEmail);
   const sendDailyEmail = useServerFn(sendDailyReportEmail);
@@ -276,14 +277,16 @@ function KitchenDashboard() {
   });
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["kitchen-orders"],
+    queryKey: ["kitchen-orders", activeShift?.id ?? null],
     queryFn: async () => {
+      if (!activeShift?.id) return [] as (Order & { order_items: OrderItem[] })[];
       const { data, error } = await supabase
         .from("orders")
         .select("*, order_items(*)")
         .is("deleted_at", null)
+        .eq("shift_id", activeShift.id)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
       return (data ?? []) as (Order & { order_items: OrderItem[] })[];
     },
