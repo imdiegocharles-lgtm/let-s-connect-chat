@@ -248,6 +248,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
+  deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio consolidado do dia"));
   out.push(...line("Familia Amaral"));
