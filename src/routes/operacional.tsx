@@ -366,7 +366,7 @@ function KitchenDashboard() {
     }
 
     try {
-      await deleteOrderFn({ orderId: deletingOrder.id, reason: deletionReason });
+      await deleteOrderFn({ data: { orderId: deletingOrder.id, reason: deletionReason } });
       qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
       setDeletingOrder(null);
       setDeletionReason("");
