@@ -184,6 +184,19 @@ function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
   out.push(...ESC.boldOn, ...line(pad("TOTAL MOTOBOYS", money(total))), ...ESC.boldOff);
 }
 
+function deletedOrdersBlock(out: number[], deletedOrders?: { order_number: number; total: number; customer_name: string; reason: string }[]) {
+  const list = deletedOrders ?? [];
+  if (list.length === 0) return;
+  out.push(...line(""));
+  out.push(...ESC.reverseOn, ...ESC.boldOn, ...line("PEDIDOS EXCLUIDOS"), ...ESC.boldOff, ...ESC.reverseOff);
+  for (const o of list) {
+    out.push(...line(`#${o.order_number.toString().padStart(4, '0')} - ${money(Number(o.total))}`));
+    out.push(...line(`Cliente: ${o.customer_name}`));
+    out.push(...line(`Motivo: ${o.reason}`));
+    out.push(...line("-".repeat(48)));
+  }
+}
+
 export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   const out: number[] = [];
   header(out, "RELATORIO DE TURNO");
