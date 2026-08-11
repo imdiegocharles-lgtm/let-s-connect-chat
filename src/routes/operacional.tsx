@@ -31,6 +31,7 @@ import {
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
 import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
+import { deleteOrder } from "@/lib/orders-admin.functions";
 
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
