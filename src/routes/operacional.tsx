@@ -77,6 +77,7 @@ type Shift = {
   opened_at: string;
   closed_at: string | null;
   opening_cash: number;
+  accepting_orders?: boolean;
 };
 
 const STATUS_FLOW: Order["status"][] = ["received", "preparing", "ready", "delivered"];
