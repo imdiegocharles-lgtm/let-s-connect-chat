@@ -910,6 +910,7 @@ function OrderCard({
   compact,
   canUpdateStatus = true,
   canConfirmPayment = true,
+  printState,
 }: {
   order: Order & { order_items: OrderItem[] };
   onStatus: (status: Order["status"]) => void;
@@ -919,6 +920,7 @@ function OrderCard({
   compact?: boolean;
   canUpdateStatus?: boolean;
   canConfirmPayment?: boolean;
+  printState?: { status: "ok" | "error" | "printing"; error?: string; at: string };
 }) {
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const nextStatus = STATUS_FLOW[currentIndex + 1];
@@ -985,6 +987,23 @@ function OrderCard({
       {order.notes && (
         <div className="bg-muted rounded-md p-2 text-sm mb-3">
           <span className="font-semibold">Obs:</span> {order.notes}
+        </div>
+      )}
+
+      {printState?.status === "error" && (
+        <div className="mb-3 rounded-md border border-destructive bg-destructive/10 p-2 text-xs">
+          <p className="flex items-center gap-1.5 font-bold text-destructive">
+            <AlertTriangle className="h-4 w-4" /> ESTE PEDIDO NÃO FOI IMPRESSO
+          </p>
+          <p className="mt-1 text-destructive/90">Motivo: {printState.error}</p>
+          <p className="mt-1 text-muted-foreground">
+            Verifique o agente de impressão e toque em REIMPRIMIR.
+          </p>
+        </div>
+      )}
+      {printState?.status === "printing" && (
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-border bg-muted/40 p-2 text-xs">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Enviando para a impressora...
         </div>
       )}
 
