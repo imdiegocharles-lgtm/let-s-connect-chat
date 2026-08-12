@@ -1,10 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Printer, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -147,6 +158,20 @@ export function ReportsViewer() {
     queryKey: ["daily-report", date],
     queryFn: () => getDailyReport(date),
   });
+
+  const { data: shiftOpen = false } = useQuery({
+    queryKey: ["shift-open-flag"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("is_shift_open");
+      return Boolean(data);
+    },
+    refetchInterval: 15000,
+  });
+
+  const shiftTypes = new Set(shiftReports.map((r: any) => r.shift_type));
+  const canGenerateDaily =
+    shiftTypes.has("almoco") && shiftTypes.has("noite") && !shiftOpen;
+  const [confirmDaily, setConfirmDaily] = useState(false);
 
   const printShift = async (r: any) => {
     try {
@@ -386,9 +411,9 @@ export function ReportsViewer() {
                     Nenhum relatório do dia gerado nesta data. Ele é gerado após os
                     dois turnos (Almoço e Churrasco) serem finalizados.
                   </p>
-                  {shiftReports.length >= 2 && (
+                  {canGenerateDaily ? (
                     <Button
-                      onClick={() => generateDaily.mutate()}
+                      onClick={() => setConfirmDaily(true)}
                       disabled={generateDaily.isPending}
                     >
                       {generateDaily.isPending && (
@@ -396,6 +421,12 @@ export function ReportsViewer() {
                       )}
                       Gerar Relatório do Dia Agora
                     </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {shiftOpen
+                        ? "Existe um turno aberto no momento. Feche o turno para finalizar o dia."
+                        : "Aguardando o fechamento dos dois turnos (almoço e churrasco)."}
+                    </p>
                   )}
                 </div>
               )}
@@ -403,6 +434,23 @@ export function ReportsViewer() {
           </section>
         </div>
       )}
+      <AlertDialog open={confirmDaily} onOpenChange={setConfirmDaily}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar o dia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar o dia? O relatório consolidado dos dois turnos será
+              gerado, impresso e enviado por e-mail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => generateDaily.mutate()}>
+              Sim, finalizar o dia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
