@@ -102,7 +102,11 @@ export type DailyReport = {
 
 const shiftLabel = (t: string) => (t === "almoco" ? "ALMOCO / DIA" : "CHURRASCO / NOITE");
 const hhmm = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
 const dateBR = (d: string) => {
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
