@@ -480,6 +480,7 @@ export type Database = {
           order_number: number
           payment_confirmed_at: string | null
           payment_method: string | null
+          printed_at: string | null
           shift_id: string | null
           status: string
           subtotal: number
@@ -507,6 +508,7 @@ export type Database = {
           order_number?: number
           payment_confirmed_at?: string | null
           payment_method?: string | null
+          printed_at?: string | null
           shift_id?: string | null
           status?: string
           subtotal?: number
@@ -534,6 +536,7 @@ export type Database = {
           order_number?: number
           payment_confirmed_at?: string | null
           payment_method?: string | null
+          printed_at?: string | null
           shift_id?: string | null
           status?: string
           subtotal?: number

@@ -440,6 +440,11 @@ function KitchenDashboard() {
         try {
           await sendToLocalPrinter(agentUrl, order, items, settings);
           rememberPrinted(order.id);
+          // Marca no banco que o pedido foi impresso (todos os operadores veem)
+          await (supabase as any)
+            .from("orders")
+            .update({ printed_at: new Date().toISOString() })
+            .eq("id", order.id);
           setPrintStates((s) => ({ ...s, [order.id]: { status: "ok", at: new Date().toISOString() } }));
           if (!opts.silent) toast.success(`Cupom #${order.order_number} enviado para impressora`);
           return true;
@@ -514,6 +519,7 @@ function KitchenDashboard() {
       user_id: null,
       deleted_at: null,
       deletion_reason: null,
+      printed_at: null,
     };
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
@@ -934,9 +940,14 @@ function OrderCard({
     <Card className={`p-4 ${compact ? "opacity-70" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-xl font-black">#{String(order.order_number).padStart(4, "0")}</h3>
             <Badge className={STATUS_COLORS[order.status] ?? "bg-muted"}>{STATUS_LABELS[order.status]}</Badge>
+            {anyOrder.printed_at && (
+              <Badge className="bg-green-600 hover:bg-green-600 text-white">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Impresso
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {new Date(order.created_at).toLocaleString("pt-BR")}
