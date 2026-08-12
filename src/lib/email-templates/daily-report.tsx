@@ -31,6 +31,7 @@ interface MotoboyLine {
   deliveries?: number
   delivery_fees_total?: number
   gas_help?: number
+  orders?: { order_number?: number; customer_name?: string }[]
 }
 
 interface DeletedOrderLine {
@@ -108,6 +109,11 @@ export const MotoboysSection = ({ motoboys = [] }: { motoboys?: MotoboyLine[] })
           <Text style={group}>
             {m.name} ({Number(m.deliveries ?? 0)} entregas)
           </Text>
+          {(m.orders ?? []).map((o, j) => (
+            <Text key={j} style={line}>
+              #{String(o.order_number ?? '').padStart(4, '0')} — {o.customer_name ?? '-'}
+            </Text>
+          ))}
           <Text style={line}>Entregas: {money(Number(m.delivery_fees_total ?? 0))}</Text>
           <Text style={line}>
             Ajuda de custo da gasolina: {money(Number(m.gas_help ?? m.daily_rate ?? 0))}
