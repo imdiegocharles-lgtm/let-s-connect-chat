@@ -1531,7 +1531,6 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
   });
 
   const types = new Set(shiftReports.map((r: any) => r.shift_type));
-  const hasClosedShift = shiftReports.length > 0;
 
   const { data: shiftOpen = false } = useQuery({
     queryKey: ["shift-open-flag"],
