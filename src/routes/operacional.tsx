@@ -1748,16 +1748,23 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Gere o consolidado dos turnos finalizados nesta data. Não é necessário ter os dois turnos.
+                O relatório do dia só pode ser gerado com os dois turnos (almoço e churrasco) finalizados.
               </p>
               <ul className="mt-3 space-y-1 text-sm">
                 <li>{types.has("almoco") ? "✅" : "⬜"} Turno almoço / dia finalizado</li>
                 <li>{types.has("noite") ? "✅" : "⬜"} Turno churrasco / noite finalizado</li>
               </ul>
+              {!canGenerateDaily && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {shiftOpen
+                    ? "Existe um turno aberto no momento. Feche o turno para finalizar o dia."
+                    : "Aguardando o fechamento dos dois turnos do dia."}
+                </p>
+              )}
               <Button
                 className="mt-4"
-                disabled={!hasClosedShift || generateDaily.isPending}
-                onClick={() => generateDaily.mutate()}
+                disabled={!canGenerateDaily || generateDaily.isPending}
+                onClick={() => setConfirmDaily(true)}
               >
                 {generateDaily.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Gerar e imprimir relatório do dia
@@ -1767,6 +1774,23 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
         </Card>
       </section>
       </div>
+      <AlertDialog open={confirmDaily} onOpenChange={setConfirmDaily}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar o dia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar o dia? O relatório consolidado dos dois turnos será
+              gerado, impresso e enviado por e-mail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => generateDaily.mutate()}>
+              Sim, finalizar o dia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
