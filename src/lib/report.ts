@@ -55,7 +55,7 @@ export const PAYMENT_LABELS: Record<string, string> = {
 };
 
 export type ItemLine = { group: string; name: string; quantity: number };
-export type MotoboyLine = { name: string; daily_rate: number; deliveries: number; delivery_fees_total: number; gas_help: number };
+export type MotoboyLine = { name: string; daily_rate: number; deliveries: number; delivery_fees_total: number; gas_help: number; orders?: { order_number: number; customer_name: string }[] };
 export type ComboLine = {
   combo: string;
   total: number;
@@ -182,6 +182,9 @@ function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
     const mTotal = entregas + ajuda;
     total += mTotal;
     out.push(...line(`${m.name} (${m.deliveries} ent.)`));
+    for (const o of m.orders ?? []) {
+      out.push(...line(`  #${String(o.order_number ?? "").padStart(4, "0")} - ${o.customer_name ?? "-"}`));
+    }
     out.push(...line(pad("  Entregas", money(entregas))));
     out.push(...line(pad("  Ajuda Gasolina", money(ajuda))));
     out.push(...ESC.boldOn, ...line(pad("  TOTAL A RECEBER", money(mTotal))), ...ESC.boldOff);

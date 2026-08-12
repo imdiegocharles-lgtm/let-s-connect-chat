@@ -23,6 +23,7 @@ export type MotoboyLine = {
   deliveries: number;
   delivery_fees_total: number;
   gas_help: number;
+  orders?: { order_number: number; customer_name: string }[];
 };
 export type ComboLine = {
   combo: string;
@@ -164,33 +165,42 @@ export async function aggregateShiftMotoboys(shiftId: string): Promise<MotoboyLi
 
   const { data: orders } = await sb
     .from("orders")
-    .select("motoboy_id, neighborhood")
+    .select("motoboy_id, neighborhood, order_number, customer_name")
     .eq("shift_id", shiftId)
-    .not("motoboy_id", "is", null);
+    .not("motoboy_id", "is", null)
+    .order("order_number", { ascending: true });
 
   const { data: neighborhoods } = await sb
     .from("neighborhoods")
     .select("name, motoboy_fee_almoco, motoboy_fee_noite");
 
-  const counts = new Map<string, { count: number; fees: number }>();
+  const counts = new Map<
+    string,
+    { count: number; fees: number; orders: { order_number: number; customer_name: string }[] }
+  >();
   for (const o of orders ?? []) {
     const hood = neighborhoods?.find((n: any) => n.name === o.neighborhood);
     const fee = shift.shift_type === "almoco" 
       ? Number(hood?.motoboy_fee_almoco ?? 0) 
       : Number(hood?.motoboy_fee_noite ?? 0);
     
-    const cur = counts.get(o.motoboy_id) ?? { count: 0, fees: 0 };
-    counts.set(o.motoboy_id, { count: cur.count + 1, fees: cur.fees + fee });
+    const cur = counts.get(o.motoboy_id) ?? { count: 0, fees: 0, orders: [] };
+    cur.orders.push({
+      order_number: Number(o.order_number ?? 0),
+      customer_name: o.customer_name ?? "-",
+    });
+    counts.set(o.motoboy_id, { count: cur.count + 1, fees: cur.fees + fee, orders: cur.orders });
   }
 
   return scale.map((s: any) => {
-    const stats = counts.get(s.motoboy_id) ?? { count: 0, fees: 0 };
+    const stats = counts.get(s.motoboy_id) ?? { count: 0, fees: 0, orders: [] };
     return {
       name: s.motoboys?.name ?? "Motoboy",
       daily_rate: Number(s.motoboys?.daily_rate ?? 0),
       gas_help: Number(s.motoboys?.daily_rate ?? 0),
       deliveries: stats.count,
       delivery_fees_total: stats.fees,
+      orders: stats.orders,
     };
   });
 }
@@ -206,13 +216,15 @@ export function mergeMotoboyLines(lists: MotoboyLine[][]): MotoboyLine[] {
         cur.daily_rate += Number(m.daily_rate ?? 0);
         cur.gas_help += Number(m.gas_help ?? 0);
         cur.delivery_fees_total += Number(m.delivery_fees_total ?? 0);
+        cur.orders = [...(cur.orders ?? []), ...(m.orders ?? [])];
       } else {
         map.set(m.name, { 
           name: m.name,
           deliveries: Number(m.deliveries ?? 0),
           daily_rate: Number(m.daily_rate ?? 0),
           gas_help: Number(m.gas_help ?? 0),
-          delivery_fees_total: Number(m.delivery_fees_total ?? 0)
+          delivery_fees_total: Number(m.delivery_fees_total ?? 0),
+          orders: [...(m.orders ?? [])],
         });
       }
     }
