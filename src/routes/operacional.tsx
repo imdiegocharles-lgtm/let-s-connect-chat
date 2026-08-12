@@ -514,6 +514,7 @@ function KitchenDashboard() {
       user_id: null,
       deleted_at: null,
       deletion_reason: null,
+      printed_at: null,
     };
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
