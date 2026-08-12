@@ -440,6 +440,11 @@ function KitchenDashboard() {
         try {
           await sendToLocalPrinter(agentUrl, order, items, settings);
           rememberPrinted(order.id);
+          // Marca no banco que o pedido foi impresso (todos os operadores veem)
+          await (supabase as any)
+            .from("orders")
+            .update({ printed_at: new Date().toISOString() })
+            .eq("id", order.id);
           setPrintStates((s) => ({ ...s, [order.id]: { status: "ok", at: new Date().toISOString() } }));
           if (!opts.silent) toast.success(`Cupom #${order.order_number} enviado para impressora`);
           return true;
