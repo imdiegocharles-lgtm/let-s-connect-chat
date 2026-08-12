@@ -548,10 +548,9 @@ function KitchenDashboard() {
             playBeep();
           }
 
-          if (autoPrint) {
-            await printOne(fullOrder);
-          } else {
-            toast.info(`Novo pedido #${fullOrder.order_number} recebido!`);
+          toast.info(`Novo pedido #${fullOrder.order_number} recebido!`);
+          if (autoPrint && !printedRef.current.has(fullOrder.id)) {
+            await printOne(fullOrder, { silent: true });
           }
         },
       )
@@ -576,6 +575,27 @@ function KitchenDashboard() {
   useEffect(() => {
     qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
   }, [qc, activeShift?.id]);
+
+  // Rede de segurança: se o evento em tempo real falhar (queda de internet, aba em segundo
+  // plano, agente fora do ar), qualquer pedido do turno que ainda não foi impresso é
+  // impresso automaticamente assim que a lista é atualizada (a cada 10s).
+  useEffect(() => {
+    if (!autoPrint || !settings) return;
+    const pending = orders.filter(
+      (o) =>
+        !printedRef.current.has(o.id) &&
+        !printingRef.current.has(o.id) &&
+        printStates[o.id]?.status !== "error" &&
+        o.status !== "delivered",
+    );
+    if (pending.length === 0) return;
+    (async () => {
+      for (const o of pending) {
+        await printOne(o, { silent: true });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, autoPrint, settings, agentUrl]);
 
   const activeOrders = useMemo(() => orders.filter((o) => o.status !== "delivered"), [orders]);
   const doneOrders = useMemo(() => orders.filter((o) => o.status === "delivered"), [orders]);
