@@ -348,19 +348,14 @@ export function MenuBrowser() {
       ))}
 
       <Dialog 
-        open={!!pendingCompleto} 
-        onOpenChange={(v) => {
-          if (!v) {
-            setPendingCompleto(null);
-            setSelectedSkewerId("");
-          }
-        }}
+        open={flow?.step === "skewer"} 
+        onOpenChange={(v) => { if (!v) closeFlow(); }}
       >
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Escolha seu espeto</DialogTitle>
             <DialogDescription>
-              O {pendingCompleto?.name} acompanha um espeto à sua escolha, sem alterar o valor do
+              O {flow?.item.name} acompanha um espeto à sua escolha, sem alterar o valor do
               prato. Escolha uma opção para continuar.
             </DialogDescription>
           </DialogHeader>
@@ -395,7 +390,6 @@ export function MenuBrowser() {
               onClick={() => {
                 const skewer = skewerOptions.find(s => s.id === selectedSkewerId);
                 if (skewer) confirmCompleto(skewer);
-                setSelectedSkewerId("");
               }}
             >
               Confirmar Escolha
@@ -403,10 +397,7 @@ export function MenuBrowser() {
             <Button 
               variant="ghost" 
               className="w-full text-muted-foreground"
-              onClick={() => {
-                setPendingCompleto(null);
-                setSelectedSkewerId("");
-              }}
+              onClick={closeFlow}
             >
               Cancelar
             </Button>
@@ -414,12 +405,12 @@ export function MenuBrowser() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!pendingSideDish} onOpenChange={(v) => !v && setPendingSideDish(null)}>
+      <Dialog open={flow?.step === "side"} onOpenChange={(v) => { if (!v) closeFlow(); }}>
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Escolha seu acompanhamento</DialogTitle>
             <DialogDescription>
-              O {pendingSideDish?.name} exige a escolha de um acompanhamento, sem custo adicional.
+              O {flow?.item.name} exige a escolha de um acompanhamento, sem custo adicional.
             </DialogDescription>
           </DialogHeader>
           <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
@@ -437,26 +428,47 @@ export function MenuBrowser() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!pendingExtra} onOpenChange={(v) => !v && setPendingExtra(null)}>
+      <Dialog open={flow?.step === "extra"} onOpenChange={(v) => { if (!v) closeFlow(); }}>
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>{pendingExtra?.extra_question_text || "Pergunta Extra"}</DialogTitle>
+            <DialogTitle>{flow?.item.extra_question_text || "Pergunta Extra"}</DialogTitle>
             <DialogDescription>
-              Selecione uma das opções abaixo para adicionar o item ao seu carrinho.
+              {(flow?.item.extra_question_options?.length ?? 0) > 0
+                ? "Selecione uma das opções abaixo para adicionar o item ao seu carrinho."
+                : "Campo opcional. Sugestão: retirar algum item do completo."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
-            {pendingExtra?.extra_question_options?.map((option) => (
-              <button
-                key={option}
-                onClick={() => confirmExtra(option)}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
-              >
-                <span className="font-semibold">{option}</span>
-                <span className="text-sm text-muted-foreground italic">Selecionar</span>
-              </button>
-            ))}
-          </div>
+          {(flow?.item.extra_question_options?.length ?? 0) > 0 ? (
+            <div className="grid max-h-[60vh] gap-2 overflow-y-auto pr-1">
+              {flow?.item.extra_question_options?.map((option: string) => (
+                <button
+                  key={option}
+                  onClick={() => confirmExtra(option)}
+                  className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+                >
+                  <span className="font-semibold">{option}</span>
+                  <span className="text-sm text-muted-foreground italic">Selecionar</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Textarea
+                value={obsText}
+                onChange={(e) => setObsText(e.target.value.slice(0, 140))}
+                placeholder="Sugestão: retirar algum item do completo"
+                rows={3}
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              <Button className="h-12 w-full text-lg font-bold" onClick={() => confirmExtra(obsText)}>
+                {obsText.trim() ? "Adicionar com observação" : "Continuar sem observação"}
+              </Button>
+              <Button variant="ghost" className="w-full text-muted-foreground" onClick={closeFlow}>
+                Cancelar
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
