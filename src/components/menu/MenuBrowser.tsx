@@ -22,6 +22,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type Category = {
   id: string;
@@ -85,10 +86,15 @@ export function MenuBrowser() {
   const { data: horarios = [], isLoading: hoursLoading } = useHorarios();
   const { data: aviso = DEFAULT_AVISO } = useAvisoLoja();
   const { add } = useCart();
-  const [pendingCompleto, setPendingCompleto] = useState<Item | null>(null);
-  const [pendingSideDish, setPendingSideDish] = useState<Item | null>(null);
-  const [pendingExtra, setPendingExtra] = useState<Item | null>(null);
   const [selectedSkewerId, setSelectedSkewerId] = useState<string>("");
+  const [obsText, setObsText] = useState("");
+  const [flow, setFlow] = useState<{
+    item: Item;
+    step: "skewer" | "side" | "extra";
+    idParts: string[];
+    nameParts: string[];
+    extras: Record<string, unknown>;
+  } | null>(null);
 
   const {
     data: isShiftOpen,
