@@ -53,6 +53,16 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 
@@ -1522,6 +1532,19 @@ function ReportsPanel({ agentUrl }: { agentUrl: string }) {
 
   const types = new Set(shiftReports.map((r: any) => r.shift_type));
   const hasClosedShift = shiftReports.length > 0;
+
+  const { data: shiftOpen = false } = useQuery({
+    queryKey: ["shift-open-flag"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("is_shift_open");
+      return Boolean(data);
+    },
+    refetchInterval: 15000,
+  });
+
+  const hasBothShifts = types.has("almoco") && types.has("noite");
+  const canGenerateDaily = hasBothShifts && !shiftOpen;
+  const [confirmDaily, setConfirmDaily] = useState(false);
 
   const printShift = async (r: any) => {
     try {
