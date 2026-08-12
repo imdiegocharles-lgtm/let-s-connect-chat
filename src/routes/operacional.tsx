@@ -384,13 +384,82 @@ function KitchenDashboard() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const printOne = async (order: Order & { order_items: OrderItem[] }) => {
+  // ---- Controle de impressão (fila + retentativas + status por pedido) ----
+  type PrintState = { status: "ok" | "error" | "printing"; error?: string; at: string };
+  const [printStates, setPrintStates] = useState<Record<string, PrintState>>({});
+  const printedRef = useRef<Set<string>>(new Set());
+  const printingRef = useRef<Set<string>>(new Set());
+
+  // Restaura o que já foi impresso (evita reimprimir tudo ao recarregar a página)
+  useEffect(() => {
     try {
-      await sendToLocalPrinter(agentUrl, order, order.order_items, settings);
-      toast.success(`Cupom #${order.order_number} enviado para impressora`);
-    } catch (e: any) {
-      toast.error(`Não foi possível imprimir: ${e.message}`);
+      const raw = localStorage.getItem("familia-amaral-printed-orders");
+      if (raw) printedRef.current = new Set(JSON.parse(raw) as string[]);
+    } catch {
+      /* ignore */
     }
+  }, []);
+
+  const rememberPrinted = (id: string) => {
+    printedRef.current.add(id);
+    try {
+      localStorage.setItem(
+        "familia-amaral-printed-orders",
+        JSON.stringify([...printedRef.current].slice(-500)),
+      );
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  /** Garante que os itens do pedido estejam carregados (o INSERT do pedido chega antes dos itens). */
+  const ensureItems = async (order: Order & { order_items?: OrderItem[] }) => {
+    if (order.order_items && order.order_items.length > 0) return order.order_items;
+    for (let i = 0; i < 5; i++) {
+      const { data } = await supabase.from("order_items").select("*").eq("order_id", order.id);
+      if (data && data.length > 0) return data as OrderItem[];
+      await sleep(600);
+    }
+    throw new Error("Itens do pedido ainda não estavam disponíveis no banco.");
+  };
+
+  const printOne = async (
+    order: Order & { order_items: OrderItem[] },
+    opts: { silent?: boolean } = {},
+  ): Promise<boolean> => {
+    if (printingRef.current.has(order.id)) return false;
+    printingRef.current.add(order.id);
+    setPrintStates((s) => ({ ...s, [order.id]: { status: "printing", at: new Date().toISOString() } }));
+
+    let lastError = "";
+    try {
+      const items = await ensureItems(order);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await sendToLocalPrinter(agentUrl, order, items, settings);
+          rememberPrinted(order.id);
+          setPrintStates((s) => ({ ...s, [order.id]: { status: "ok", at: new Date().toISOString() } }));
+          if (!opts.silent) toast.success(`Cupom #${order.order_number} enviado para impressora`);
+          return true;
+        } catch (e: any) {
+          lastError = e?.message ?? "Erro desconhecido";
+          if (attempt < 3) await sleep(attempt * 1500);
+        }
+      }
+    } catch (e: any) {
+      lastError = e?.message ?? "Erro desconhecido";
+    } finally {
+      printingRef.current.delete(order.id);
+    }
+
+    setPrintStates((s) => ({
+      ...s,
+      [order.id]: { status: "error", error: lastError, at: new Date().toISOString() },
+    }));
+    toast.error(`Pedido #${order.order_number} NÃO foi impresso: ${lastError}`, { duration: 15000 });
+    return false;
   };
 
   const handleDeleteOrder = async () => {
