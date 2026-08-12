@@ -940,9 +940,14 @@ function OrderCard({
     <Card className={`p-4 ${compact ? "opacity-70" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-xl font-black">#{String(order.order_number).padStart(4, "0")}</h3>
             <Badge className={STATUS_COLORS[order.status] ?? "bg-muted"}>{STATUS_LABELS[order.status]}</Badge>
+            {anyOrder.printed_at && (
+              <Badge className="bg-green-600 hover:bg-green-600 text-white">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Impresso
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {new Date(order.created_at).toLocaleString("pt-BR")}
