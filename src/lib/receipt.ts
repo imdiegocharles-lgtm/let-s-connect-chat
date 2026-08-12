@@ -264,17 +264,32 @@ export async function sendToLocalPrinter(
   agentUrl: string,
   order: Order,
   items: OrderItem[],
-  settings?: ReceiptSettings
+  settings?: ReceiptSettings,
+  timeoutMs = 8000,
 ): Promise<void> {
   const bytes = buildReceiptBytes(order, items, settings);
 
-  const res = await fetch(agentUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: new Blob([bytes.buffer as ArrayBuffer]),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Erro ${res.status}: ${await res.text().catch(() => "desconhecido")}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(agentUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: new Blob([bytes.buffer as ArrayBuffer]),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Erro ${res.status}: ${await res.text().catch(() => "desconhecido")}`);
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error("Tempo esgotado: o agente de impressão não respondeu (verifique se está aberto no PC).");
+    }
+    if (e instanceof TypeError) {
+      throw new Error("Sem conexão com o agente de impressão (verifique o endereço e se o programa está aberto).");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
 }
