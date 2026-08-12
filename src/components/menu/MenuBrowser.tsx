@@ -435,7 +435,7 @@ export function MenuBrowser() {
             <DialogDescription>
               {(flow?.item.extra_question_options?.length ?? 0) > 0
                 ? "Selecione uma das opções abaixo para adicionar o item ao seu carrinho."
-                : "Campo opcional. Sugestão: retirar algum item do completo."}
+                : "Resposta opcional — deixe em branco se não quiser responder."}
             </DialogDescription>
           </DialogHeader>
           {(flow?.item.extra_question_options?.length ?? 0) > 0 ? (
