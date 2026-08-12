@@ -793,6 +793,7 @@ export type Database = {
       }
       shifts: {
         Row: {
+          accepting_orders: boolean
           closed_at: string | null
           created_at: string
           id: string
@@ -804,6 +805,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepting_orders?: boolean
           closed_at?: string | null
           created_at?: string
           id?: string
@@ -815,6 +817,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepting_orders?: boolean
           closed_at?: string | null
           created_at?: string
           id?: string

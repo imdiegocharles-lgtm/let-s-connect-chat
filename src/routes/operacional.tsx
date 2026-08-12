@@ -77,6 +77,7 @@ type Shift = {
   opened_at: string;
   closed_at: string | null;
   opening_cash: number;
+  accepting_orders?: boolean;
 };
 
 const STATUS_FLOW: Order["status"][] = ["received", "preparing", "ready", "delivered"];
@@ -638,9 +639,15 @@ function KitchenDashboard() {
           <div className="flex items-center gap-3">
             <h1 className="text-lg sm:text-xl font-bold">Painel Operacional — Pedidos</h1>
             {activeShift ? (
-              <Badge className="bg-green-600 hover:bg-green-600">
-                Turno {activeShift.shift_type === "almoco" ? "Almoço" : "Noite"} aberto
-              </Badge>
+              activeShift.accepting_orders === false ? (
+                <Badge className="bg-amber-500 hover:bg-amber-500">
+                  Turno {activeShift.shift_type === "almoco" ? "Almoço" : "Noite"} — recebimento pausado
+                </Badge>
+              ) : (
+                <Badge className="bg-green-600 hover:bg-green-600">
+                  Turno {activeShift.shift_type === "almoco" ? "Almoço" : "Noite"} aberto
+                </Badge>
+              )
             ) : (
               <Badge variant="destructive">Nenhum turno aberto</Badge>
             )}
@@ -688,6 +695,31 @@ function KitchenDashboard() {
               {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
             {p.can_open_close_shift && activeShift ? (
+              <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const next = activeShift.accepting_orders === false;
+                  const { error } = await (supabase as any)
+                    .from("shifts")
+                    .update({ accepting_orders: next })
+                    .eq("id", activeShift.id);
+                  if (error) {
+                    toast.error("Não foi possível alterar o recebimento de pedidos");
+                    return;
+                  }
+                  toast.success(next ? "Recebimento de pedidos reaberto" : "Recebimento de novos pedidos encerrado");
+                  refetchShift();
+                }}
+                className={activeShift.accepting_orders === false ? "border-green-600 text-green-700" : "border-amber-500 text-amber-600"}
+              >
+                {activeShift.accepting_orders === false ? (
+                  <><Play className="h-4 w-4 mr-2" /> Reabrir pedidos</>
+                ) : (
+                  <><Square className="h-4 w-4 mr-2" /> Encerrar recebimento</>
+                )}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -696,6 +728,7 @@ function KitchenDashboard() {
               >
                 <Square className="h-4 w-4 mr-2" /> Fechar turno
               </Button>
+              </>
             ) : p.can_open_close_shift ? (
               <Button size="sm" onClick={() => setOpenShiftModal(true)}>
                 <Play className="h-4 w-4 mr-2" /> Abrir turno
