@@ -34,7 +34,13 @@ const money = (n: number) =>
   Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const hhmm = (v?: string) =>
-  v ? new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
+  v
+    ? new Date(v).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      })
+    : '-'
 
 const shiftLabel = (t?: string) =>
   t === 'almoco' ? 'Almoço / Dia' : t === 'noite' ? 'Churrasco / Noite' : (t ?? '-')

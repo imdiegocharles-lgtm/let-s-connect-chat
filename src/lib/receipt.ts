@@ -84,8 +84,8 @@ function formatMoney(n: number): string {
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  const dateStr = d.toLocaleDateString("pt-BR");
-  const timeStr = d.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+  const dateStr = d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const timeStr = d.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit', timeZone: "America/Sao_Paulo" });
   return `DATA: ${dateStr}   HORA: ${timeStr}`;
 }
 
