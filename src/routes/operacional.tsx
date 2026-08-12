@@ -751,6 +751,7 @@ function KitchenDashboard() {
                         isPending={updateStatus.isPending}
                         canUpdateStatus={p.can_update_order_status}
                         canConfirmPayment={p.can_confirm_payment}
+                        printState={printStates[order.id]}
                       />
                     ))}
                     {activeOrders.length === 0 && (
@@ -783,6 +784,7 @@ function KitchenDashboard() {
                         compact
                         canUpdateStatus={p.can_update_order_status}
                         canConfirmPayment={p.can_confirm_payment}
+                        printState={printStates[order.id]}
                       />
                     ))}
                     {doneOrders.length === 0 && (
