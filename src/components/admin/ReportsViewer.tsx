@@ -1,10 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Printer, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -147,6 +158,20 @@ export function ReportsViewer() {
     queryKey: ["daily-report", date],
     queryFn: () => getDailyReport(date),
   });
+
+  const { data: shiftOpen = false } = useQuery({
+    queryKey: ["shift-open-flag"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("is_shift_open");
+      return Boolean(data);
+    },
+    refetchInterval: 15000,
+  });
+
+  const shiftTypes = new Set(shiftReports.map((r: any) => r.shift_type));
+  const canGenerateDaily =
+    shiftTypes.has("almoco") && shiftTypes.has("noite") && !shiftOpen;
+  const [confirmDaily, setConfirmDaily] = useState(false);
 
   const printShift = async (r: any) => {
     try {
