@@ -288,6 +288,8 @@ function KitchenDashboard() {
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["kitchen-orders"],
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!activeShift?.id) return [] as (Order & { order_items: OrderItem[] })[];
       const { data, error } = await supabase
