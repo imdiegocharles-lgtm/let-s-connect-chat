@@ -157,65 +157,99 @@ export function MenuBrowser() {
     .filter((i) => i.is_completo_skewer_option)
     .sort((a, b) => Number(a.price) - Number(b.price) || a.name.localeCompare(b.name, "pt-BR"));
 
+  type FlowState = NonNullable<typeof flow>;
+
+  /** Avança para a próxima etapa pendente; se não houver, adiciona ao carrinho. */
+  const advance = (state: Omit<FlowState, "step">, done: FlowState["step"] | null) => {
+    const { item } = state;
+    const order: FlowState["step"][] = ["skewer", "side", "extra"];
+    const startAt = done ? order.indexOf(done) + 1 : 0;
+
+    for (let i = startAt; i < order.length; i++) {
+      const step = order[i];
+      if (step === "skewer" && item.requires_skewer_choice && skewerOptions.length > 0) {
+        setFlow({ ...state, step });
+        return;
+      }
+      if (step === "side" && item.has_side_dish && sides.length > 0) {
+        setFlow({ ...state, step });
+        return;
+      }
+      if (step === "extra" && item.has_extra_question) {
+        setFlow({ ...state, step });
+        return;
+      }
+    }
+
+    add({
+      id: [item.id, ...state.idParts].join(":"),
+      menuItemId: item.id,
+      name: [item.name, ...state.nameParts].join(" "),
+      price: Number(item.price),
+      extras: Object.keys(state.extras).length ? state.extras : null,
+    });
+    setFlow(null);
+    setSelectedSkewerId("");
+    setObsText("");
+  };
+
   const handleAdd = (item: Item) => {
     if (!store.hasActiveShift) {
       toast.error("Estamos fechados no momento, em breve estaremos online.");
       return;
     }
-
-    // Vinculado ao PRODUTO: vale em qualquer seção onde ele apareça.
-    if (item.requires_skewer_choice && skewerOptions.length > 0) {
-      setPendingCompleto(item);
-      return;
-    }
-    if (item.has_side_dish && sides.length > 0) {
-      setPendingSideDish(item);
-      return;
-    }
-    if (item.has_extra_question && (item.extra_question_options?.length ?? 0) > 0) {
-      setPendingExtra(item);
-      return;
-    }
-    add({ id: item.id, menuItemId: item.id, name: item.name, price: Number(item.price) });
+    setSelectedSkewerId("");
+    setObsText("");
+    advance({ item, idParts: [], nameParts: [], extras: {} }, null);
   };
 
   const confirmSideDish = (side: { id: string; name: string }) => {
-    if (!pendingSideDish) return;
-    add({
-      id: `${pendingSideDish.id}:side:${side.id}`,
-      menuItemId: pendingSideDish.id,
-      name: `${pendingSideDish.name} (Acompanhamento: ${side.name})`,
-      price: Number(pendingSideDish.price),
-      extras: { acompanhamento: side.name, acompanhamento_id: side.id },
-    });
-    setPendingSideDish(null);
+    if (!flow) return;
+    advance(
+      {
+        item: flow.item,
+        idParts: [...flow.idParts, `side:${side.id}`],
+        nameParts: [...flow.nameParts, `(Acompanhamento: ${side.name})`],
+        extras: { ...flow.extras, acompanhamento: side.name, acompanhamento_id: side.id },
+      },
+      "side",
+    );
   };
 
   const confirmCompleto = (skewer: Item) => {
-    if (!pendingCompleto) return;
-    add({
-      id: `${pendingCompleto.id}:${skewer.id}`,
-      menuItemId: pendingCompleto.id,
-      name: `${pendingCompleto.name} (Espeto: ${skewer.name})`,
-      price: Number(pendingCompleto.price),
-      extras: { espeto: skewer.name, espeto_id: skewer.id },
-    });
-    setPendingCompleto(null);
+    if (!flow) return;
+    setSelectedSkewerId("");
+    advance(
+      {
+        item: flow.item,
+        idParts: [...flow.idParts, skewer.id],
+        nameParts: [...flow.nameParts, `(Espeto: ${skewer.name})`],
+        extras: { ...flow.extras, espeto: skewer.name, espeto_id: skewer.id },
+      },
+      "skewer",
+    );
   };
 
-  const confirmExtra = (option: string) => {
-    if (!pendingExtra) return;
-    add({
-      id: `${pendingExtra.id}:extra:${option}`,
-      menuItemId: pendingExtra.id,
-      name: `${pendingExtra.name} (${pendingExtra.extra_question_text || "Opção"}: ${option})`,
-      price: Number(pendingExtra.price),
-      extras: { 
-        pergunta: pendingExtra.extra_question_text || "Opção", 
-        escolha: option 
+  const confirmExtra = (answer: string) => {
+    if (!flow) return;
+    const label = flow.item.extra_question_text || "Opção";
+    const value = answer.trim();
+    setObsText("");
+    advance(
+      {
+        item: flow.item,
+        idParts: value ? [...flow.idParts, `extra:${value}`] : flow.idParts,
+        nameParts: value ? [...flow.nameParts, `(${label} ${value})`] : flow.nameParts,
+        extras: value ? { ...flow.extras, pergunta: label, escolha: value } : flow.extras,
       },
-    });
-    setPendingExtra(null);
+      "extra",
+    );
+  };
+
+  const closeFlow = () => {
+    setFlow(null);
+    setSelectedSkewerId("");
+    setObsText("");
   };
 
   return (
