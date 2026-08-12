@@ -818,14 +818,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
                       <Input
                         value={extraQuestionOptions}
                         onChange={(e) => setExtraQuestionOptions(e.target.value)}
-                        placeholder="Ex: Sim, Não"
+                        placeholder="Ex: Sim, Não (deixe vazio p/ observação livre)"
                         className="h-8 text-sm"
                         autoCapitalize="none"
                         autoCorrect="off"
                         spellCheck="false"
                       />
                       <p className="mt-1 text-[10px] text-muted-foreground">
-                        Escreva as opções separadas por vírgula. Ex: Sim, Não
+                        Preencha para virar escolha obrigatória (ex: Sim, Não). Deixe vazio para
+                        virar um campo de observação livre e opcional (ex: pergunta "OBSERVAÇÕES:").
                       </p>
                     </div>
                   </div>
