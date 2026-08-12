@@ -411,9 +411,9 @@ export function ReportsViewer() {
                     Nenhum relatório do dia gerado nesta data. Ele é gerado após os
                     dois turnos (Almoço e Churrasco) serem finalizados.
                   </p>
-                  {shiftReports.length >= 2 && (
+                  {canGenerateDaily ? (
                     <Button
-                      onClick={() => generateDaily.mutate()}
+                      onClick={() => setConfirmDaily(true)}
                       disabled={generateDaily.isPending}
                     >
                       {generateDaily.isPending && (
@@ -421,6 +421,12 @@ export function ReportsViewer() {
                       )}
                       Gerar Relatório do Dia Agora
                     </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {shiftOpen
+                        ? "Existe um turno aberto no momento. Feche o turno para finalizar o dia."
+                        : "Aguardando o fechamento dos dois turnos (almoço e churrasco)."}
+                    </p>
                   )}
                 </div>
               )}
@@ -428,6 +434,23 @@ export function ReportsViewer() {
           </section>
         </div>
       )}
+      <AlertDialog open={confirmDaily} onOpenChange={setConfirmDaily}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar o dia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar o dia? O relatório consolidado dos dois turnos será
+              gerado, impresso e enviado por e-mail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => generateDaily.mutate()}>
+              Sim, finalizar o dia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
