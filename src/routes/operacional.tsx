@@ -1416,14 +1416,14 @@ function ConfirmPaymentDialog({
   const [lines, setLines] = useState<{ method: string; amount: string }[]>([
     { method: "dinheiro", amount: "" },
   ]);
-  const [motoboyId, setMotoboyId] = useState<string>("none");
+  const [motoboyId, setMotoboyId] = useState<string>("");
   useEffect(() => {
     if (order)
       setLines([
         { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
       ]);
     if (order)
-      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "none");
+      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
   }, [order, lastMotoboyId]);
 
   const orderTotal = Number(order?.total ?? 0);
@@ -1499,13 +1499,12 @@ function ConfirmPaymentDialog({
             </Button>
           </div>
           <div className="grid gap-1.5">
-            <Label>Motoboy da entrega</Label>
+            <Label>Motoboy da entrega *</Label>
             <Select value={motoboyId} onValueChange={setMotoboyId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Não informar</SelectItem>
                 {(shiftMotoboys ?? []).map((m) => (
                   <SelectItem key={m.motoboy_id} value={m.motoboy_id}>
                     {m.motoboys?.name ?? "Motoboy"}
@@ -1516,6 +1515,11 @@ function ConfirmPaymentDialog({
             {(shiftMotoboys ?? []).length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Nenhum motoboy escalado no turno — cadastre na aba Motoboys.
+              </p>
+            )}
+            {!motoboyId && (shiftMotoboys ?? []).length > 0 && (
+              <p className="text-xs text-destructive">
+                Selecione o motoboy para dar baixa na venda.
               </p>
             )}
           </div>
@@ -1548,10 +1552,10 @@ function ConfirmPaymentDialog({
                     amount: Number(String(l.amount).replace(",", ".")) || 0,
                   }))
                   .filter((l) => l.amount > 0),
-                motoboyId === "none" ? null : motoboyId,
+                motoboyId,
               )
             }
-            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0}
+            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar recebimento
