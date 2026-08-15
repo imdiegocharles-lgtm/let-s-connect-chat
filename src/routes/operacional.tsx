@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2, AlertTriangle } from "lucide-react";
-import { sendToLocalPrinter } from "@/lib/receipt";
+import { sendToLocalPrinter, sendReservationToLocalPrinter } from "@/lib/receipt";
 import {
   buildDailyReportBytes,
   buildShiftReportBytes,
@@ -582,6 +582,33 @@ function KitchenDashboard() {
   useEffect(() => {
     qc.invalidateQueries({ queryKey: ["kitchen-orders"] });
   }, [qc, activeShift?.id]);
+
+  // Impressão automática das reservas feitas pelo site
+  useEffect(() => {
+    const channel = supabase
+      .channel("kitchen-reservations")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "reservations" },
+        async (payload) => {
+          const r = payload.new as any;
+          if (soundOn) playBeep();
+          toast.info(`Nova reserva de ${r.customer_name} recebida!`);
+          if (!autoPrint) return;
+          try {
+            await sendReservationToLocalPrinter(agentUrl, r);
+            toast.success("Reserva enviada para impressora");
+          } catch (e: any) {
+            toast.error(`Reserva NÃO foi impressa: ${e.message}`, { duration: 15000 });
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [autoPrint, soundOn, agentUrl]);
 
   // Rede de segurança: se o evento em tempo real falhar (queda de internet, aba em segundo
   // plano, agente fora do ar), qualquer pedido do turno que ainda não foi impresso é
