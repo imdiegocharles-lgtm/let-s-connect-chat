@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calendar as CalendarIcon, Users, Phone, MapPin, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
@@ -12,6 +12,16 @@ import { toast } from "sonner";
 
 type Location = "varanda" | "salao" | "segundo_andar";
 
+const LOCATIONS: { value: Location; label: string }[] = [
+  { value: "varanda", label: "Varanda" },
+  { value: "salao", label: "Salão" },
+  { value: "segundo_andar", label: "Segundo Andar (Ambiente fechado com ar-condicionado)" },
+];
+
+function toISO(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>();
@@ -21,9 +31,34 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
   const [location, setLocation] = useState<Location | "">("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [taken, setTaken] = useState<Record<string, string[]>>({});
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  async function loadTaken() {
+    const from = new Date();
+    const to = new Date();
+    to.setDate(to.getDate() + 120);
+    const { data } = await (supabase as any).rpc("get_reserved_slots", {
+      from_date: toISO(from),
+      to_date: toISO(to),
+    });
+    const map: Record<string, string[]> = {};
+    for (const row of (data ?? []) as { reservation_date: string; location: string }[]) {
+      (map[row.reservation_date] ||= []).push(row.location);
+    }
+    setTaken(map);
+  }
+
+  useEffect(() => {
+    if (open) loadTaken();
+  }, [open]);
+
+  const takenForDate = useMemo(
+    () => (date ? (taken[toISO(date)] ?? []) : []),
+    [date, taken],
+  );
 
   function reset() {
     setDate(undefined); setName(""); setPeople(""); setPhone(""); setLocation("");
@@ -44,7 +79,7 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
     if (!date) return toast.error("Selecione uma data disponível");
 
     setSubmitting(true);
-    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const iso = toISO(date);
     const { error } = await supabase.from("reservations" as any).insert({
       customer_name: name.trim(),
       phone: phone.trim(),
@@ -53,7 +88,18 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
       reservation_date: iso,
     });
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if ((error as any).code === "23505" || /duplicate key/i.test(error.message)) {
+        await loadTaken();
+        setLocation("");
+        return toast.error(
+          "Este local acabou de ser reservado para esta data. Escolha outro local ou outra data.",
+          { duration: 8000 },
+        );
+      }
+      return toast.error(error.message);
+    }
+    await loadTaken();
     setSuccess(true);
   }
 
@@ -89,7 +135,8 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
                 locale={ptBR}
                 disabled={(d) => {
                   const day = d.getDay();
-                  return d < today || day === 0 || day === 5;
+                  const full = (taken[toISO(d)] ?? []).length >= LOCATIONS.length;
+                  return d < today || day === 0 || day === 5 || full;
                 }}
                 initialFocus
                 className="p-3 pointer-events-auto rounded-md border"
@@ -115,11 +162,21 @@ export function ReservationDialog({ trigger }: { trigger: React.ReactNode }) {
                   <Select value={location} onValueChange={(v) => setLocation(v as Location)}>
                     <SelectTrigger><SelectValue placeholder="Escolha o local" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="varanda">Varanda</SelectItem>
-                      <SelectItem value="salao">Salão</SelectItem>
-                      <SelectItem value="segundo_andar">Segundo Andar (Ambiente fechado com ar-condicionado)</SelectItem>
+                      {LOCATIONS.map((l) => {
+                        const busy = takenForDate.includes(l.value);
+                        return (
+                          <SelectItem key={l.value} value={l.value} disabled={busy}>
+                            {l.label}{busy ? " — Indisponível" : ""}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
+                  {takenForDate.length > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Alguns locais já estão reservados nesta data.
+                    </p>
+                  )}
                 </div>
 
                 <p className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2">
