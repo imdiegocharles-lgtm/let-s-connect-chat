@@ -597,6 +597,10 @@ function KitchenDashboard() {
           if (!autoPrint) return;
           try {
             await sendReservationToLocalPrinter(agentUrl, r);
+            await (supabase as any)
+              .from("reservations")
+              .update({ printed_at: new Date().toISOString() })
+              .eq("id", r.id);
             toast.success("Reserva enviada para impressora");
           } catch (e: any) {
             toast.error(`Reserva NÃO foi impressa: ${e.message}`, { duration: 15000 });
@@ -609,6 +613,41 @@ function KitchenDashboard() {
       supabase.removeChannel(channel);
     };
   }, [autoPrint, soundOn, agentUrl]);
+
+  // Rede de segurança: imprime reservas ainda não impressas (queda de internet, aba fechada).
+  useEffect(() => {
+    if (!autoPrint) return;
+    let cancelled = false;
+    const run = async () => {
+      const today = new Date();
+      const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const { data } = await (supabase as any)
+        .from("reservations")
+        .select("*")
+        .is("printed_at", null)
+        .gte("reservation_date", iso)
+        .order("created_at", { ascending: true })
+        .limit(20);
+      if (cancelled || !data?.length) return;
+      for (const r of data) {
+        try {
+          await sendReservationToLocalPrinter(agentUrl, r);
+          await (supabase as any)
+            .from("reservations")
+            .update({ printed_at: new Date().toISOString() })
+            .eq("id", r.id);
+        } catch {
+          /* tenta de novo no próximo ciclo */
+        }
+      }
+    };
+    run();
+    const t = setInterval(run, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [autoPrint, agentUrl]);
 
   // Rede de segurança: se o evento em tempo real falhar (queda de internet, aba em segundo
   // plano, agente fora do ar), qualquer pedido do turno que ainda não foi impresso é

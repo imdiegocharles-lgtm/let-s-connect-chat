@@ -629,6 +629,7 @@ export type Database = {
           location: string
           people_count: number
           phone: string
+          printed_at: string | null
           reservation_date: string
           status: string
           updated_at: string
@@ -640,6 +641,7 @@ export type Database = {
           location: string
           people_count: number
           phone: string
+          printed_at?: string | null
           reservation_date: string
           status?: string
           updated_at?: string
@@ -651,6 +653,7 @@ export type Database = {
           location?: string
           people_count?: number
           phone?: string
+          printed_at?: string | null
           reservation_date?: string
           status?: string
           updated_at?: string
@@ -924,6 +927,13 @@ export type Database = {
     Functions: {
       get_active_shift_id: { Args: never; Returns: string }
       get_next_order_number: { Args: never; Returns: number }
+      get_reserved_slots: {
+        Args: { from_date: string; to_date: string }
+        Returns: {
+          location: string
+          reservation_date: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
