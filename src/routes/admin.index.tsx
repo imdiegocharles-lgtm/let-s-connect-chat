@@ -1682,6 +1682,22 @@ function ReservationsPanel() {
     return true;
   });
 
+  const printReservation = async (r: any) => {
+    try {
+      const { sendReservationToLocalPrinter } = await import("@/lib/receipt");
+      const { data: cfg } = await (supabase as any)
+        .from("system_settings").select("printer_url").eq("id", 1).maybeSingle();
+      const url =
+        localStorage.getItem("familia-amaral-printer-url") ||
+        cfg?.printer_url ||
+        "http://localhost:8080/print";
+      await sendReservationToLocalPrinter(url, r);
+      toast.success("Reserva enviada para impressora");
+    } catch (e: any) {
+      toast.error(`Falha ao imprimir: ${e.message}`);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4 grid gap-3 sm:grid-cols-3">
@@ -1725,6 +1741,9 @@ function ReservationsPanel() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => printReservation(r)}>
+                      🖨️ Imprimir
+                    </Button>
                     <Select value={r.status} onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v })}>
                       <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                       <SelectContent>

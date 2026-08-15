@@ -260,6 +260,107 @@ export function receiptToBase64(order: Order, items: OrderItem[], settings?: Rec
   return btoa(binary);
 }
 
+/* ----------------------------- RESERVAS ----------------------------- */
+
+export type ReservationReceipt = {
+  id?: string;
+  customer_name: string;
+  phone: string;
+  people_count: number;
+  location: string;
+  reservation_date: string;
+  status?: string | null;
+  created_at?: string | null;
+};
+
+const RESERVATION_LOCATIONS: Record<string, string> = {
+  varanda: "VARANDA",
+  salao: "SALÃO",
+  segundo_andar: "SEGUNDO ANDAR (AR-CONDICIONADO)",
+};
+
+const RESERVATION_STATUS: Record<string, string> = {
+  pendente: "PENDENTE",
+  confirmada: "CONFIRMADA",
+  cancelada: "CANCELADA",
+};
+
+export function buildReservationBytes(r: ReservationReceipt): Uint8Array {
+  const out: number[] = [];
+  out.push(...COMMANDS.init);
+  out.push(...COMMANDS.selectCP860);
+
+  out.push(...COMMANDS.center);
+  out.push(...line("FAMILIA AMARAL", true, true));
+  out.push(...line("CHURRASQUINHO & RESTAURANTE", true));
+  out.push(...line(""));
+  out.push(...line("*** RESERVA ***", true, true, true));
+  out.push(...line("------------------------------------------------", true));
+
+  out.push(...COMMANDS.left);
+  const dataBR = new Date(`${r.reservation_date}T00:00:00`).toLocaleDateString("pt-BR");
+  out.push(...line(" DATA DA RESERVA", true));
+  out.push(...line(dataBR, true, true));
+  out.push(...line("------------------------------------------------", true));
+
+  out.push(...line(" CLIENTE", true, true));
+  out.push(...line(`  NOME: ${r.customer_name.toUpperCase()}`, true));
+  out.push(...line(`  FONE: ${r.phone}`, true));
+  out.push(...line("------------------------------------------------", true));
+
+  out.push(...line(" DETALHES", true, true));
+  out.push(...COMMANDS.doubleSizeOn);
+  out.push(...encode(`${r.people_count} PESSOAS`));
+  out.push(...COMMANDS.doubleSizeOff);
+  out.push(...COMMANDS.lf);
+  out.push(...line(`  LOCAL: ${RESERVATION_LOCATIONS[r.location] ?? r.location.toUpperCase()}`, true));
+  if (r.status) {
+    out.push(...line(`  STATUS: ${RESERVATION_STATUS[r.status] ?? r.status.toUpperCase()}`, true));
+  }
+  out.push(...line("------------------------------------------------", true));
+
+  if (r.created_at) {
+    out.push(...line(formatDate(r.created_at)));
+  }
+  out.push(...line("RESERVA VALIDA ATE AS 19:30H", true));
+
+  out.push(...line(""));
+  out.push(...line(""));
+  out.push(...COMMANDS.cut);
+  return new Uint8Array(out);
+}
+
+export async function sendReservationToLocalPrinter(
+  agentUrl: string,
+  reservation: ReservationReceipt,
+  timeoutMs = 8000,
+): Promise<void> {
+  const bytes = buildReservationBytes(reservation);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(agentUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: new Blob([bytes.buffer as ArrayBuffer]),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Erro ${res.status}: ${await res.text().catch(() => "desconhecido")}`);
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error("Tempo esgotado: o agente de impressão não respondeu (verifique se está aberto no PC).");
+    }
+    if (e instanceof TypeError) {
+      throw new Error("Sem conexão com o agente de impressão (verifique o endereço e se o programa está aberto).");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function sendToLocalPrinter(
   agentUrl: string,
   order: Order,
