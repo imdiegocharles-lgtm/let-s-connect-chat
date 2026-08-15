@@ -361,14 +361,6 @@ export async function sendReservationToLocalPrinter(
   }
 }
 
-function _legacyReceiptToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 export async function sendToLocalPrinter(
   agentUrl: string,
   order: Order,
