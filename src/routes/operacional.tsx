@@ -1488,14 +1488,27 @@ function ConfirmPaymentDialog({
     { method: "dinheiro", amount: "" },
   ]);
   const [motoboyId, setMotoboyId] = useState<string>("");
+  const isEditing = !!(order as any)?.payment_confirmed_at;
   useEffect(() => {
-    if (order)
-      setLines([
-        { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
-      ]);
-    if (order)
-      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    if (!order) return;
+    setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    setLines([
+      { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+    ]);
+    if ((order as any).payment_confirmed_at) {
+      (async () => {
+        const { data } = await (supabase as any)
+          .from("order_payments")
+          .select("method, amount")
+          .eq("order_id", order.id);
+        if (data && data.length)
+          setLines(
+            data.map((p: any) => ({ method: p.method, amount: Number(p.amount).toFixed(2) })),
+          );
+      })();
+    }
   }, [order, lastMotoboyId]);
+
 
   const orderTotal = Number(order?.total ?? 0);
   const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
