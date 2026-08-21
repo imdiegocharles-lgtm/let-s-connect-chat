@@ -1542,7 +1542,7 @@ function ConfirmPaymentDialog({
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirmar pagamento</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar motoboy / pagamento" : "Confirmar pagamento"}</DialogTitle>
           <DialogDescription>
             Registre a forma real recebida pelo motoboy. Só entra no faturamento após confirmar.
           </DialogDescription>
