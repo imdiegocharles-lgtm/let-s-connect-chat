@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2, AlertTriangle, Pencil } from "lucide-react";
 import { sendToLocalPrinter, sendReservationToLocalPrinter } from "@/lib/receipt";
 import {
   buildDailyReportBytes,
@@ -1193,6 +1193,11 @@ function OrderCard({
             <CheckCircle2 className="h-4 w-4 mr-2" /> CONFIRMAR PAGAMENTO
           </Button>
         )}
+        {payConfirmed && canConfirmPayment && (
+          <Button size="sm" variant="outline" onClick={onConfirmPayment} className="font-bold">
+            <Pencil className="h-4 w-4 mr-2" /> EDITAR MOTOBOY / PAGAMENTO
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -1483,14 +1488,27 @@ function ConfirmPaymentDialog({
     { method: "dinheiro", amount: "" },
   ]);
   const [motoboyId, setMotoboyId] = useState<string>("");
+  const isEditing = !!(order as any)?.payment_confirmed_at;
   useEffect(() => {
-    if (order)
-      setLines([
-        { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
-      ]);
-    if (order)
-      setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    if (!order) return;
+    setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    setLines([
+      { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+    ]);
+    if ((order as any).payment_confirmed_at) {
+      (async () => {
+        const { data } = await (supabase as any)
+          .from("order_payments")
+          .select("method, amount")
+          .eq("order_id", order.id);
+        if (data && data.length)
+          setLines(
+            data.map((p: any) => ({ method: p.method, amount: Number(p.amount).toFixed(2) })),
+          );
+      })();
+    }
   }, [order, lastMotoboyId]);
+
 
   const orderTotal = Number(order?.total ?? 0);
   const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
@@ -1524,7 +1542,7 @@ function ConfirmPaymentDialog({
     <Dialog open={!!order} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirmar pagamento</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar motoboy / pagamento" : "Confirmar pagamento"}</DialogTitle>
           <DialogDescription>
             Registre a forma real recebida pelo motoboy. Só entra no faturamento após confirmar.
           </DialogDescription>
@@ -1624,7 +1642,7 @@ function ConfirmPaymentDialog({
             disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirmar recebimento
+            {isEditing ? "Salvar alterações" : "Confirmar recebimento"}
           </Button>
         </DialogFooter>
       </DialogContent>
