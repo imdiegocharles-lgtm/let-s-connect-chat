@@ -1642,7 +1642,7 @@ function ConfirmPaymentDialog({
             disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirmar recebimento
+            {isEditing ? "Salvar alterações" : "Confirmar recebimento"}
           </Button>
         </DialogFooter>
       </DialogContent>
