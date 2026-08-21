@@ -1193,6 +1193,11 @@ function OrderCard({
             <CheckCircle2 className="h-4 w-4 mr-2" /> CONFIRMAR PAGAMENTO
           </Button>
         )}
+        {payConfirmed && canConfirmPayment && (
+          <Button size="sm" variant="outline" onClick={onConfirmPayment} className="font-bold">
+            <Pencil className="h-4 w-4 mr-2" /> EDITAR MOTOBOY / PAGAMENTO
+          </Button>
+        )}
       </div>
     </Card>
   );
