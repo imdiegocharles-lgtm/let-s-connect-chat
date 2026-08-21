@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, LogOut, Printer, Volume2, VolumeX, Play, Square, CheckCircle2, Info, Trash2, AlertTriangle, Pencil } from "lucide-react";
 import { sendToLocalPrinter, sendReservationToLocalPrinter } from "@/lib/receipt";
 import {
   buildDailyReportBytes,
