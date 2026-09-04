@@ -10,10 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
-import { useAvisoLoja, DEFAULT_AVISO } from "@/lib/store-hours";
+import { useAvisoLoja, useConfigEntrega, DEFAULT_AVISO } from "@/lib/store-hours";
 
 type Neighborhood = { id: string; name: string; fee_almoco: number; fee_noite: number };
 
@@ -33,6 +33,7 @@ export function CartSheet() {
   const { data: horarios = [] } = useHorarios();
   const { data: isShiftOpen, error: shiftError } = useIsShiftOpen();
   const { data: aviso } = useAvisoLoja();
+  const { data: entrega } = useConfigEntrega();
   const store = getStoreStatus(horarios, isShiftOpen === true);
 
 
@@ -361,13 +362,35 @@ export function CartSheet() {
         )}
 
         {step === "done" && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-            <CheckCircle2 className="h-16 w-16 text-primary" />
-            <h3 className="text-xl font-black">{aviso?.order_confirmation_message || DEFAULT_AVISO.order_confirmation_message}</h3>
-            <p className="text-sm text-muted-foreground">
-              Tempo estimado: <b>{aviso?.order_estimated_time || DEFAULT_AVISO.order_estimated_time}</b>
-            </p>
-            <Button className="mt-2 w-full" onClick={reset}>
+          <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-8 text-center">
+            <div className="relative">
+              <span className="absolute inset-0 rounded-full bg-emerald-500/30 animate-ping" />
+              <div className="relative grid h-28 w-28 place-items-center rounded-full border-8 border-card bg-emerald-500 shadow-xl shadow-emerald-500/30">
+                <svg className="h-14 w-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-4xl font-black uppercase leading-tight tracking-tight">
+              {aviso?.order_confirmation_message || DEFAULT_AVISO.order_confirmation_message}
+            </h3>
+
+            <div className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                Tempo Estimado
+              </span>
+              <span className="mt-1 block text-lg font-bold">
+                {entrega
+                  ? `Entrega em ${entrega.prazo_minimo_minutos}–${entrega.prazo_maximo_minutos} min`
+                  : aviso?.order_estimated_time || DEFAULT_AVISO.order_estimated_time}
+              </span>
+            </div>
+
+            <Button
+              className="mt-2 w-full py-6 text-lg font-black uppercase tracking-wider transition-transform active:scale-[0.98]"
+              onClick={reset}
+            >
               Fechar
             </Button>
           </div>
