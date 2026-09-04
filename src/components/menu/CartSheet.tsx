@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
 import { useAvisoLoja, useConfigEntrega, DEFAULT_AVISO } from "@/lib/store-hours";
