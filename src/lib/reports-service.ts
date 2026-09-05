@@ -245,10 +245,12 @@ function aggregate(orders: any[], paymentsByOrder?: Map<string, { method: string
       }
     } else {
       const m = o.confirmed_payment_method ?? o.payment_method ?? "outros";
-      totals_by_payment[m] = (totals_by_payment[m] ?? 0) + Number(o.total ?? 0);
+      totals_by_payment[m] =
+        (totals_by_payment[m] ?? 0) + Number(o.total ?? 0) - Number(o.discount_amount ?? 0);
     }
-    total_revenue += Number(o.total ?? 0);
+    total_revenue += Number(o.total ?? 0) - Number(o.discount_amount ?? 0);
     delivery_fees += Number(o.delivery_fee ?? 0);
+
   }
   return { orders_count: paid.length, total_revenue, delivery_fees, totals_by_payment };
 }
