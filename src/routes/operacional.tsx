@@ -968,10 +968,10 @@ function KitchenDashboard() {
         shiftId={activeShift?.id ?? null}
         lastMotoboyId={lastMotoboyId}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(payments, motoboyId) => {
+        onConfirm={(payments, motoboyId, discount) => {
           if (!confirmPayFor) return;
           setLastMotoboyId(motoboyId);
-          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId });
+          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId, discount });
         }}
         isPending={confirmPayment.isPending}
       />
