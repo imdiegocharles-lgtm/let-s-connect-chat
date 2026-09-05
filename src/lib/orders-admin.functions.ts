@@ -47,6 +47,86 @@ export const hasDeletionPassword = createServerFn({ method: "GET" })
     return { configured: !!data?.deletion_password_hash };
   });
 
+async function assertStaff(supabase: any, userId: string) {
+  const { data: role, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["admin", "operator"])
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`Não foi possível verificar seu acesso: ${error.message}`);
+  if (!role) throw new Error("Acesso negado.");
+}
+
+async function assertDeletionPassword(password: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await (supabaseAdmin as any)
+    .from("system_settings")
+    .select("deletion_password_hash")
+    .eq("id", 1)
+    .maybeSingle();
+  const stored = data?.deletion_password_hash as string | null | undefined;
+  if (!stored) {
+    throw new Error("Nenhuma senha administrativa foi configurada. Defina-a no painel administrativo.");
+  }
+  if ((await sha256Hex(password)) !== stored) throw new Error("Senha incorreta.");
+}
+
+/** Valida a senha administrativa (mesma usada na exclusão) para liberar o desconto. */
+export const verifyDeletionPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ password: z.string().min(1, "Informe a senha") }))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    await assertDeletionPassword(data.password);
+    return { valid: true };
+  });
+
+/** Aplica um desconto ao pedido; exige novamente a senha administrativa. */
+export const applyOrderDiscount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      orderId: z.string().uuid(),
+      amount: z.number().min(0),
+      reason: z.string().trim().max(200),
+      password: z.string().min(1, "Informe a senha"),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    await assertDeletionPassword(data.password);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order, error: oErr } = await (supabaseAdmin as any)
+      .from("orders")
+      .select("total")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (oErr) throw new Error(oErr.message);
+    if (!order) throw new Error("Pedido não encontrado.");
+    if (data.amount > Number(order.total)) {
+      throw new Error("O desconto não pode ser maior que o total do pedido.");
+    }
+    if (data.amount > 0 && data.reason.length < 3) {
+      throw new Error("Informe o motivo do desconto.");
+    }
+
+    const { error } = await (supabaseAdmin as any)
+      .from("orders")
+      .update({
+        discount_amount: data.amount,
+        discount_reason: data.amount > 0 ? data.reason : null,
+        discount_authorized_by: data.amount > 0 ? context.userId : null,
+        discount_authorized_at: data.amount > 0 ? new Date().toISOString() : null,
+      })
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+
 export const deleteOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
