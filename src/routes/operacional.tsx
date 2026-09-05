@@ -1501,19 +1501,41 @@ function ConfirmPaymentDialog({
   shiftId: string | null;
   lastMotoboyId?: string | null;
   onClose: () => void;
-  onConfirm: (payments: { method: string; amount: number }[], motoboyId: string | null) => void;
+  onConfirm: (
+    payments: { method: string; amount: number }[],
+    motoboyId: string | null,
+    discount?: { amount: number; reason: string; password: string } | null,
+  ) => void;
   isPending: boolean;
 }) {
   const [lines, setLines] = useState<{ method: string; amount: string }[]>([
     { method: "dinheiro", amount: "" },
   ]);
   const [motoboyId, setMotoboyId] = useState<string>("");
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountPassword, setDiscountPassword] = useState("");
+  const [discountUnlocked, setDiscountUnlocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
+  const verifyPasswordFn = useServerFn(verifyDeletionPassword);
   const isEditing = !!(order as any)?.payment_confirmed_at;
   useEffect(() => {
     if (!order) return;
     setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    setDiscountOpen(false);
+    setDiscountUnlocked(false);
+    setDiscountPassword("");
+    setDiscountValue(
+      Number((order as any).discount_amount ?? 0) > 0
+        ? Number((order as any).discount_amount).toFixed(2)
+        : "",
+    );
+    setDiscountReason(((order as any).discount_reason as string) ?? "");
+    const already = Number((order as any).discount_amount ?? 0);
+    const net = Number(order.total ?? 0) - already;
     setLines([
-      { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+      { method: order.payment_method ?? "dinheiro", amount: net.toFixed(2) },
     ]);
     if ((order as any).payment_confirmed_at) {
       (async () => {
@@ -1529,12 +1551,33 @@ function ConfirmPaymentDialog({
     }
   }, [order, lastMotoboyId]);
 
-
-  const orderTotal = Number(order?.total ?? 0);
+  const grossTotal = Number(order?.total ?? 0);
+  const savedDiscount = Number((order as any)?.discount_amount ?? 0);
+  const parsedDiscount = Number(String(discountValue).replace(",", ".")) || 0;
+  const discount = discountUnlocked ? parsedDiscount : savedDiscount;
+  const orderTotal = Number(Math.max(grossTotal - discount, 0).toFixed(2));
   const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
   const diff = Number((orderTotal - sum).toFixed(2));
   const money = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const discountInvalid =
+    discountUnlocked &&
+    (parsedDiscount > grossTotal || (parsedDiscount > 0 && discountReason.trim().length < 3));
+
+  const unlockDiscount = async () => {
+    if (!discountPassword.trim()) return;
+    setUnlocking(true);
+    try {
+      await verifyPasswordFn({ data: { password: discountPassword } });
+      setDiscountUnlocked(true);
+      toast.success("Desconto liberado");
+    } catch (e: any) {
+      toast.error(e.message ?? "Senha incorreta");
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const setLine = (i: number, patch: Partial<{ method: string; amount: string }>) =>
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -1544,6 +1587,7 @@ function ConfirmPaymentDialog({
       { method: "dinheiro", amount: diff > 0 ? diff.toFixed(2) : "" },
     ]);
   const removeLine = (i: number) => setLines((prev) => prev.filter((_, idx) => idx !== i));
+
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
