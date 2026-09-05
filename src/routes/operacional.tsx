@@ -349,21 +349,37 @@ function KitchenDashboard() {
     },
   });
 
+  const applyDiscountFn = useServerFn(applyOrderDiscount);
+
   const confirmPayment = useMutation({
     mutationFn: async ({
       id,
       payments,
       motoboyId,
+      discount,
     }: {
       id: string;
       payments: { method: string; amount: number }[];
       motoboyId?: string | null;
+      discount?: { amount: number; reason: string; password: string } | null;
     }) => {
+      if (discount && discount.password) {
+        await applyDiscountFn({
+          data: {
+            orderId: id,
+            amount: discount.amount,
+            reason: discount.reason,
+            password: discount.password,
+          },
+        });
+      }
+
       await (supabase as any).from("order_payments").delete().eq("order_id", id);
       const { error: pErr } = await (supabase as any).from("order_payments").insert(
         payments.map((p) => ({ order_id: id, method: p.method, amount: p.amount })),
       );
       if (pErr) throw pErr;
+
 
       const summaryMethod = payments.length === 1 ? payments[0].method : "misto";
       const { error } = await (supabase as any)
