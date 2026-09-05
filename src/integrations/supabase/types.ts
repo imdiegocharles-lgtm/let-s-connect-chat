@@ -473,6 +473,10 @@ export type Database = {
           deletion_reason: string | null
           delivery_fee: number
           delivery_type: string
+          discount_amount: number
+          discount_authorized_at: string | null
+          discount_authorized_by: string | null
+          discount_reason: string | null
           id: string
           motoboy_id: string | null
           neighborhood: string | null
@@ -501,6 +505,10 @@ export type Database = {
           deletion_reason?: string | null
           delivery_fee?: number
           delivery_type: string
+          discount_amount?: number
+          discount_authorized_at?: string | null
+          discount_authorized_by?: string | null
+          discount_reason?: string | null
           id?: string
           motoboy_id?: string | null
           neighborhood?: string | null
@@ -529,6 +537,10 @@ export type Database = {
           deletion_reason?: string | null
           delivery_fee?: number
           delivery_type?: string
+          discount_amount?: number
+          discount_authorized_at?: string | null
+          discount_authorized_by?: string | null
+          discount_reason?: string | null
           id?: string
           motoboy_id?: string | null
           neighborhood?: string | null

@@ -31,7 +31,7 @@ import {
 } from "@/lib/reports-service";
 import { sendDailyReportEmail } from "@/lib/daily-report-email.functions";
 import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
-import { deleteOrder } from "@/lib/orders-admin.functions";
+import { deleteOrder, verifyDeletionPassword, applyOrderDiscount } from "@/lib/orders-admin.functions";
 
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
 import { playBeep } from "@/lib/sound";
@@ -349,21 +349,37 @@ function KitchenDashboard() {
     },
   });
 
+  const applyDiscountFn = useServerFn(applyOrderDiscount);
+
   const confirmPayment = useMutation({
     mutationFn: async ({
       id,
       payments,
       motoboyId,
+      discount,
     }: {
       id: string;
       payments: { method: string; amount: number }[];
       motoboyId?: string | null;
+      discount?: { amount: number; reason: string; password: string } | null;
     }) => {
+      if (discount && discount.password) {
+        await applyDiscountFn({
+          data: {
+            orderId: id,
+            amount: discount.amount,
+            reason: discount.reason,
+            password: discount.password,
+          },
+        });
+      }
+
       await (supabase as any).from("order_payments").delete().eq("order_id", id);
       const { error: pErr } = await (supabase as any).from("order_payments").insert(
         payments.map((p) => ({ order_id: id, method: p.method, amount: p.amount })),
       );
       if (pErr) throw pErr;
+
 
       const summaryMethod = payments.length === 1 ? payments[0].method : "misto";
       const { error } = await (supabase as any)
@@ -521,7 +537,11 @@ function KitchenDashboard() {
       deleted_at: null,
       deletion_reason: null,
       printed_at: null,
-    };
+      discount_amount: 0,
+      discount_reason: null,
+      discount_authorized_by: null,
+      discount_authorized_at: null,
+    } as Order;
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
       { id: "2", order_id: "test", menu_item_id: "2", name: "Batata Completa", price: 35, quantity: 1, extras: null, created_at: "" },
@@ -948,10 +968,10 @@ function KitchenDashboard() {
         shiftId={activeShift?.id ?? null}
         lastMotoboyId={lastMotoboyId}
         onClose={() => setConfirmPayFor(null)}
-        onConfirm={(payments, motoboyId) => {
+        onConfirm={(payments, motoboyId, discount) => {
           if (!confirmPayFor) return;
           setLastMotoboyId(motoboyId);
-          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId });
+          confirmPayment.mutate({ id: confirmPayFor.id, payments, motoboyId, discount });
         }}
         isPending={confirmPayment.isPending}
       />
@@ -1481,19 +1501,41 @@ function ConfirmPaymentDialog({
   shiftId: string | null;
   lastMotoboyId?: string | null;
   onClose: () => void;
-  onConfirm: (payments: { method: string; amount: number }[], motoboyId: string | null) => void;
+  onConfirm: (
+    payments: { method: string; amount: number }[],
+    motoboyId: string | null,
+    discount?: { amount: number; reason: string; password: string } | null,
+  ) => void;
   isPending: boolean;
 }) {
   const [lines, setLines] = useState<{ method: string; amount: string }[]>([
     { method: "dinheiro", amount: "" },
   ]);
   const [motoboyId, setMotoboyId] = useState<string>("");
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountPassword, setDiscountPassword] = useState("");
+  const [discountUnlocked, setDiscountUnlocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
+  const verifyPasswordFn = useServerFn(verifyDeletionPassword);
   const isEditing = !!(order as any)?.payment_confirmed_at;
   useEffect(() => {
     if (!order) return;
     setMotoboyId(((order as any).motoboy_id as string) ?? lastMotoboyId ?? "");
+    setDiscountOpen(false);
+    setDiscountUnlocked(false);
+    setDiscountPassword("");
+    setDiscountValue(
+      Number((order as any).discount_amount ?? 0) > 0
+        ? Number((order as any).discount_amount).toFixed(2)
+        : "",
+    );
+    setDiscountReason(((order as any).discount_reason as string) ?? "");
+    const already = Number((order as any).discount_amount ?? 0);
+    const net = Number(order.total ?? 0) - already;
     setLines([
-      { method: order.payment_method ?? "dinheiro", amount: Number(order.total ?? 0).toFixed(2) },
+      { method: order.payment_method ?? "dinheiro", amount: net.toFixed(2) },
     ]);
     if ((order as any).payment_confirmed_at) {
       (async () => {
@@ -1509,12 +1551,33 @@ function ConfirmPaymentDialog({
     }
   }, [order, lastMotoboyId]);
 
-
-  const orderTotal = Number(order?.total ?? 0);
+  const grossTotal = Number(order?.total ?? 0);
+  const savedDiscount = Number((order as any)?.discount_amount ?? 0);
+  const parsedDiscount = Number(String(discountValue).replace(",", ".")) || 0;
+  const discount = discountUnlocked ? parsedDiscount : savedDiscount;
+  const orderTotal = Number(Math.max(grossTotal - discount, 0).toFixed(2));
   const sum = lines.reduce((s, l) => s + (Number(String(l.amount).replace(",", ".")) || 0), 0);
   const diff = Number((orderTotal - sum).toFixed(2));
   const money = (n: number) =>
     n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const discountInvalid =
+    discountUnlocked &&
+    (parsedDiscount > grossTotal || (parsedDiscount > 0 && discountReason.trim().length < 3));
+
+  const unlockDiscount = async () => {
+    if (!discountPassword.trim()) return;
+    setUnlocking(true);
+    try {
+      await verifyPasswordFn({ data: { password: discountPassword } });
+      setDiscountUnlocked(true);
+      toast.success("Desconto liberado");
+    } catch (e: any) {
+      toast.error(e.message ?? "Senha incorreta");
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const setLine = (i: number, patch: Partial<{ method: string; amount: string }>) =>
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -1524,6 +1587,7 @@ function ConfirmPaymentDialog({
       { method: "dinheiro", amount: diff > 0 ? diff.toFixed(2) : "" },
     ]);
   const removeLine = (i: number) => setLines((prev) => prev.filter((_, idx) => idx !== i));
+
 
   const { data: shiftMotoboys } = useQuery({
     queryKey: ["shift-motoboys", shiftId],
@@ -1607,13 +1671,77 @@ function ConfirmPaymentDialog({
               </p>
             )}
           </div>
+          <div className="grid gap-2 rounded-md border p-3">
+            {!discountOpen && !discountUnlocked ? (
+              <Button size="sm" variant="outline" onClick={() => setDiscountOpen(true)} className="w-fit">
+                Aplicar desconto
+              </Button>
+            ) : !discountUnlocked ? (
+              <div className="grid gap-2">
+                <Label htmlFor="discountPassword">Senha administrativa (mesma da exclusão)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="discountPassword"
+                    type="password"
+                    autoComplete="off"
+                    placeholder="Senha"
+                    value={discountPassword}
+                    onChange={(e) => setDiscountPassword(e.target.value)}
+                  />
+                  <Button size="sm" onClick={unlockDiscount} disabled={unlocking || !discountPassword.trim()}>
+                    {unlocking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Liberar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  O desconto só é liberado após a senha correta.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>Desconto</Label>
+                <div className="flex gap-2">
+                  <Input
+                    inputMode="decimal"
+                    className="w-28"
+                    placeholder="0,00"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Motivo do desconto"
+                    value={discountReason}
+                    onChange={(e) => setDiscountReason(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+                {parsedDiscount > grossTotal && (
+                  <p className="text-xs text-destructive">
+                    O desconto não pode ser maior que o total do pedido.
+                  </p>
+                )}
+                {parsedDiscount > 0 && discountReason.trim().length < 3 && (
+                  <p className="text-xs text-destructive">Informe o motivo do desconto.</p>
+                )}
+              </div>
+            )}
+          </div>
           {order && (
-            <p className="text-sm text-muted-foreground">
-              Total do pedido:{" "}
-              <strong>
-                {Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </strong>
-            </p>
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Total do pedido: <strong>{money(grossTotal)}</strong>
+              </p>
+              {discount > 0 && (
+                <>
+                  <p>
+                    Desconto: <strong>-{money(discount)}</strong>
+                  </p>
+                  <p>
+                    Total a receber: <strong>{money(orderTotal)}</strong>
+                  </p>
+                </>
+              )}
+            </div>
           )}
           {order && (
             <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-muted-foreground" : "text-destructive"}`}>
@@ -1637,9 +1765,18 @@ function ConfirmPaymentDialog({
                   }))
                   .filter((l) => l.amount > 0),
                 motoboyId,
+                discountUnlocked
+                  ? {
+                      amount: parsedDiscount,
+                      reason: discountReason.trim(),
+                      password: discountPassword,
+                    }
+                  : null,
               )
             }
-            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId}
+            disabled={
+              isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId || discountInvalid
+            }
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? "Salvar alterações" : "Confirmar recebimento"}

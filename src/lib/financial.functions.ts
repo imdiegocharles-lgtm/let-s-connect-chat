@@ -72,7 +72,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
     // Calcular faturamento por dia para o gráfico
     const { data: dailyChart } = await sb
       .from("orders")
-      .select("total, created_at")
+      .select("total, discount_amount, created_at")
       .gte("created_at", startISO)
       .lte("created_at", endISO)
       .not("payment_confirmed_at", "is", null);
@@ -80,7 +80,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
     const chartDataMap: Record<string, number> = {};
     (dailyChart ?? []).forEach((o: any) => {
       const date = o.created_at.slice(0, 10);
-      chartDataMap[date] = (chartDataMap[date] ?? 0) + Number(o.total || 0);
+      chartDataMap[date] = (chartDataMap[date] ?? 0) + Number(o.total || 0) - Number(o.discount_amount || 0);
     });
 
     const chartData = Object.entries(chartDataMap)
@@ -177,7 +177,7 @@ export const getFinancialStats = createServerFn({ method: "GET" })
 async function fetchPeriodStats(sb: any, start: string, end: string) {
   const { data: orders, error } = await sb
     .from("orders")
-    .select("total, delivery_fee, confirmed_payment_method, payment_method")
+    .select("total, discount_amount, delivery_fee, confirmed_payment_method, payment_method")
     .gte("created_at", start)
     .lte("created_at", end)
     .not("payment_confirmed_at", "is", null);
@@ -189,7 +189,7 @@ async function fetchPeriodStats(sb: any, start: string, end: string) {
   const paymentMap: Record<string, number> = {};
 
   (orders ?? []).forEach((o: any) => {
-    revenue += Number(o.total || 0);
+    revenue += Number(o.total || 0) - Number(o.discount_amount || 0);
     deliveryFees += Number(o.delivery_fee || 0);
     const method = o.confirmed_payment_method || o.payment_method || "Outros";
     paymentMap[method] = (paymentMap[method] ?? 0) + 1;
