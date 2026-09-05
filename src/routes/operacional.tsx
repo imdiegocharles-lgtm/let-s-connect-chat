@@ -1671,13 +1671,77 @@ function ConfirmPaymentDialog({
               </p>
             )}
           </div>
+          <div className="grid gap-2 rounded-md border p-3">
+            {!discountOpen && !discountUnlocked ? (
+              <Button size="sm" variant="outline" onClick={() => setDiscountOpen(true)} className="w-fit">
+                Aplicar desconto
+              </Button>
+            ) : !discountUnlocked ? (
+              <div className="grid gap-2">
+                <Label htmlFor="discountPassword">Senha administrativa (mesma da exclusão)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="discountPassword"
+                    type="password"
+                    autoComplete="off"
+                    placeholder="Senha"
+                    value={discountPassword}
+                    onChange={(e) => setDiscountPassword(e.target.value)}
+                  />
+                  <Button size="sm" onClick={unlockDiscount} disabled={unlocking || !discountPassword.trim()}>
+                    {unlocking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Liberar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  O desconto só é liberado após a senha correta.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>Desconto</Label>
+                <div className="flex gap-2">
+                  <Input
+                    inputMode="decimal"
+                    className="w-28"
+                    placeholder="0,00"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Motivo do desconto"
+                    value={discountReason}
+                    onChange={(e) => setDiscountReason(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+                {parsedDiscount > grossTotal && (
+                  <p className="text-xs text-destructive">
+                    O desconto não pode ser maior que o total do pedido.
+                  </p>
+                )}
+                {parsedDiscount > 0 && discountReason.trim().length < 3 && (
+                  <p className="text-xs text-destructive">Informe o motivo do desconto.</p>
+                )}
+              </div>
+            )}
+          </div>
           {order && (
-            <p className="text-sm text-muted-foreground">
-              Total do pedido:{" "}
-              <strong>
-                {Number(order.total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </strong>
-            </p>
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Total do pedido: <strong>{money(grossTotal)}</strong>
+              </p>
+              {discount > 0 && (
+                <>
+                  <p>
+                    Desconto: <strong>-{money(discount)}</strong>
+                  </p>
+                  <p>
+                    Total a receber: <strong>{money(orderTotal)}</strong>
+                  </p>
+                </>
+              )}
+            </div>
           )}
           {order && (
             <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-muted-foreground" : "text-destructive"}`}>
@@ -1701,9 +1765,18 @@ function ConfirmPaymentDialog({
                   }))
                   .filter((l) => l.amount > 0),
                 motoboyId,
+                discountUnlocked
+                  ? {
+                      amount: parsedDiscount,
+                      reason: discountReason.trim(),
+                      password: discountPassword,
+                    }
+                  : null,
               )
             }
-            disabled={isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId}
+            disabled={
+              isPending || Math.abs(diff) >= 0.005 || sum <= 0 || !motoboyId || discountInvalid
+            }
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? "Salvar alterações" : "Confirmar recebimento"}
