@@ -526,7 +526,6 @@ function KitchenDashboard() {
       discount_authorized_by: null,
       discount_authorized_at: null,
     } as Order;
-    };
     const testItems: OrderItem[] = [
       { id: "1", order_id: "test", menu_item_id: "1", name: "Espeto de Carne", price: 12.9, quantity: 3, extras: null, created_at: "" },
       { id: "2", order_id: "test", menu_item_id: "2", name: "Batata Completa", price: 35, quantity: 1, extras: null, created_at: "" },
