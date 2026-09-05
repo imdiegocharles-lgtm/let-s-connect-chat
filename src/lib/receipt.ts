@@ -213,7 +213,15 @@ export function buildReceiptBytes(
         if (order.delivery_type === "delivery") {
           out.push(...line(padLine("TAXA DE ENTREGA", formatMoney(order.delivery_fee), 48), s.receipt_footer_bold));
         }
-        out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true, true));
+        {
+          const disc = Number((order as any).discount_amount ?? 0);
+          if (disc > 0) {
+            out.push(...line(padLine("DESCONTO", "-" + formatMoney(disc), 48), s.receipt_footer_bold));
+            out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(Number(order.total) - disc), 48), true, true));
+          } else {
+            out.push(...line(padLine("TOTAL DO PEDIDO", formatMoney(order.total), 48), true, true));
+          }
+        }
         out.push(...line("------------------------------------------------", s.receipt_footer_bold));
         break;
 
