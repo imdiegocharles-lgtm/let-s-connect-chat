@@ -266,7 +266,7 @@ export async function createShiftReport(shift: {
 }): Promise<ShiftReport> {
   const { data: orders, error } = await sb
     .from("orders")
-    .select("id, total, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
+    .select("id, total, discount_amount, delivery_fee, payment_method, confirmed_payment_method, payment_confirmed_at, deleted_at")
     .eq("shift_id", shift.id);
   if (error) throw error;
 
