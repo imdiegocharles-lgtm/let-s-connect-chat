@@ -26,6 +26,8 @@ export const Route = createFileRoute("/auth")({
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "Acesso — Família Amaral" },
       { property: "og:description", content: "Painel administrativo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,

@@ -55,6 +55,8 @@ export const Route = createFileRoute("/admin/")({
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:title", content: "Painel — Família Amaral" },
       { property: "og:description", content: "Painel administrativo do restaurante." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdminPage,
