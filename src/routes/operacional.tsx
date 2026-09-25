@@ -34,6 +34,7 @@ import { sendShiftReportEmail } from "@/lib/shift-report-email.functions";
 import { deleteOrder, verifyDeletionPassword, applyOrderDiscount } from "@/lib/orders-admin.functions";
 
 import { MotoboysPanel } from "@/components/operacional/MotoboysPanel";
+import { ReservationsPanel } from "@/components/operacional/ReservationsPanel";
 import { playBeep } from "@/lib/sound";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -632,7 +633,7 @@ function KitchenDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [autoPrint, soundOn, agentUrl]);
+  }, [autoPrint, soundOn, agentUrl, qc]);
 
   // Rede de segurança: imprime reservas ainda não impressas (queda de internet, aba fechada).
   useEffect(() => {
