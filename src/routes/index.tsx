@@ -26,6 +26,14 @@ import {
 } from "@/lib/store-hours";
 
 export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "Família Amaral — Churrasquinho & Restaurante | Delivery" },
+    { name: "description", content: "Peça churrasquinhos, refeições e bebidas no delivery da Família Amaral ou faça sua reserva." },
+    { property: "og:title", content: "Família Amaral — Churrasquinho & Restaurante" },
+    { property: "og:description", content: "Cardápio de churrasquinhos e refeições com delivery e reservas na Família Amaral." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Home,
 });
 
