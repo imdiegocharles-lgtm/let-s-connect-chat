@@ -613,6 +613,7 @@ function KitchenDashboard() {
         { event: "INSERT", schema: "public", table: "reservations" },
         async (payload) => {
           const r = payload.new as any;
+          qc.invalidateQueries({ queryKey: ["kitchen-reservations"] });
           if (soundOn) playBeep();
           toast.info(`Nova reserva de ${r.customer_name} recebida!`);
           if (!autoPrint) return;
@@ -853,10 +854,11 @@ function KitchenDashboard() {
           </div>
         ) : (
           <Tabs defaultValue="orders">
-            <TabsList>
+            <TabsList className="flex flex-wrap h-auto">
               <TabsTrigger value="orders">Pedidos</TabsTrigger>
               <TabsTrigger value="motoboys">Motoboys</TabsTrigger>
               <TabsTrigger value="reports">Relatórios</TabsTrigger>
+              <TabsTrigger value="reservations">🍽️ Reservas</TabsTrigger>
               {p.can_manage_menu && <TabsTrigger value="menu">Cardápio</TabsTrigger>}
             </TabsList>
             <TabsContent value="orders" className="mt-4">
@@ -927,6 +929,9 @@ function KitchenDashboard() {
             </TabsContent>
             <TabsContent value="reports" className="mt-4">
               <ReportsPanel agentUrl={agentUrl} />
+            </TabsContent>
+            <TabsContent value="reservations" className="mt-4">
+              <ReservationsPanel agentUrl={agentUrl} />
             </TabsContent>
             {p.can_manage_menu && (
               <TabsContent value="menu" className="mt-4">
