@@ -11,7 +11,7 @@ export function PainelError({ error, reset }: Partial<ErrorComponentProps>) {
         <p className="mt-2 text-sm text-muted-foreground">
           Houve uma falha temporária. Tente novamente — nenhum dado foi perdido.
         </p>
-        {error?.message && (
+        {(error as Error | undefined)?.message && (
           <p className="mt-2 text-xs text-muted-foreground break-words">{error.message}</p>
         )}
         <div className="mt-4 flex justify-center gap-2">
