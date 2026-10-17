@@ -118,7 +118,7 @@ export const Route = createFileRoute("/operacional")({
     ],
   }),
   component: KitchenPage,
-  errorComponent: OperacionalError,
+  errorComponent: (props) => <OperacionalError {...props} />,
   notFoundComponent: () => <OperacionalError />,
 });
 
