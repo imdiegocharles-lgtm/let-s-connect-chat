@@ -109,7 +109,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ settings }) => {
                           {item.quantity}X
                         </span>
                         <div className="flex-1">
-                          <div className="font-bold text-[11px]">{item.name}</div>
+                          <div className="font-bold text-[11px]">{item.extras?.espeto ? item.name.replace(/\s*\(Espeto:[^)]*\)/gi, "") : item.name}</div>
                           <div className={`text-right ${isItemsBold ? 'font-bold' : ''}`}>
                             {formatMoney(item.price * item.quantity)}
                           </div>
@@ -117,7 +117,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ settings }) => {
                             <div className={`text-[10px] italic ${isItemsBold ? 'font-bold' : ''}`}>
                               {item.extras.espeto && (
                                 <div className="flex items-start">
-                                  <span className={s.receipt_qty_double_size ? "text-[14px] font-bold mr-1" : "mr-1"}>1X</span>
+                                  <span className={s.receipt_qty_double_size ? "text-[14px] font-bold mr-1" : "mr-1"}>{item.quantity}X</span>
                                   <span>ESPETO: {item.extras.espeto}</span>
                                 </div>
                               )}

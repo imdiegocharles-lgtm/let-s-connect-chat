@@ -158,7 +158,8 @@ export function buildReceiptBytes(
         out.push(...line("")); 
 
         for (const item of items) {
-          const name = item.name.toUpperCase();
+          const hasEspeto = !!(item.extras as any)?.espeto;
+          const name = (hasEspeto ? item.name.replace(/\s*\(Espeto:[^)]*\)/gi, "") : item.name).toUpperCase();
           const total = formatMoney(item.price * item.quantity);
           
           if (s.receipt_qty_double_size) {
@@ -185,11 +186,11 @@ export function buildReceiptBytes(
               if (s.receipt_qty_double_size) {
                 out.push(...COMMANDS.left);
                 out.push(...COMMANDS.doubleSizeOn);
-                out.push(...encode(" 1X "));
+                out.push(...encode(` ${item.quantity}X `));
                 out.push(...COMMANDS.doubleSizeOff);
                 out.push(...line(`ESPETO: ${espetoName}`, s.receipt_items_bold));
               } else {
-                out.push(...line(`   1X ESPETO: ${espetoName}`, s.receipt_items_bold));
+                out.push(...line(`   ${item.quantity}X ESPETO: ${espetoName}`, s.receipt_items_bold));
               }
             }
             if (extras.acompanhamento) {
