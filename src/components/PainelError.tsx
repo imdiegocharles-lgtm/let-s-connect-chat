@@ -1,7 +1,8 @@
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export function PainelError({ error, reset }: { error?: Error; reset?: () => void }) {
+export function PainelError({ error, reset }: Partial<ErrorComponentProps>) {
   if (error) console.error(error);
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
