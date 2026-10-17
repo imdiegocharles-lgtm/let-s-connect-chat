@@ -104,9 +104,37 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          percent: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percent: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_reports: {
         Row: {
           combos_summary: Json
+          coupons_summary: Json
           created_at: string
           deleted_orders: Json
           delivery_fees: number
@@ -125,6 +153,7 @@ export type Database = {
         }
         Insert: {
           combos_summary?: Json
+          coupons_summary?: Json
           created_at?: string
           deleted_orders?: Json
           delivery_fees?: number
@@ -143,6 +172,7 @@ export type Database = {
         }
         Update: {
           combos_summary?: Json
+          coupons_summary?: Json
           created_at?: string
           deleted_orders?: Json
           delivery_fees?: number
@@ -463,6 +493,7 @@ export type Database = {
         Row: {
           change_for: number | null
           confirmed_payment_method: string | null
+          coupon_code: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
@@ -495,6 +526,7 @@ export type Database = {
         Insert: {
           change_for?: number | null
           confirmed_payment_method?: string | null
+          coupon_code?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
@@ -527,6 +559,7 @@ export type Database = {
         Update: {
           change_for?: number | null
           confirmed_payment_method?: string | null
+          coupon_code?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
@@ -733,6 +766,7 @@ export type Database = {
         Row: {
           closed_at: string
           combos_summary: Json
+          coupons_summary: Json
           created_at: string
           deleted_orders: Json | null
           delivery_fees: number
@@ -755,6 +789,7 @@ export type Database = {
         Insert: {
           closed_at: string
           combos_summary?: Json
+          coupons_summary?: Json
           created_at?: string
           deleted_orders?: Json | null
           delivery_fees?: number
@@ -777,6 +812,7 @@ export type Database = {
         Update: {
           closed_at?: string
           combos_summary?: Json
+          coupons_summary?: Json
           created_at?: string
           deleted_orders?: Json | null
           delivery_fees?: number
