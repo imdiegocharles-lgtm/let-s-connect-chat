@@ -7,7 +7,8 @@
 ## Solução
 1. A linha do espeto passa a usar a mesma quantidade do Completo (2 Completos → "2X ESPETO: TULIPA DA ASA").
 2. O nome do Completo sai sem o "(Espeto: ...)" — fica só "2X COMPLETO COM SALPICÃO", com o espeto apenas na linha de baixo.
-3. Vale também para pedidos já feitos ao reimprimir, e para a pré-visualização da comanda no Admin.
+3. Vale para qualquer espeto escolhido no Completo (tulipa, frango, carne, etc.), em Completo com Salpicão e com Maionese.
+4. Vale também para pedidos já feitos ao reimprimir, e para a pré-visualização da comanda no Admin.
 4. Pedidos novos já passam a ser gravados sem o parênteses no nome (no carrinho e relatórios o espeto continua identificado pelas escolhas do item).
 
 ## Detalhes técnicos
