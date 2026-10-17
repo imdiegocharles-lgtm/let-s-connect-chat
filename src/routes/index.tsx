@@ -162,6 +162,14 @@ function Home() {
               alt="Logo Família Amaral"
               className="relative h-64 w-64 rounded-full object-cover shadow-2xl ring-4 ring-white/20 md:h-80 md:w-80 animate-scale-in"
             />
+            <img
+              src={gorroNatal}
+              alt=""
+              aria-hidden="true"
+              width={1024}
+              height={1024}
+              className="pointer-events-none absolute -top-14 right-0 w-40 rotate-[18deg] drop-shadow-2xl md:-top-16 md:w-48"
+            />
           </div>
         </div>
       </section>
