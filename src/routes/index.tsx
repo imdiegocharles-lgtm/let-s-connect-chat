@@ -112,7 +112,7 @@ function Home() {
           height={1536}
           className="absolute inset-0 h-full w-full object-cover object-right"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest backdrop-blur">
