@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyRoles, hasMyRole } from "@/lib/roles";
+import { OperacionalError } from "@/components/OperacionalError";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -121,35 +122,6 @@ export const Route = createFileRoute("/operacional")({
   notFoundComponent: () => <OperacionalError />,
 });
 
-function OperacionalError({ error, reset }: Partial<import("@tanstack/react-router").ErrorComponentProps>) {
-  if (error) console.error(error);
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="p-8 max-w-md text-center">
-        <h2 className="text-xl font-bold">Não foi possível carregar o painel</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Houve uma falha temporária. Tente novamente — seus dados de turno e pedidos estão salvos.
-        </p>
-        {(error as Error | undefined)?.message && (
-          <p className="mt-2 text-xs text-muted-foreground break-words">{(error as Error).message}</p>
-        )}
-        <div className="mt-4 flex justify-center gap-2">
-          <Button
-            onClick={() => {
-              reset?.();
-              if (typeof window !== "undefined") window.location.reload();
-            }}
-          >
-            Tentar novamente
-          </Button>
-          <Button variant="outline" onClick={() => { if (typeof window !== "undefined") window.location.href = "/"; }}>
-            Ir para o site
-          </Button>
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 function KitchenPage() {
   const navigate = useNavigate();
