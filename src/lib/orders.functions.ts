@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { couponDiscount, normalizeCouponCode } from "./coupons";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -10,6 +11,7 @@ const schema = z.object({
   paymentMethod: z.enum(["dinheiro", "credito", "debito", "sodexo", "alelo", "pix"]),
   changeFor: z.number().nullable().optional(),
   notes: z.string().trim().max(500).nullable().optional(),
+  couponCode: z.string().trim().max(40).nullable().optional(),
   items: z
     .array(
       z.object({
@@ -81,6 +83,20 @@ export const createGuestOrder = createServerFn({ method: "POST" })
       : Number(hood.fee_noite ?? 0);
     const total = subtotal + deliveryFee;
 
+    let couponCode: string | null = null;
+    let discount = 0;
+    if (data.couponCode && data.couponCode.trim()) {
+      const code = normalizeCouponCode(data.couponCode);
+      const { data: c } = await sb
+        .from("coupons")
+        .select("code, percent, is_active")
+        .ilike("code", code)
+        .maybeSingle();
+      if (!c || !c.is_active) throw new Error("Cupom inválido ou desativado.");
+      couponCode = String(c.code).toUpperCase();
+      discount = couponDiscount(total, Number(c.percent));
+    }
+
     const { data: order, error: oErr } = await sb
       .from("orders")
       .insert({
@@ -99,6 +115,9 @@ export const createGuestOrder = createServerFn({ method: "POST" })
         change_for: data.paymentMethod === "dinheiro" ? (data.changeFor ?? null) : null,
         notes: data.notes || null,
         status: "received",
+        coupon_code: couponCode,
+        discount_amount: discount,
+        discount_reason: couponCode ? `Cupom ${couponCode}` : null,
       })
       .select("id, order_number")
       .single();
