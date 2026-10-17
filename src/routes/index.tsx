@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
+import heroNatal from "@/assets/hero-natal.jpg";
+import gorroNatal from "@/assets/gorro-natal.png";
 
 import {
   Clock,
@@ -100,10 +102,17 @@ function Home() {
 
       {/* Hero */}
       <section
-        className="relative overflow-hidden text-white"
-        style={{ background: "var(--gradient-hero)" }}
+        className="relative overflow-hidden text-white bg-background"
       >
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_60%,white,transparent_35%)]" />
+        <img
+          src={heroNatal}
+          alt=""
+          aria-hidden="true"
+          width={1024}
+          height={1536}
+          className="absolute inset-0 h-full w-full object-cover object-right"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/50 to-transparent" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest backdrop-blur">
