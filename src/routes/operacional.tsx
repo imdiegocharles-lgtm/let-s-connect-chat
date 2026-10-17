@@ -130,7 +130,7 @@ function OperacionalError({ error, reset }: Partial<import("@tanstack/react-rout
         <p className="mt-2 text-sm text-muted-foreground">
           Houve uma falha temporária. Tente novamente — seus dados de turno e pedidos estão salvos.
         </p>
-        {error?.message && (
+        {(error as Error | undefined)?.message && (
           <p className="mt-2 text-xs text-muted-foreground break-words">{error.message}</p>
         )}
         <div className="mt-4 flex justify-center gap-2">
