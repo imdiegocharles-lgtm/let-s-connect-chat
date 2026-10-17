@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import logoAsset from "@/assets/logo-familia-amaral-4k.png.asset.json";
+import heroNatal from "@/assets/hero-natal.jpg";
+import gorroNatal from "@/assets/gorro-natal.png";
 
 import {
   Clock,
@@ -100,10 +102,17 @@ function Home() {
 
       {/* Hero */}
       <section
-        className="relative overflow-hidden text-white"
-        style={{ background: "var(--gradient-hero)" }}
+        className="relative overflow-hidden text-white bg-background"
       >
-        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_60%,white,transparent_35%)]" />
+        <img
+          src={heroNatal}
+          alt=""
+          aria-hidden="true"
+          width={1024}
+          height={1536}
+          className="absolute inset-0 h-full w-full object-cover object-right"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
           <div className="animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest backdrop-blur">
@@ -152,6 +161,14 @@ function Home() {
               src={logoAsset.url}
               alt="Logo Família Amaral"
               className="relative h-64 w-64 rounded-full object-cover shadow-2xl ring-4 ring-white/20 md:h-80 md:w-80 animate-scale-in"
+            />
+            <img
+              src={gorroNatal}
+              alt=""
+              aria-hidden="true"
+              width={1024}
+              height={1024}
+              className="pointer-events-none absolute -top-14 right-0 w-40 rotate-[18deg] drop-shadow-2xl md:-top-16 md:w-48"
             />
           </div>
         </div>
