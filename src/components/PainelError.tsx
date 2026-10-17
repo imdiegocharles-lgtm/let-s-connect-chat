@@ -1,7 +1,8 @@
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export function PainelError({ error, reset }: { error?: Error; reset?: () => void }) {
+export function PainelError({ error, reset }: Partial<ErrorComponentProps>) {
   if (error) console.error(error);
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -10,8 +11,8 @@ export function PainelError({ error, reset }: { error?: Error; reset?: () => voi
         <p className="mt-2 text-sm text-muted-foreground">
           Houve uma falha temporária. Tente novamente — nenhum dado foi perdido.
         </p>
-        {error?.message && (
-          <p className="mt-2 text-xs text-muted-foreground break-words">{error.message}</p>
+        {(error as Error | undefined)?.message && (
+          <p className="mt-2 text-xs text-muted-foreground break-words">{(error as Error).message}</p>
         )}
         <div className="mt-4 flex justify-center gap-2">
           <Button

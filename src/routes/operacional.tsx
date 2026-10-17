@@ -121,7 +121,7 @@ export const Route = createFileRoute("/operacional")({
   notFoundComponent: () => <OperacionalError />,
 });
 
-function OperacionalError({ error, reset }: { error?: Error; reset?: () => void }) {
+function OperacionalError({ error, reset }: Partial<import("@tanstack/react-router").ErrorComponentProps>) {
   if (error) console.error(error);
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -130,8 +130,8 @@ function OperacionalError({ error, reset }: { error?: Error; reset?: () => void 
         <p className="mt-2 text-sm text-muted-foreground">
           Houve uma falha temporária. Tente novamente — seus dados de turno e pedidos estão salvos.
         </p>
-        {error?.message && (
-          <p className="mt-2 text-xs text-muted-foreground break-words">{error.message}</p>
+        {(error as Error | undefined)?.message && (
+          <p className="mt-2 text-xs text-muted-foreground break-words">{(error as Error).message}</p>
         )}
         <div className="mt-4 flex justify-center gap-2">
           <Button
