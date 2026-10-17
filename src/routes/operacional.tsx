@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyRoles, hasMyRole } from "@/lib/roles";
+import { OperacionalError } from "@/components/OperacionalError";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
