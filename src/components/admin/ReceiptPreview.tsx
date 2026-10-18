@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReceiptSettings } from '@/lib/receipt';
+import { cleanItemName, type ReceiptSettings } from '@/lib/receipt';
 
 interface ReceiptPreviewProps {
   settings: ReceiptSettings;
@@ -109,7 +109,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ settings }) => {
                           {item.quantity}X
                         </span>
                         <div className="flex-1">
-                          <div className="font-bold text-[11px]">{item.extras?.espeto ? item.name.replace(/\s*\(Espeto:[^)]*\)/gi, "") : item.name}</div>
+                          <div className="font-bold text-[11px]">{cleanItemName(item.name, item.extras as any)}</div>
                           <div className={`text-right ${isItemsBold ? 'font-bold' : ''}`}>
                             {formatMoney(item.price * item.quantity)}
                           </div>

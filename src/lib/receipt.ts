@@ -82,6 +82,21 @@ function formatMoney(n: number): string {
   return `R$ ${n.toFixed(2).replace('.', ',')}`;
 }
 
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Remove do nome as escolhas entre parênteses que já saem em linha própria na comanda. */
+export function cleanItemName(name: string, extras?: Record<string, any> | null): string {
+  let n = name;
+  if (!extras) return n;
+  if (extras.espeto) n = n.replace(/\s*\(Espeto:[^)]*\)/gi, "");
+  if (extras.acompanhamento) n = n.replace(/\s*\(Acompanhamento:[^)]*\)/gi, "");
+  if (extras.pergunta && extras.escolha) {
+    const re = new RegExp(`\\s*\\(${escapeRe(String(extras.pergunta).trim())}\\s*${escapeRe(String(extras.escolha).trim())}\\)`, "gi");
+    n = n.replace(re, "");
+  }
+  return n.trim();
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   const dateStr = d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -158,8 +173,7 @@ export function buildReceiptBytes(
         out.push(...line("")); 
 
         for (const item of items) {
-          const hasEspeto = !!(item.extras as any)?.espeto;
-          const name = (hasEspeto ? item.name.replace(/\s*\(Espeto:[^)]*\)/gi, "") : item.name).toUpperCase();
+          const name = cleanItemName(item.name, item.extras as any).toUpperCase();
           const total = formatMoney(item.price * item.quantity);
           
           if (s.receipt_qty_double_size) {
