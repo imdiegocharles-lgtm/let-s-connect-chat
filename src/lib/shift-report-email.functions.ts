@@ -58,6 +58,7 @@ export const sendShiftReportEmail = createServerFn({ method: "POST" })
       combos: report.combos_summary ?? [],
       motoboys: report.motoboys_summary ?? [],
       deletedOrders: report.deleted_orders ?? [],
+      coupons: (report as any).coupons_summary ?? [],
       payments: Object.entries(report.totals_by_payment ?? {})
         .filter(([, v]) => Number(v) > 0)
         .map(([k, v]) => ({ label: PAYMENT_LABELS[k] ?? k, value: Number(v) })),
