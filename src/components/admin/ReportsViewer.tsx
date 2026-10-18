@@ -294,6 +294,7 @@ export function ReportsViewer() {
                       <PaymentsBlock totals={r.totals_by_payment} />
                       <ItemsBlock items={r.items_summary} />
                       <CombosBlock combos={r.combos_summary} />
+                      <CouponsBlock coupons={(r as any).coupons_summary} />
                       <MotoboysBlock
                         motoboys={r.motoboys_summary}
                         revenue={Number(r.total_revenue)}
@@ -377,6 +378,7 @@ export function ReportsViewer() {
                   </Block>
                   <ItemsBlock items={(daily as any).items_summary} />
                   <CombosBlock combos={(daily as any).combos_summary} />
+                  <CouponsBlock coupons={(daily as any).coupons_summary} />
                   <MotoboysBlock
                     motoboys={(daily as any).motoboys_summary}
                     revenue={Number((daily as any).total_revenue)}
@@ -451,6 +453,25 @@ export function ReportsViewer() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+function CouponsBlock({ coupons }: { coupons?: any[] }) {
+  const list = coupons ?? [];
+  if (list.length === 0) return null;
+  const total = list.reduce((s, c) => s + Number(c.discount ?? 0), 0);
+  return (
+    <div className="mt-3 rounded-lg border border-border p-3 text-sm">
+      <p className="mb-2 font-bold">Cupons usados ({list.length})</p>
+      {list.map((c, i) => (
+        <div key={i} className="flex justify-between">
+          <span>#{String(c.order_number ?? "").padStart(4, "0")} · {c.customer_name} · {c.coupon_code}</span>
+          <span>- {money(Number(c.discount ?? 0))}</span>
+        </div>
+      ))}
+      <div className="mt-2 flex justify-between border-t border-border pt-2 font-bold">
+        <span>Total descontado</span><span>{money(total)}</span>
+      </div>
     </div>
   );
 }

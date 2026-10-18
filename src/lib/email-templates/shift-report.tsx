@@ -11,7 +11,7 @@ import {
   Text,
 } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { ItemsSection, MotoboysSection, CombosSection, DeletedOrdersSection } from './daily-report'
+import { ItemsSection, MotoboysSection, CombosSection, DeletedOrdersSection, CouponsSection } from './daily-report'
 
 interface Props {
   reportDate?: string
@@ -28,6 +28,7 @@ interface Props {
   motoboys?: any[]
   combos?: any[]
   deletedOrders?: any[]
+  coupons?: any[]
 }
 
 const money = (n: number) =>
@@ -60,6 +61,7 @@ const Email = ({
   motoboys = [],
   combos = [],
   deletedOrders = [],
+  coupons = [],
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -104,6 +106,7 @@ const Email = ({
 
         <MotoboysSection motoboys={motoboys} />
 
+        <CouponsSection coupons={coupons} />
         <DeletedOrdersSection deletedOrders={deletedOrders} />
 
         <Hr style={hr} />

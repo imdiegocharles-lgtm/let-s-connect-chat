@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ReportsViewer } from "@/components/admin/ReportsViewer";
+import { CouponsPanel } from "@/components/admin/CouponsPanel";
 import { ReceiptPreview } from "@/components/admin/ReceiptPreview";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -172,6 +173,7 @@ function AdminDashboard() {
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="neighborhoods">Bairros</TabsTrigger>
             <TabsTrigger value="kitchen">Usuários Cozinha</TabsTrigger>
+            <TabsTrigger value="coupons">🎟️ Cupons</TabsTrigger>
             <TabsTrigger value="reviews">⭐ Avaliações</TabsTrigger>
             <TabsTrigger value="reports">📊 Relatórios</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
@@ -185,6 +187,7 @@ function AdminDashboard() {
           <TabsContent value="categories" className="mt-6"><CategoriesPanel /></TabsContent>
           <TabsContent value="neighborhoods" className="mt-6"><NeighborhoodsPanel /></TabsContent>
           <TabsContent value="kitchen" className="mt-6"><KitchenUsersPanel /></TabsContent>
+          <TabsContent value="coupons" className="mt-6"><CouponsPanel /></TabsContent>
           <TabsContent value="reviews" className="mt-6"><ReviewsPanel /></TabsContent>
           <TabsContent value="reports" className="mt-6"><ReportsViewer /></TabsContent>
           <TabsContent value="settings" className="mt-6"><SettingsPanel /></TabsContent>

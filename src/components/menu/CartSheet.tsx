@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
+import { validateCoupon } from "@/lib/coupons.functions";
+import { couponDiscount } from "@/lib/coupons";
 import { useAvisoLoja, useConfigEntrega, DEFAULT_AVISO } from "@/lib/store-hours";
 
 type Neighborhood = { id: string; name: string; fee_almoco: number; fee_noite: number };
@@ -62,7 +64,31 @@ export function CartSheet() {
   const deliveryFee = neighborhood 
     ? (store.openService === "almoco" ? Number(neighborhood.fee_almoco) : Number(neighborhood.fee_noite)) 
     : 0;
-  const total = subtotal + deliveryFee;
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; percent: number } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const grossTotal = subtotal + deliveryFee;
+  const couponValue = coupon ? couponDiscount(grossTotal, coupon.percent) : 0;
+  const total = Math.max(grossTotal - couponValue, 0);
+
+  const applyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    try {
+      const r = await validateCoupon({ data: { code: couponInput } });
+      if (r.valid) {
+        setCoupon({ code: r.code, percent: r.percent });
+        toast.success(`Cupom ${r.code} aplicado (-${r.percent}%)`);
+      } else {
+        setCoupon(null);
+        toast.error("Cupom inválido ou desativado");
+      }
+    } catch {
+      toast.error("Não foi possível verificar o cupom");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const paymentLabel = useMemo(
     () => PAYMENT_METHODS.find((p) => p.value === payment)?.label ?? "",
@@ -106,6 +132,7 @@ export function CartSheet() {
           paymentMethod: payment as never,
           changeFor: payment === "dinheiro" ? Number(changeFor) : null,
           notes: combinedNotes || null,
+          couponCode: coupon?.code ?? null,
           items: items.map((i) => ({
             menuItemId: (i.menuItemId ?? i.id.split(":")[0]) as string,
             name: i.name,
@@ -330,6 +357,34 @@ export function CartSheet() {
                 />
               </div>
 
+              <div className="grid gap-2">
+                <Label htmlFor="coupon">Adicionar cupom de desconto</Label>
+                {coupon ? (
+                  <div className="flex items-center justify-between rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
+                    <span className="font-bold">Cupom {coupon.code} aplicado (-{coupon.percent}%)</span>
+                    <Button variant="ghost" size="sm" onClick={() => { setCoupon(null); setCouponInput(""); }}>
+                      Remover
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      id="coupon"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      maxLength={40}
+                      placeholder="Digite o cupom"
+                      autoCorrect="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                    />
+                    <Button variant="outline" onClick={applyCoupon} disabled={couponLoading || !couponInput.trim()}>
+                      {couponLoading ? "…" : "Aplicar"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-1 rounded-lg border border-border bg-card p-3 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
@@ -339,6 +394,12 @@ export function CartSheet() {
                   <span>Taxa de entrega</span>
                   <span>{formatBRL(deliveryFee)}</span>
                 </div>
+                {coupon && (
+                  <div className="flex justify-between text-primary">
+                    <span>Desconto do cupom ({coupon.percent}%)</span>
+                    <span>- {formatBRL(couponValue)}</span>
+                  </div>
+                )}
                 <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-black">
                   <span>Total</span>
                   <span className="text-primary">{formatBRL(total)}</span>

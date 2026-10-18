@@ -290,6 +290,19 @@ export async function createShiftReport(shift: {
     aggregateShiftItems(shift.id),
     aggregateShiftMotoboys(shift.id),
   ]);
+  const { data: couponRows } = await sb
+    .from("orders")
+    .select("order_number, customer_name, coupon_code, discount_amount")
+    .eq("shift_id", shift.id)
+    .is("deleted_at", null)
+    .not("coupon_code", "is", null)
+    .order("order_number", { ascending: true });
+  const coupons_summary = (couponRows ?? []).map((o: any) => ({
+    order_number: Number(o.order_number ?? 0),
+    customer_name: o.customer_name ?? "-",
+    coupon_code: o.coupon_code,
+    discount: Number(o.discount_amount ?? 0),
+  }));
   const payload = {
     shift_id: shift.id,
     report_date: saoPauloDateISO(shift.opened_at),
@@ -301,6 +314,7 @@ export async function createShiftReport(shift: {
     items_summary: itemsAgg.items,
     combos_summary: itemsAgg.combos,
     motoboys_summary,
+    coupons_summary,
     deleted_orders: itemsAgg.deletedOrders,
     ...agg,
   };
@@ -378,6 +392,7 @@ export async function createDailyReport(date = todayISO()) {
     delivery_fees,
     totals_by_payment,
     deleted_orders,
+    coupons_summary: reports.flatMap((r: any) => r.coupons_summary ?? []),
     items_summary: mergeItemLines(reports.map((r: any) => r.items_summary ?? [])),
     combos_summary: mergeComboLines(reports.map((r: any) => r.combos_summary ?? [])),
     motoboys_summary: mergeMotoboyLines(reports.map((r: any) => r.motoboys_summary ?? [])),

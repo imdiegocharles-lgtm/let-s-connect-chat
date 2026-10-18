@@ -58,6 +58,7 @@ interface Props {
   motoboys?: MotoboyLine[]
   combos?: ComboLine[]
   deletedOrders?: DeletedOrderLine[]
+  coupons?: any[]
 }
 
 const money = (n: number) =>
@@ -130,6 +131,23 @@ export const MotoboysSection = ({ motoboys = [] }: { motoboys?: MotoboyLine[] })
   )
 }
 
+export const CouponsSection = ({ coupons = [] }: { coupons?: any[] }) => {
+  if (!coupons || coupons.length === 0) return null
+  const total = coupons.reduce((s: number, c: any) => s + Number(c.discount ?? 0), 0)
+  return (
+    <Section>
+      <Hr style={hr} />
+      <Heading as="h2" style={h2}>Cupons usados ({coupons.length})</Heading>
+      {coupons.map((c: any, i: number) => (
+        <Text key={i} style={line}>
+          #{String(c.order_number ?? '').padStart(4, '0')} — {c.customer_name} · {c.coupon_code}: <b>- {money(Number(c.discount ?? 0))}</b>
+        </Text>
+      ))}
+      <Text style={line}>Total descontado: <b>{money(total)}</b></Text>
+    </Section>
+  )
+}
+
 export const DeletedOrdersSection = ({
   deletedOrders = [],
 }: {
@@ -189,6 +207,7 @@ const Email = ({
   motoboys = [],
   combos = [],
   deletedOrders = [],
+  coupons = [],
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -237,6 +256,7 @@ const Email = ({
 
         <MotoboysSection motoboys={motoboys} />
 
+        <CouponsSection coupons={coupons} />
         <DeletedOrdersSection deletedOrders={deletedOrders} />
 
         <Hr style={hr} />

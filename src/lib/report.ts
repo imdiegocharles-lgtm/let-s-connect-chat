@@ -1,3 +1,4 @@
+import type { CouponLine } from "./coupons";
 const ESC = {
   init: [0x1b, 0x40],
   lf: [0x0a],
@@ -75,6 +76,7 @@ export type ShiftReport = {
   totals_by_payment: Record<string, number>;
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
+  coupons_summary?: CouponLine[];
   combos_summary?: ComboLine[];
   deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
 };
@@ -88,6 +90,7 @@ export type DailyReport = {
   totals_by_payment: Record<string, number>;
   items_summary?: ItemLine[];
   motoboys_summary?: MotoboyLine[];
+  coupons_summary?: CouponLine[];
   combos_summary?: ComboLine[];
   deleted_orders?: { order_number: number; total: number; customer_name: string; reason: string }[];
   shifts_summary: {
@@ -193,6 +196,19 @@ function motoboysBlock(out: number[], motoboys?: MotoboyLine[]) {
   out.push(...ESC.boldOn, ...line(pad("TOTAL MOTOBOYS", money(total))), ...ESC.boldOff);
 }
 
+function couponsBlock(out: number[], coupons?: CouponLine[]) {
+  const list = coupons ?? [];
+  if (list.length === 0) return;
+  const total = list.reduce((s, c) => s + Number(c.discount ?? 0), 0);
+  out.push(...line(""));
+  out.push(...ESC.boldOn, ...line(`CUPONS USADOS (${list.length})`), ...ESC.boldOff);
+  for (const c of list) {
+    out.push(...line(`#${String(c.order_number ?? "").padStart(4, "0")} - ${c.customer_name ?? "-"}`));
+    out.push(...line(pad(`  ${c.coupon_code}`, `- ${money(Number(c.discount ?? 0))}`)));
+  }
+  out.push(...ESC.boldOn, ...line(pad("TOTAL DESCONTADO", money(total))), ...ESC.boldOff);
+}
+
 function deletedOrdersBlock(out: number[], deletedOrders?: { order_number: number; total: number; customer_name: string; reason: string }[]) {
   const list = deletedOrders ?? [];
   if (list.length === 0) return;
@@ -224,6 +240,7 @@ export function buildShiftReportBytes(r: ShiftReport): Uint8Array {
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
+  couponsBlock(out, r.coupons_summary);
   deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio de turno - Familia Amaral"));
@@ -257,6 +274,7 @@ export function buildDailyReportBytes(r: DailyReport): Uint8Array {
   itemsBlock(out, r.items_summary);
   combosBlock(out, r.combos_summary);
   motoboysBlock(out, r.motoboys_summary);
+  couponsBlock(out, r.coupons_summary);
   deletedOrdersBlock(out, r.deleted_orders);
   out.push(...line(""));
   out.push(...ESC.center, ...line("Relatorio consolidado do dia"));
