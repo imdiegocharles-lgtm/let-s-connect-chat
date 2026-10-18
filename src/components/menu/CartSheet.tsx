@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { getStoreStatus, useHorarios, useIsShiftOpen } from "@/lib/store-hours";
 import { createGuestOrder } from "@/lib/orders.functions";
+import { validateCoupon } from "@/lib/coupons.functions";
+import { couponDiscount } from "@/lib/coupons";
 import { useAvisoLoja, useConfigEntrega, DEFAULT_AVISO } from "@/lib/store-hours";
 
 type Neighborhood = { id: string; name: string; fee_almoco: number; fee_noite: number };
