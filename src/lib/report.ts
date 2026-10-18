@@ -1,3 +1,4 @@
+import type { CouponLine } from "./coupons";
 const ESC = {
   init: [0x1b, 0x40],
   lf: [0x0a],
