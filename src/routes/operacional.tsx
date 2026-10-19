@@ -1800,6 +1800,22 @@ function MenuAvailabilityPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleAll = useMutation({
+    mutationFn: async ({ ids, value }: { ids: string[]; value: boolean }) => {
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ is_available: value })
+        .in("id", ids);
+      if (error) throw error;
+      return value;
+    },
+    onSuccess: (value) => {
+      qc.invalidateQueries({ queryKey: ["op-menu"] });
+      toast.success(value ? "Todos ativados" : "Todos desativados");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading || !data) {
     return (
       <div className="flex justify-center py-10">
@@ -1831,9 +1847,29 @@ function MenuAvailabilityPanel() {
         if (!catItems.length) return null;
         return (
           <section key={cat.id}>
-            <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              {cat.name}
-            </h3>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                {cat.name}
+              </h3>
+              {(() => {
+                const allOn = catItems.every((i: any) => i.is_available);
+                const someOn = catItems.some((i: any) => i.is_available);
+                return (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Todos{!allOn && someOn ? " (parcial)" : ""}
+                    </span>
+                    <Switch
+                      checked={allOn}
+                      disabled={toggleAll.isPending}
+                      onCheckedChange={(v) =>
+                        toggleAll.mutate({ ids: catItems.map((i: any) => i.id), value: v })
+                      }
+                    />
+                  </div>
+                );
+              })()}
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {catItems.map((item: any) => (
                 <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
