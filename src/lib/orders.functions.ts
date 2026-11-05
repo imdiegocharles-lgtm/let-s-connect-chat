@@ -8,7 +8,7 @@ const schema = z.object({
   street: z.string().trim().min(1).max(300),
   number: z.string().trim().min(1).max(50),
   neighborhoodId: z.string().uuid(),
-  paymentMethod: z.enum(["dinheiro", "credito", "debito", "sodexo", "alelo", "pix"]),
+  paymentMethod: z.enum(["dinheiro", "credito", "debito", "sodexo", "alelo", "pix", "pix_cnpj"]),
   changeFor: z.number().nullable().optional(),
   notes: z.string().trim().max(500).nullable().optional(),
   couponCode: z.string().trim().max(40).nullable().optional(),

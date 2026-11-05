@@ -9,6 +9,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   sodexo: "Vale-refeicao Sodexo",
   alelo: "Vale-refeicao Alelo",
   pix: "Pix (na entrega)",
+  pix_cnpj: "Pix CNPJ",
 };
 
 const dateBR = (d: string) => {
