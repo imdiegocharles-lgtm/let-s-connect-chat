@@ -26,7 +26,6 @@ const PAYMENT_METHODS = [
   { value: "sodexo", label: "Vale-refeição Sodexo" },
   { value: "alelo", label: "Vale-refeição Alelo" },
   { value: "pix", label: "Pix (na entrega)" },
-  { value: "pix_cnpj", label: "Pix CNPJ" },
 ];
 
 export function CartSheet() {
