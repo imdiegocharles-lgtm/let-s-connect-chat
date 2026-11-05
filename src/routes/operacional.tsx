@@ -102,6 +102,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   sodexo: "Vale-refeição Sodexo",
   alelo: "Vale-refeição Alelo",
   pix: "Pix (na entrega)",
+  pix_cnpj: "Pix CNPJ",
 };
 
 export const Route = createFileRoute("/operacional")({

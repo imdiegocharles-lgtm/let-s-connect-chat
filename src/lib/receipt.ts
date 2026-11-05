@@ -111,6 +111,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   sodexo: "SODEXO",
   alelo: "ALELO",
   pix: "PIX (ENTREGA)",
+  pix_cnpj: "PIX CNPJ",
 };
 
 export function buildReceiptBytes(
