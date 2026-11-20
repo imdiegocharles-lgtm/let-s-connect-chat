@@ -1,0 +1,1 @@
+ALTER TABLE public.menu_items ADD COLUMN IF NOT EXISTS extra_question_required boolean NOT NULL DEFAULT false;

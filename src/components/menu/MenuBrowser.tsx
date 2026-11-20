@@ -46,6 +46,7 @@ type Item = {
   has_extra_question: boolean;
   extra_question_text: string | null;
   extra_question_options: string[] | null;
+  extra_question_required?: boolean;
 };
 
 async function fetchMenu() {
@@ -57,7 +58,7 @@ async function fetchMenu() {
     supabase
       .from("menu_items")
       .select(
-        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice, has_side_dish, has_extra_question, extra_question_text, extra_question_options",
+        "id, category_id, name, description, price, image_url, is_available, sort_order, is_completo_skewer_option, requires_skewer_choice, has_side_dish, has_extra_question, extra_question_text, extra_question_options, extra_question_required",
       )
       .eq("is_available", true)
       .order("price", { ascending: true })
@@ -435,7 +436,9 @@ export function MenuBrowser() {
             <DialogDescription>
               {(flow?.item.extra_question_options?.length ?? 0) > 0
                 ? "Selecione uma das opções abaixo para adicionar o item ao seu carrinho."
-                : "Resposta opcional — deixe em branco se não quiser responder."}
+                : flow?.item.extra_question_required
+                  ? "Resposta obrigatória."
+                  : "Resposta opcional — deixe em branco se não quiser responder."}
             </DialogDescription>
           </DialogHeader>
           {(flow?.item.extra_question_options?.length ?? 0) > 0 ? (
@@ -456,13 +459,13 @@ export function MenuBrowser() {
               <Textarea
                 value={obsText}
                 onChange={(e) => setObsText(e.target.value.slice(0, 140))}
-                placeholder="Digite aqui (opcional)"
+                placeholder={flow?.item.extra_question_required ? "Digite aqui" : "Digite aqui (opcional)"}
                 rows={3}
                 autoCorrect="off"
                 spellCheck={false}
               />
-              <Button className="h-12 w-full text-lg font-bold" onClick={() => confirmExtra(obsText)}>
-                {obsText.trim() ? "Adicionar com observação" : "Continuar sem observação"}
+              <Button className="h-12 w-full text-lg font-bold" disabled={!!flow?.item.extra_question_required && !obsText.trim()} onClick={() => confirmExtra(obsText)}>
+                {flow?.item.extra_question_required ? "Adicionar ao pedido" : obsText.trim() ? "Adicionar com observação" : "Continuar sem observação"}
               </Button>
               <Button variant="ghost" className="w-full text-muted-foreground" onClick={closeFlow}>
                 Cancelar

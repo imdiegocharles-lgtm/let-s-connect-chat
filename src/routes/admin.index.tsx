@@ -585,6 +585,7 @@ type MenuItem = {
   has_extra_question?: boolean;
   extra_question_text?: string | null;
   extra_question_options?: string[] | null;
+  extra_question_required?: boolean;
 };
 
 function ItemsPanel() {
@@ -682,6 +683,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
   const [hasExtraQuestion, setHasExtraQuestion] = useState(item?.has_extra_question ?? false);
   const [extraQuestionText, setExtraQuestionText] = useState(item?.extra_question_text ?? "");
   const [extraQuestionOptions, setExtraQuestionOptions] = useState(item?.extra_question_options?.join(", ") ?? "");
+  const [extraRequired, setExtraRequired] = useState(item?.extra_question_required ?? false);
 
   useEffect(() => {
     if (open) {
@@ -697,6 +699,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
       setHasExtraQuestion(item?.has_extra_question ?? false);
       setExtraQuestionText(item?.extra_question_text ?? "");
       setExtraQuestionOptions(item?.extra_question_options?.join(", ") ?? "");
+      setExtraRequired(item?.extra_question_required ?? false);
     }
   }, [open, item, categories]);
 
@@ -715,6 +718,7 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
         has_extra_question: hasExtraQuestion,
         extra_question_text: extraQuestionText || null,
         extra_question_options: extraQuestionOptions.split(",").map(o => o.trim()).filter(o => o.length > 0) || null,
+        extra_question_required: extraRequired,
       };
       if (item) {
         const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
@@ -832,6 +836,15 @@ function ItemDialog({ item, categories, trigger }: { item?: MenuItem; categories
                         virar um campo de observação livre e opcional (ex: pergunta "OBSERVAÇÕES:").
                       </p>
                     </div>
+                    {!extraQuestionOptions.trim() && (
+                      <div className="flex items-center justify-between rounded-md border border-border p-2">
+                        <div>
+                          <Label className="text-xs">Resposta obrigatória</Label>
+                          <p className="text-[10px] text-muted-foreground">Cliente precisa digitar para adicionar (ex: sabor do pastel).</p>
+                        </div>
+                        <Switch checked={extraRequired} onCheckedChange={setExtraRequired} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

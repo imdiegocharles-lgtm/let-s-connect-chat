@@ -290,6 +290,7 @@ export type Database = {
           created_at: string
           description: string | null
           extra_question_options: string[] | null
+          extra_question_required: boolean
           extra_question_text: string | null
           has_extra_question: boolean | null
           has_side_dish: boolean
@@ -308,6 +309,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           extra_question_options?: string[] | null
+          extra_question_required?: boolean
           extra_question_text?: string | null
           has_extra_question?: boolean | null
           has_side_dish?: boolean
@@ -326,6 +328,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           extra_question_options?: string[] | null
+          extra_question_required?: boolean
           extra_question_text?: string | null
           has_extra_question?: boolean | null
           has_side_dish?: boolean
