@@ -1,10 +1,10 @@
 # Reativar o banco de dados
 
-O login de Admin e Cozinha falha ("Load failed") porque o banco de dados do site está **pausado**. Com ele pausado, nada que depende de dados funciona: login, pedidos, cardápio do banco e reservas.
+Os créditos já foram adicionados, mas o banco de dados do site continua pausado. Por isso o login de Admin e da Cozinha ainda falha.
 
 ## O que fazer
-1. Reativar o banco (botão abaixo ao aprovar, ou em More → Database → Manage → Settings → Resume).
-2. Aguardar alguns minutos até ficar ativo e confirmar o status.
-3. Testar o login de Admin e da Cozinha.
+1. Reativar o banco de dados.
+2. Esperar alguns minutos e confirmar que ele está ativo.
+3. Testar os logins de Admin e da Cozinha.
 
-Nenhuma alteração no site é necessária.
+Nada no site precisa ser alterado.
